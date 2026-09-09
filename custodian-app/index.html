@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Custodian</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+      :root, [data-theme="light"] {
+        --bg-main: #F8F6F1;
+        --panel-main: #FFFFFF;
+        --panel-alt: #F2EEE7;
+        --line-main: #E2DDD5;
+        --text-main: #1A1816;
+        --text-dim: #5C564E;
+        --text-faint: #8A8275;
+        --brass-main: #946E37;
+        --brass-dim: #785627;
+        --green-main: #2D6A42;
+        --red-main: #B5382B;
+        --primary-btn-text: #FFFFFF;
+        --sidebar-bg: #F5EFE6;
+        --card-shadow: 0 1px 3px rgba(28, 24, 18, 0.06), 0 4px 14px rgba(28, 24, 18, 0.04);
+        --modal-overlay-bg: rgba(28, 24, 18, 0.48);
+        --highlight-bg: rgba(148, 110, 55, 0.12);
+        --scrollbar-thumb: rgba(92, 86, 78, 0.28);
+        --scrollbar-thumb-hover: rgba(92, 86, 78, 0.5);
+        --scrollbar-track: transparent;
+      }
+      [data-theme="dark"] {
+        --bg-main: #171615;
+        --panel-main: #1F1E1C;
+        --panel-alt: #242320;
+        --line-main: #302E2A;
+        --text-main: #EDE9E3;
+        --text-dim: #A8A399;
+        --text-faint: #6E6A64;
+        --brass-main: #B08D57;
+        --brass-dim: #8B7148;
+        --green-main: #8FA98C;
+        --red-main: #C06B5F;
+        --primary-btn-text: #1A1611;
+        --sidebar-bg: #1A1917;
+        --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        --modal-overlay-bg: rgba(10, 9, 8, 0.85);
+        --highlight-bg: rgba(176, 141, 87, 0.14);
+        --scrollbar-thumb: rgba(255, 255, 255, 0.18);
+        --scrollbar-thumb-hover: rgba(255, 255, 255, 0.32);
+        --scrollbar-track: transparent;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg-main);
+        color: var(--text-main);
+        font-family: 'Inter', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        transition: background 0.2s ease, color 0.2s ease;
+      }
+      input, button, textarea, select {
+        font: inherit;
+      }
+      /* Keyboard Accessibility Focus Visible */
+      :focus-visible {
+        outline: 2px solid var(--brass-main) !important;
+        outline-offset: 2px !important;
+      }
+      /* Sleek Theme-Aware Custom Scrollbars */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+      }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--scrollbar-track);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+        border-radius: 8px;
+        transition: background 0.2s ease;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--scrollbar-thumb-hover);
+      }
+      ::-webkit-scrollbar-corner {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-button {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      /* Shimmer Animation for Skeletons */
+      @keyframes shimmer {
+        0% { opacity: 0.4; }
+        50% { opacity: 0.85; }
+        100% { opacity: 0.4; }
+      }
+      .skeleton-shimmer {
+        animation: shimmer 1.5s ease-in-out infinite;
+      }
+      /* Floating Toast Slide-In Animation */
+      @keyframes slideInToast {
+        from { transform: translateY(20px) scale(0.96); opacity: 0; }
+        to { transform: translateY(0) scale(1); opacity: 1; }
+      }
+      /* Tab hover/focus micro-interactions */
+      button:hover {
+        filter: brightness(1.08);
+      }
+      button:active {
+        transform: scale(0.97);
+      }
+      /* Hide scrollbars on horizontal tabs while keeping smooth touch/wheel scroll */
+      .projectTabNav::-webkit-scrollbar,
+      .custodian-hscroll::-webkit-scrollbar {
+        display: none !important;
+      }
+      .custodian-hscroll {
+        display: flex !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+        scroll-behavior: smooth !important;
+      }
+      .custodian-hscroll > * {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+      }
+      /* Mobile Drawer Overlay Backdrop */
+      .custodian-sidebar-backdrop {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: rgba(0, 0, 0, 0.72) !important;
+        backdrop-filter: blur(4px) !important;
+        -webkit-backdrop-filter: blur(4px) !important;
+        z-index: 998 !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      }
+      .custodian-sidebar-backdrop.open {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+      }
+
+      /* Mobile Drawer Overlay Rules */
+      @media (max-width: 768px) {
+        .custodian-sidebar {
+          position: fixed !important;
+          top: 0 !important;
+          bottom: 0 !important;
+          left: 0 !important;
+          width: 285px !important;
+          max-width: 85vw !important;
+          z-index: 999 !important;
+          transform: translateX(-105%) !important;
+          transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+          box-shadow: 6px 0 36px rgba(0, 0, 0, 0.85) !important;
+          border-right: 1px solid rgba(176, 141, 87, 0.3) !important;
+          overflow-y: auto !important;
+          -webkit-overflow-scrolling: touch !important;
+          height: 100vh !important;
+          padding-bottom: 40px !important;
+          box-sizing: border-box !important;
+        }
+        .custodian-sidebar.open {
+          transform: translateX(0) !important;
+        }
+        /* Make mobile sidebar tree flow naturally inside drawer without nested scroll traps */
+        .custodian-sidebar .custodian-tree-scroll {
+          overflow-y: visible !important;
+          flex: none !important;
+        }
+        .custodian-main {
+          margin-left: 0 !important;
+          width: 100% !important;
+          max-width: 100vw !important;
+          padding: 0 14px 28px !important;
+          box-sizing: border-box !important;
+          flex: 1 1 100% !important;
+          -webkit-overflow-scrolling: touch !important;
+        }
+        .mobile-only-header {
+          display: flex !important;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 14px;
+          background: var(--bg-main);
+          border-bottom: 1px solid var(--line-main);
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          margin: 0 -14px 14px -14px;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+        }
+        .mobile-drawer-close {
+          display: flex !important;
+        }
+        /* Mobile Modal Overlay Scrolling & Soft Keyboard Clearance */
+        .custodian-modal-overlay {
+          align-items: flex-start !important;
+          padding: 14px 10px 48px !important;
+          overflow-y: auto !important;
+          -webkit-overflow-scrolling: touch !important;
+          box-sizing: border-box !important;
+        }
+        .custodian-modal-card {
+          width: 100% !important;
+          max-width: 100% !important;
+          max-height: 88vh !important;
+          overflow-y: auto !important;
+          -webkit-overflow-scrolling: touch !important;
+          margin: auto 0 !important;
+          box-sizing: border-box !important;
+        }
+        /* Mobile Command Palette */
+        .custodian-cmd-overlay {
+          align-items: flex-start !important;
+          padding-top: 18px !important;
+          overflow-y: auto !important;
+          -webkit-overflow-scrolling: touch !important;
+        }
+        /* Mobile Document Annotation Scratchpad Drawer */
+        .custodian-scratchpad-drawer {
+          position: absolute !important;
+          right: 0 !important;
+          top: 0 !important;
+          bottom: 0 !important;
+          width: 85% !important;
+          max-width: 320px !important;
+          box-shadow: -10px 0 40px rgba(0, 0, 0, 0.85) !important;
+        }
+      }
+      @media (min-width: 769px) {
+        .mobile-only-header {
+          display: none !important;
+        }
+        .custodian-sidebar-backdrop {
+          display: none !important;
+        }
+        .mobile-drawer-close {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

@@ -1,0 +1,38 @@
+{
+  "name": "custodian",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "cap:sync": "npm run build && npx cap sync",
+    "cap:android": "npx cap run android",
+    "cap:open:android": "npx cap open android",
+    "cap:open:ios": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/browser": "^8.0.4",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
+    "@revenuecat/purchases-capacitor": "^13.5.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "lucide-react": "^0.383.0",
+    "pdfjs-dist": "^3.11.174",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.0",
+    "vitest": "^4.1.11"
+  }
+}

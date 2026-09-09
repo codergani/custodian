@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Custodian</string>
+    <string name="title_activity_main">Custodian</string>
+    <string name="package_name">com.custodians.app</string>
+    <string name="custom_url_scheme">com.custodians.app</string>
+</resources>
