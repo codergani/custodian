@@ -13,9 +13,26 @@ import { openLemonCheckout } from "../utils/lemonsqueezy";
 import { isNative } from "../native/nativeBridge";
 import { purchaseSubscriptionPackage, restoreNativePurchases } from "../native/revenueCat";
 
-export default function ModalRouter({ modal, currentPlan, defaultCurrency, userId, userEmail, onClose, onAddClient, onAddProject, onUpdateProjectDetails, onAddCred, onUpdateCred, onImportEnv, onUpgradePlan, onOpenUpgrade, showSuccess }) {
+import { encryptSharedPayload, importPublicKeyJWK } from "../crypto";
+
+export default function ModalRouter({ modal, currentPlan, defaultCurrency, userId, userEmail, ecdhPrivateKey, onClose, onAddClient, onAddProject, onUpdateProjectDetails, onAddCred, onUpdateCred, onImportEnv, onUpgradePlan, onOpenUpgrade, showSuccess }) {
 
   const [name, setName] = useState("");
+
+  if (modal.type === "share_secret") {
+    return (
+      <Overlay onClose={onClose} title="Zero-Knowledge Secret Sharing" icon={<ShieldCheck size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 560 }}>
+        <ShareSecretModalContent
+          userId={userId}
+          ecdhPrivateKey={ecdhPrivateKey}
+          initialCred={modal.initialCred}
+          onClose={onClose}
+          showSuccess={showSuccess}
+        />
+      </Overlay>
+    );
+  }
+
 
   if (modal.type === "readiness_audit") {
     return (
@@ -1901,4 +1918,337 @@ function EditDeploymentContent({ project, onSave }) {
     </form>
   );
 }
+
+function ShareSecretModalContent({ userId, ecdhPrivateKey, initialCred, onClose, showSuccess }) {
+  const [recipientQuery, setRecipientQuery] = useState("");
+  const [matchingUsers, setMatchingUsers] = useState([]);
+  const [selectedRecipient, setSelectedRecipient] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [title, setTitle] = useState(initialCred?.title || "");
+  const [category, setCategory] = useState(initialCred?.category || "API KEY");
+  const [fields, setFields] = useState(initialCred?.fields || [{ key: "API_SECRET", value: "" }]);
+  const [note, setNote] = useState("");
+  const [sharing, setSharing] = useState(false);
+  const [err, setErr] = useState("");
+
+  const searchUsers = useCallback(async (q) => {
+    const clean = q.trim().toLowerCase().replace(/^@/, "");
+    if (!clean || clean.length < 2) {
+      setMatchingUsers([]);
+      return;
+    }
+    setSearching(true);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, email, username, display_name, public_key")
+        .neq("id", userId)
+        .or(`username.ilike.%${clean}%,display_name.ilike.%${clean}%`)
+        .limit(6);
+
+      if (error) throw error;
+      setMatchingUsers(data || []);
+    } catch (e) {
+      console.warn("[ShareSecretModal] Search error:", e);
+    } finally {
+      setSearching(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (recipientQuery && !selectedRecipient) {
+        searchUsers(recipientQuery);
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [recipientQuery, selectedRecipient, searchUsers]);
+
+  function handleAddField() {
+    setFields([...fields, { key: "", value: "" }]);
+  }
+
+  function handleRemoveField(idx) {
+    setFields(fields.filter((_, i) => i !== idx));
+  }
+
+  function handleFieldChange(idx, fieldKey, val) {
+    const next = [...fields];
+    next[idx] = { ...next[idx], [fieldKey]: val };
+    setFields(next);
+  }
+
+  async function handleShareSubmit(e) {
+    e.preventDefault();
+    setErr("");
+    if (!selectedRecipient) return setErr("Please search and select a recipient.");
+    if (!selectedRecipient.public_key) {
+      return setErr(
+        `@${selectedRecipient.username || "recipient"} hasn't initialized their vault key yet. Ask them to log in to Custodian first.`
+      );
+    }
+    if (!title.trim()) return setErr("Please enter a title for the shared secret.");
+    if (fields.length === 0 || fields.every((f) => !f.value.trim())) {
+      return setErr("Please provide at least one secret value.");
+    }
+    if (!ecdhPrivateKey) {
+      return setErr("Your asymmetric private key was not found. Please lock and re-unlock your vault.");
+    }
+
+    setSharing(true);
+    try {
+      // 1. Import recipient's ECDH public key
+      const recipientPubKey = await importPublicKeyJWK(selectedRecipient.public_key);
+
+      // 2. Encrypt payload with derived ECDH shared key
+      const payloadObj = {
+        title: title.trim(),
+        category,
+        fields: fields.filter((f) => f.value.trim()),
+        note: note.trim(),
+        sharedAt: new Date().toISOString(),
+      };
+
+      const encryptedBlob = await encryptSharedPayload(ecdhPrivateKey, recipientPubKey, payloadObj);
+
+      // 3. Get sender's public key
+      const { data: myProfile } = await supabase
+        .from("profiles")
+        .select("public_key")
+        .eq("id", userId)
+        .single();
+
+      if (!myProfile?.public_key) {
+        throw new Error("Sender public key not found. Please re-lock your vault to refresh keys.");
+      }
+
+      // 4. Save to shared_secrets table
+      const { error: insertErr } = await supabase.from("shared_secrets").insert({
+        sender_id: userId,
+        recipient_id: selectedRecipient.id,
+        title: title.trim(),
+        category,
+        encrypted_payload: encryptedBlob,
+        sender_public_key: myProfile.public_key,
+      });
+
+      if (insertErr) throw insertErr;
+
+      showSuccess(`Secret securely shared with @${selectedRecipient.username || selectedRecipient.display_name}!`);
+      onClose();
+    } catch (sErr) {
+      console.error("[ShareSecretModal] Share error:", sErr);
+      setErr(sErr.message || "Failed to encrypt and share secret.");
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleShareSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {err && (
+        <div style={S.errBox}>
+          <AlertTriangle size={14} /> {err}
+        </div>
+      )}
+
+      {/* Recipient Search & Selector */}
+      <div>
+        <label style={S.label}>Recipient (@username or Display Name)</label>
+        {selectedRecipient ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              background: "rgba(176,141,87,0.12)",
+              border: `1px solid ${COLORS.brassBorder}`,
+              borderRadius: 8,
+              padding: "8px 12px",
+            }}
+          >
+            <div>
+              <strong style={{ color: COLORS.text, fontSize: 13 }}>
+                {selectedRecipient.display_name || selectedRecipient.username}
+              </strong>
+              <span style={{ color: COLORS.brass, fontSize: 12, marginLeft: 6 }}>
+                @{selectedRecipient.username || "user"}
+              </span>
+              {selectedRecipient.public_key && (
+                <span style={{ fontSize: 10, color: "#52B788", marginLeft: 8 }}>✓ P-256 Ready</span>
+              )}
+            </div>
+            <button
+              type="button"
+              style={{ ...S.iconBtn, color: COLORS.textFaint }}
+              onClick={() => {
+                setSelectedRecipient(null);
+                setRecipientQuery("");
+              }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <div style={{ position: "relative" }}>
+            <input
+              style={S.input}
+              value={recipientQuery}
+              onChange={(e) => setRecipientQuery(e.target.value)}
+              placeholder="Search by @username (e.g. @alex_dev)..."
+              autoFocus
+            />
+            {searching && (
+              <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: COLORS.textFaint }}>
+                Searching…
+              </span>
+            )}
+            {matchingUsers.length > 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  top: "100%",
+                  marginTop: 4,
+                  background: COLORS.cardBg,
+                  border: `1px solid ${COLORS.border}`,
+                  borderRadius: 8,
+                  maxHeight: 180,
+                  overflowY: "auto",
+                  zIndex: 20,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                }}
+              >
+                {matchingUsers.map((u) => (
+                  <div
+                    key={u.id}
+                    style={{
+                      padding: "8px 12px",
+                      cursor: "pointer",
+                      borderBottom: `1px solid ${COLORS.border}`,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                    onClick={() => {
+                      setSelectedRecipient(u);
+                      setMatchingUsers([]);
+                    }}
+                  >
+                    <div>
+                      <strong style={{ color: COLORS.text, fontSize: 13 }}>
+                        {u.display_name || u.username}
+                      </strong>
+                      <span style={{ color: COLORS.brass, fontSize: 12, marginLeft: 6 }}>
+                        @{u.username || "user"}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 10, color: u.public_key ? "#52B788" : COLORS.textFaint }}>
+                      {u.public_key ? "ECDH Ready" : "Vault locked"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Secret Title & Category */}
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
+        <div>
+          <label style={S.label}>Secret Title</label>
+          <input
+            style={S.input}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Production Stripe API Key"
+            required
+          />
+        </div>
+        <div>
+          <label style={S.label}>Category</label>
+          <select
+            style={{ ...S.input, cursor: "pointer" }}
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option value="API KEY">API KEY</option>
+            <option value="DATABASE">DATABASE</option>
+            <option value="STRIPE">STRIPE</option>
+            <option value="SUPABASE">SUPABASE</option>
+            <option value="AWS">AWS</option>
+            <option value="SSH">SSH</option>
+            <option value="ENV VAR">ENV VAR</option>
+            <option value="PASSWORD">PASSWORD</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Dynamic Key/Value Fields */}
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+          <label style={{ ...S.label, margin: 0 }}>Secret Fields</label>
+          <button
+            type="button"
+            style={{ ...S.secondaryBtn, padding: "2px 8px", fontSize: 11 }}
+            onClick={handleAddField}
+          >
+            + Add Field
+          </button>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {fields.map((f, idx) => (
+            <div key={idx} style={{ display: "grid", gridTemplateColumns: "1fr 2fr auto", gap: 6, alignItems: "center" }}>
+              <input
+                style={{ ...S.input, fontSize: 12, fontFamily: "monospace" }}
+                value={f.key}
+                onChange={(e) => handleFieldChange(idx, "key", e.target.value)}
+                placeholder="Field name (e.g. SECRET_KEY)"
+              />
+              <input
+                style={{ ...S.input, fontSize: 12, fontFamily: "monospace" }}
+                value={f.value}
+                onChange={(e) => handleFieldChange(idx, "value", e.target.value)}
+                placeholder="Secret value"
+                required
+              />
+              {fields.length > 1 && (
+                <button
+                  type="button"
+                  style={{ ...S.iconBtn, color: COLORS.textFaint }}
+                  onClick={() => handleRemoveField(idx)}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Optional Note */}
+      <div>
+        <label style={S.label}>Optional Note (Included in encrypted payload)</label>
+        <textarea
+          style={{ ...S.input, height: 50, resize: "vertical", fontSize: 12 }}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="e.g. Valid for the next 30 days. Don't share with external clients."
+        />
+      </div>
+
+      <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
+        <button type="button" style={{ ...S.secondaryBtn, flex: 1 }} onClick={onClose} disabled={sharing}>
+          Cancel
+        </button>
+        <button type="submit" style={{ ...S.primaryBtn, flex: 2 }} disabled={sharing}>
+          {sharing ? "Encrypting with ECDH P-256…" : "🔒 Encrypt & Share Secret"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 

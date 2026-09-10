@@ -117,16 +117,75 @@ export default function ProfilePanel({
     }
   }
 
+  const [displayName, setDisplayName] = useState(profile?.display_name || "");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
+
+  async function handleSaveDisplayName() {
+    if (!profile?.id) return;
+    setProfileSaving(true);
+    try {
+      await supabase
+        .from("profiles")
+        .update({ display_name: displayName.trim() })
+        .eq("id", profile.id);
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 2000);
+    } catch (err) {
+      console.warn("Failed to update display name:", err);
+    } finally {
+      setProfileSaving(false);
+    }
+  }
+
   return (
     <div style={{ maxWidth: 480 }}>
       <div style={S.mainHeadRow}>
         <div><div style={S.eyebrow}>ACCOUNT</div><h2 style={S.mainTitle}>Profile & Preferences</h2></div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {/* Identity & Username Row */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, background: COLORS.panelAlt, padding: "14px", borderRadius: 8, border: `1px solid ${COLORS.line}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <span style={{ fontSize: 11, color: COLORS.textFaint, fontFamily: "IBM Plex Mono, monospace" }}>
+                IDENTIFIER & USERNAME
+              </span>
+              <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.brass, marginTop: 2 }}>
+                @{profile?.username || profile?.email?.split("@")[0] || "member"}
+              </div>
+            </div>
+            <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 12, background: "rgba(82,183,136,0.15)", color: "#52B788", border: "1px solid rgba(82,183,136,0.3)" }}>
+              {profile?.public_key ? "ECDH P-256 Ready" : "Vault Key Ready"}
+            </span>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
+            <label style={{ fontSize: 11, color: COLORS.textDim, fontWeight: 600 }}>Display Name</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                style={{ ...S.input, flex: 1, padding: "7px 10px", fontSize: 12.5 }}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Your Display Name"
+              />
+              <button
+                type="button"
+                style={{ ...S.secondaryBtn, padding: "7px 12px", fontSize: 12 }}
+                onClick={handleSaveDisplayName}
+                disabled={profileSaving}
+              >
+                {profileSaving ? "Saving…" : profileSaved ? "Saved!" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div style={S.fieldRow}>
           <div style={S.fieldLabel}>Email</div>
           <div style={S.fieldValue}>{profile?.email}</div>
         </div>
+
 
         {/* Appearance & Theme Setting */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.panelAlt, padding: "12px 14px", borderRadius: 8, border: `1px solid ${COLORS.line}` }}>

@@ -182,3 +182,68 @@ export function setupDeepLinkAuthListener(supabase, onSession) {
     }
   });
 }
+
+// ──── Background Auto-Lock Listener ────
+let appStateInitialized = false;
+
+/**
+ * Automatically lock vault when native app is sent to background or minimized.
+ * @param {Function} onLock
+ */
+export function setupAppStateAutoLock(onLock) {
+  if (!Capacitor.isNativePlatform() || appStateInitialized) return;
+  appStateInitialized = true;
+
+  CapApp.addListener("appStateChange", ({ isActive }) => {
+    if (!isActive && onLock) {
+      console.log("[NativeBridge] App transitioned to background, engaging auto-lock...");
+      onLock();
+    }
+  });
+}
+
+// ──── Biometric Authentication Convenience Layer ────
+
+/**
+ * Checks if hardware biometrics (Fingerprint / Face ID / Platform Authenticator) are available.
+ * @returns {Promise<boolean>}
+ */
+export async function isBiometricsAvailable() {
+  try {
+    if (window.PublicKeyCredential && typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function") {
+      const available = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+      return !!available;
+    }
+  } catch (err) {
+    console.warn("[NativeBridge] Biometrics check error:", err);
+  }
+  return false;
+}
+
+/**
+ * Triggers native hardware biometric prompt (Fingerprint/Face/PIN) as a convenience layer.
+ * @param {string} promptMessage
+ * @returns {Promise<boolean>} True if biometric authentication succeeded
+ */
+export async function authenticateBiometrics(promptMessage = "Unlock Custodian Vault") {
+  try {
+    if (!window.PublicKeyCredential) return false;
+
+    // Use WebAuthn User Verification Assertion for platform authenticators
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const credential = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        timeout: 60000,
+        userVerification: "required",
+        rpId: window.location.hostname || "localhost",
+      },
+    });
+    return !!credential;
+  } catch (err) {
+    // If WebAuthn fails or not yet registered, return false to fallback gracefully to passphrase
+    console.warn("[NativeBridge] Biometric authentication not completed, falling back to passphrase:", err);
+    return false;
+  }
+}
+

@@ -6,7 +6,7 @@ import VaultUnlock from "./VaultUnlock";
 import Vault from "./Vault";
 import AdminHQ from "./AdminHQ";
 import { ThemeProvider } from "./ThemeContext";
-import { initNativePlugins, setupBackButtonListener, setupDeepLinkAuthListener } from "./native/nativeBridge";
+import { initNativePlugins, setupBackButtonListener, setupDeepLinkAuthListener, setupAppStateAutoLock } from "./native/nativeBridge";
 import { initLemonSqueezy } from "./utils/lemonsqueezy";
 import { initRevenueCat, identifyUser, resetPurchasesUser } from "./native/revenueCat";
 import { S } from "./styles";
@@ -83,6 +83,7 @@ function AppContent() {
   const [session, setSession] = useState(undefined); // undefined = loading, null = signed out
   const [profile, setProfile] = useState(null);
   const [vaultKey, setVaultKey] = useState(null);
+  const [ecdhPrivateKey, setEcdhPrivateKey] = useState(null);
   const [route, setRoute] = useState(() => window.location.hash || window.location.pathname);
 
   useEffect(() => {
@@ -97,14 +98,28 @@ function AppContent() {
     };
   }, []);
 
-  // Initialize native mobile features and web payment scripts
+  function handleLock() {
+    // Purge in-memory keys immediately on lock
+    setVaultKey(null);
+    setEcdhPrivateKey(null);
+    sessionStorage.removeItem("custodian_session_vault_key");
+  }
+
+  function handleUnlocked(key, ecdhKey) {
+    // In-memory key retention during active session
+    setVaultKey(key);
+    if (ecdhKey) setEcdhPrivateKey(ecdhKey);
+    sessionStorage.removeItem("custodian_session_vault_key");
+  }
+
+  // Initialize native mobile features, listeners, and web payment scripts
   useEffect(() => {
     initNativePlugins();
     setupBackButtonListener();
     setupDeepLinkAuthListener(supabase, setSession);
+    setupAppStateAutoLock(handleLock);
     initLemonSqueezy();
   }, []);
-
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -120,6 +135,7 @@ function AppContent() {
       } else {
         setProfile(null);
         setVaultKey(null);
+        setEcdhPrivateKey(null);
         sessionStorage.removeItem("custodian_session_vault_key");
         resetPurchasesUser();
       }
@@ -155,17 +171,6 @@ function AppContent() {
       });
   }, [session]);
 
-  function handleUnlocked(key) {
-    // In-memory key retention during active session
-    setVaultKey(key);
-    sessionStorage.removeItem("custodian_session_vault_key");
-  }
-
-  function handleLock() {
-    // Purge in-memory key immediately on lock
-    setVaultKey(null);
-    sessionStorage.removeItem("custodian_session_vault_key");
-  }
 
   if (session === undefined) {
     return <div style={S.centerScreen}><div style={{ color: "#A8A399", fontSize: 13 }}>Loading…</div></div>;
@@ -242,6 +247,7 @@ function AppContent() {
         userId={session.user.id}
         profile={profile}
         vaultKey={vaultKey}
+        ecdhPrivateKey={ecdhPrivateKey}
         onLock={handleLock}
         onProfileUpdate={setProfile}
       />

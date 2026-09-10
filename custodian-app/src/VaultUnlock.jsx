@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Lock, AlertTriangle, Eye, EyeOff, LogOut, ShieldCheck, Download, KeyRound, AlertOctagon, CheckSquare, Square } from "lucide-react";
 import { supabase } from "./supabaseClient";
-import { deriveKey, encryptJSON, decryptJSON, newSalt, withTimeout } from "./crypto";
+import {
+  deriveKey,
+  encryptJSON,
+  decryptJSON,
+  newSalt,
+  withTimeout,
+  generateECDHKeyPair,
+  exportPublicKeyJWK,
+  exportEncryptedPrivateKey,
+  importDecryptedPrivateKey,
+} from "./crypto";
 import { getLockoutState, recordFailedAttempt, clearFailedAttempts } from "./security";
 import { S, COLORS } from "./styles";
 
@@ -76,18 +86,32 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
       const salt = newSalt();
       const key = await withTimeout(deriveKey(pw, salt), 8000, "Key generation");
       const check = await withTimeout(encryptJSON(key, { marker: "ok" }), 8000, "Encryption");
+
+      // Generate ECDH P-256 keypair for zero-knowledge asymmetric sharing
+      const ecdhPair = await withTimeout(generateECDHKeyPair(), 8000, "Asymmetric key generation");
+      const pubKeyJWK = await exportPublicKeyJWK(ecdhPair.publicKey);
+      const encryptedPrivKey = await exportEncryptedPrivateKey(ecdhPair.privateKey, key);
+
       localStorage.setItem(`demo_vault_salt_${userId}`, salt);
       localStorage.setItem(`demo_vault_check_${userId}`, JSON.stringify(check));
+      localStorage.setItem(`demo_vault_ecdh_pub_${userId}`, pubKeyJWK);
+      localStorage.setItem(`demo_vault_ecdh_priv_${userId}`, encryptedPrivKey);
+
       try {
         await supabase
           .from("profiles")
-          .update({ vault_salt: salt, vault_check: check })
+          .update({
+            vault_salt: salt,
+            vault_check: check,
+            public_key: pubKeyJWK,
+            encrypted_private_key: encryptedPrivKey,
+          })
           .eq("id", userId);
       } catch (dbErr) {
-        console.warn("Could not save salt to DB, using local storage:", dbErr);
+        console.warn("Could not save salt/asymmetric keys to DB, using local storage:", dbErr);
       }
       clearFailedAttempts(userId);
-      onUnlocked(key);
+      onUnlocked(key, ecdhPair.privateKey, pubKeyJWK);
     } catch (e) {
       setErr(e.message);
     }
@@ -109,8 +133,42 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
         const result = await withTimeout(decryptJSON(key, check), 8000, "Verifying");
         if (result?.marker !== "ok") throw new Error("Wrong vault password.");
       }
+
+      // Provision or decrypt ECDH asymmetric private key
+      let ecdhPrivKey = null;
+      let pubKeyJWK = profile?.public_key || localStorage.getItem(`demo_vault_ecdh_pub_${userId}`);
+      const encryptedPrivKey = profile?.encrypted_private_key || localStorage.getItem(`demo_vault_ecdh_priv_${userId}`);
+
+      if (encryptedPrivKey) {
+        try {
+          ecdhPrivKey = await importDecryptedPrivateKey(encryptedPrivKey, key);
+        } catch (privErr) {
+          console.warn("[VaultUnlock] Private key import error, regenerating:", privErr);
+        }
+      }
+
+      // Auto-migrate legacy vaults that don't have ECDH keys yet
+      if (!ecdhPrivKey) {
+        const ecdhPair = await generateECDHKeyPair();
+        ecdhPrivKey = ecdhPair.privateKey;
+        pubKeyJWK = await exportPublicKeyJWK(ecdhPair.publicKey);
+        const newEncPrivKey = await exportEncryptedPrivateKey(ecdhPair.privateKey, key);
+
+        localStorage.setItem(`demo_vault_ecdh_pub_${userId}`, pubKeyJWK);
+        localStorage.setItem(`demo_vault_ecdh_priv_${userId}`, newEncPrivKey);
+
+        try {
+          await supabase
+            .from("profiles")
+            .update({ public_key: pubKeyJWK, encrypted_private_key: newEncPrivKey })
+            .eq("id", userId);
+        } catch (dbErr) {
+          console.warn("[VaultUnlock] Asymmetric key migration notice:", dbErr);
+        }
+      }
+
       clearFailedAttempts(userId);
-      onUnlocked(key);
+      onUnlocked(key, ecdhPrivKey, pubKeyJWK);
     } catch (e) {
       const failState = recordFailedAttempt(userId);
       if (failState.remainingSeconds > 0) {
@@ -122,6 +180,7 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
     }
     setBusy(false);
   }
+
 
   async function handleSignOut() {
     sessionStorage.removeItem("custodian_session_vault_key");

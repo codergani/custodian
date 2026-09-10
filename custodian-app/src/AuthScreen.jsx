@@ -1,14 +1,17 @@
 import React, { useState } from "react";
-import { KeyRound, AlertTriangle, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { KeyRound, AlertTriangle, ShieldCheck, Eye, EyeOff, AtSign, User } from "lucide-react";
 import { supabase, detectPlatform } from "./supabaseClient";
 import { isNative, openInAppBrowser } from "./native/nativeBridge";
 import { withTimeout } from "./crypto";
+import { normalizeUsername, validateUsername } from "./utils/usernameValidation";
 import { S, COLORS } from "./styles";
 
 export default function AuthScreen({ onAuthed }) {
   const [mode, setMode] = useState("login"); // login | signup | reset
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -20,19 +23,49 @@ export default function AuthScreen({ onAuthed }) {
     if (!email.trim()) return setErr("Please enter your email address.");
     if (mode !== "reset" && !password) return setErr("Please enter your password.");
 
+    let validUsername = "";
+    if (mode === "signup") {
+      const uRes = validateUsername(username);
+      if (!uRes.isValid) {
+        return setErr(uRes.error);
+      }
+      validUsername = uRes.normalized;
+    }
+
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await withTimeout(
+        const { data: signUpData, error } = await withTimeout(
           supabase.auth.signUp({
             email: email.trim(),
             password,
-            options: { data: { platform: detectPlatform() } },
+            options: {
+              data: {
+                platform: detectPlatform(),
+                username: validUsername,
+                display_name: displayName.trim() || validUsername,
+              },
+            },
           }),
           15000,
           "Sign up"
         );
         if (error) throw error;
+
+        // Also upsert profile record with username if user id exists
+        if (signUpData?.user?.id) {
+          try {
+            await supabase.from("profiles").upsert({
+              id: signUpData.user.id,
+              email: email.trim(),
+              username: validUsername,
+              display_name: displayName.trim() || validUsername,
+            });
+          } catch (pErr) {
+            console.warn("[AuthScreen] Profile username upsert notice:", pErr);
+          }
+        }
+
         setInfo("Check your email to confirm your account, then log in.");
         setMode("login");
       } else if (mode === "login") {
@@ -61,6 +94,7 @@ export default function AuthScreen({ onAuthed }) {
       setBusy(false);
     }
   }
+
 
   async function handleGoogleSignIn() {
     setErr("");
@@ -148,8 +182,54 @@ export default function AuthScreen({ onAuthed }) {
           </>
         )}
 
+        {mode === "signup" && (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <label style={S.label}>
+                  <AtSign size={12} style={{ display: "inline", verticalAlign: "middle", marginRight: 3 }} />
+                  Username <span style={{ color: COLORS.brass, fontWeight: 700 }}>*</span>
+                </label>
+                <div style={{ position: "relative" }}>
+                  <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: COLORS.textFaint, fontSize: 13, fontWeight: 600 }}>
+                    @
+                  </span>
+                  <input
+                    style={{ ...S.input, paddingLeft: 26, textTransform: "lowercase" }}
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(normalizeUsername(e.target.value))}
+                    placeholder="alex_dev"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck="false"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={S.label}>
+                  <User size={12} style={{ display: "inline", verticalAlign: "middle", marginRight: 3 }} />
+                  Display Name
+                </label>
+                <input
+                  style={S.input}
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Alex Developer"
+                />
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: COLORS.textDim, margin: "-4px 0 8px" }}>
+              Username is unique, lowercase-only (3–20 chars). Used for zero-knowledge secret sharing.
+            </div>
+          </>
+        )}
+
         <label style={S.label}>Email</label>
         <input style={S.input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoFocus />
+
 
         {mode !== "reset" && (
           <>

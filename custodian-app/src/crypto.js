@@ -77,3 +77,112 @@ export async function hashText(text) {
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
+
+// ──────── Zero-Knowledge Asymmetric Cryptography (ECDH P-256) ────────
+
+/**
+ * Generates an ECDH P-256 keypair for zero-knowledge end-to-end secret sharing.
+ * @returns {Promise<CryptoKeyPair>}
+ */
+export async function generateECDHKeyPair() {
+  return crypto.subtle.generateKey(
+    { name: "ECDH", namedCurve: "P-256" },
+    true,
+    ["deriveKey", "deriveBits"]
+  );
+}
+
+/**
+ * Exports an ECDH public key as a serialized JWK string (safe to store openly in database).
+ * @param {CryptoKey} publicKey
+ * @returns {Promise<string>}
+ */
+export async function exportPublicKeyJWK(publicKey) {
+  const jwk = await crypto.subtle.exportKey("jwk", publicKey);
+  return JSON.stringify(jwk);
+}
+
+/**
+ * Imports an ECDH public key from a serialized JWK string.
+ * @param {string} jwkString
+ * @returns {Promise<CryptoKey>}
+ */
+export async function importPublicKeyJWK(jwkString) {
+  const jwk = typeof jwkString === "string" ? JSON.parse(jwkString) : jwkString;
+  return crypto.subtle.importKey(
+    "jwk",
+    jwk,
+    { name: "ECDH", namedCurve: "P-256" },
+    true,
+    []
+  );
+}
+
+/**
+ * Exports an ECDH private key as a JWK, then encrypts it using the user's master AES-256-GCM vault key.
+ * @param {CryptoKey} privateKey
+ * @param {CryptoKey} vaultKey
+ * @returns {Promise<string>} Encrypted ciphertext blob JSON string
+ */
+export async function exportEncryptedPrivateKey(privateKey, vaultKey) {
+  const jwk = await crypto.subtle.exportKey("jwk", privateKey);
+  return encryptJSON(vaultKey, jwk);
+}
+
+/**
+ * Decrypts an encrypted private key blob using the master vault key, then imports the ECDH private key.
+ * @param {string} encryptedBlob
+ * @param {CryptoKey} vaultKey
+ * @returns {Promise<CryptoKey>}
+ */
+export async function importDecryptedPrivateKey(encryptedBlob, vaultKey) {
+  const jwk = await decryptJSON(vaultKey, encryptedBlob);
+  return crypto.subtle.importKey(
+    "jwk",
+    jwk,
+    { name: "ECDH", namedCurve: "P-256" },
+    true,
+    ["deriveKey", "deriveBits"]
+  );
+}
+
+/**
+ * Derives a symmetric AES-256-GCM key from sender's private key and recipient's public key via ECDH.
+ * @param {CryptoKey} myPrivateKey
+ * @param {CryptoKey} theirPublicKey
+ * @returns {Promise<CryptoKey>}
+ */
+export async function deriveSharedSecretKey(myPrivateKey, theirPublicKey) {
+  return crypto.subtle.deriveKey(
+    { name: "ECDH", public: theirPublicKey },
+    myPrivateKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+/**
+ * Asymmetrically encrypts a secret payload for a recipient using ECDH P-256.
+ * @param {CryptoKey} myPrivateKey
+ * @param {CryptoKey} recipientPublicKey
+ * @param {object} payloadObj
+ * @returns {Promise<string>} Encrypted ciphertext blob
+ */
+export async function encryptSharedPayload(myPrivateKey, recipientPublicKey, payloadObj) {
+  const sharedKey = await deriveSharedSecretKey(myPrivateKey, recipientPublicKey);
+  return encryptJSON(sharedKey, payloadObj);
+}
+
+/**
+ * Asymmetrically decrypts a secret payload from a sender using ECDH P-256.
+ * @param {CryptoKey} myPrivateKey
+ * @param {CryptoKey} senderPublicKey
+ * @param {string} encryptedBlob
+ * @returns {Promise<object>} Decrypted payload object
+ */
+export async function decryptSharedPayload(myPrivateKey, senderPublicKey, encryptedBlob) {
+  const sharedKey = await deriveSharedSecretKey(myPrivateKey, senderPublicKey);
+  return decryptJSON(sharedKey, encryptedBlob);
+}
+

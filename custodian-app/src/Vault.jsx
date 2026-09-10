@@ -35,11 +35,11 @@ import DeploymentCenter from "./components/DeploymentCenter";
 import { calculateProjectReadiness } from "./utils/projectReadiness";
 import ModalRouter from "./components/ModalRouter";
 import CommandPalette from "./components/CommandPalette";
-import { SkeletonGrid, SkeletonRow, SkeletonCard } from "./components/Skeletons";
 import OnboardingTour from "./components/OnboardingTour";
 import FloatingStickyNotes from "./components/FloatingStickyNotes";
+import SharedSecretsView from "./components/SharedSecretsView";
 
-export default function Vault({ userId, profile, vaultKey, onLock, onProfileUpdate }) {
+export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLock, onProfileUpdate }) {
   const { theme, toggleTheme } = useTheme();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showStickyNotes, setShowStickyNotes] = useState(() => {
@@ -855,6 +855,20 @@ export default function Vault({ userId, profile, vaultKey, onLock, onProfileUpda
               justifyContent: "center",
               padding: "6px 4px",
               fontSize: 11.5,
+              ...(view === "sharing" ? { borderColor: COLORS.brass, color: COLORS.text, background: "rgba(176,141,87,0.12)" } : {}),
+            }}
+            onClick={() => { setView("sharing"); setMobileSidebarOpen(false); }}
+            title="Zero-Knowledge Secret Sharing (ECDH P-256)"
+          >
+            <Share2 size={13} color={COLORS.brass} /> Sharing
+          </button>
+          <button
+            style={{
+              ...S.secondaryBtn,
+              flex: "1 1 100%",
+              justifyContent: "center",
+              padding: "6px 4px",
+              fontSize: 11.5,
               position: "relative",
               ...(showStickyNotes ? { borderColor: "#E2B714", background: "rgba(226,183,20,0.12)", color: COLORS.text } : {}),
             }}
@@ -1171,6 +1185,13 @@ export default function Vault({ userId, profile, vaultKey, onLock, onProfileUpda
             clients={clients}
             showSuccess={showSuccess}
             onOpenUpgrade={() => setModal({ type: "upgrade" })}
+          />
+        ) : view === "sharing" ? (
+          <SharedSecretsView
+            userId={userId}
+            profile={profile}
+            ecdhPrivateKey={ecdhPrivateKey}
+            onOpenShareModal={() => setModal({ type: "share_secret" })}
           />
         ) : !currentClient ? (
           <OwnerCommandCenter
@@ -1787,6 +1808,7 @@ export default function Vault({ userId, profile, vaultKey, onLock, onProfileUpda
           defaultCurrency={defaultCurrency}
           userId={userId}
           userEmail={profile?.email}
+          ecdhPrivateKey={ecdhPrivateKey}
           onClose={() => setModal(null)}
           onAddClient={addClient}
           onAddProject={addProject}

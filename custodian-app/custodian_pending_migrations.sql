@@ -170,4 +170,52 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- ---------- 7. USERNAME, DISPLAY NAME & ASYMMETRIC KEYS ----------
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS username text,
+  ADD COLUMN IF NOT EXISTS display_name text,
+  ADD COLUMN IF NOT EXISTS public_key text,
+  ADD COLUMN IF NOT EXISTS encrypted_private_key text;
+
+-- Unique case-insensitive index on username (lowercase only)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_username_lower ON public.profiles (lower(username)) WHERE username IS NOT NULL;
+
+-- ---------- 8. ZERO-KNOWLEDGE SHARED SECRETS TABLE (ECDH P-256) ----------
+CREATE TABLE IF NOT EXISTS public.shared_secrets (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  sender_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  recipient_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  category text NOT NULL DEFAULT 'SHARED',
+  encrypted_payload text NOT NULL,
+  sender_public_key text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  revoked_at timestamptz DEFAULT null
+);
+
+ALTER TABLE public.shared_secrets ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can view shared secrets sent to or from them' AND tablename = 'shared_secrets') THEN
+    CREATE POLICY "Users can view shared secrets sent to or from them" ON public.shared_secrets
+      FOR SELECT USING (sender_id = auth.uid() OR (recipient_id = auth.uid() AND revoked_at IS NULL));
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can share secrets with others' AND tablename = 'shared_secrets') THEN
+    CREATE POLICY "Users can share secrets with others" ON public.shared_secrets
+      FOR INSERT WITH CHECK (sender_id = auth.uid());
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Senders can revoke their shared secrets' AND tablename = 'shared_secrets') THEN
+    CREATE POLICY "Senders can revoke their shared secrets" ON public.shared_secrets
+      FOR UPDATE USING (sender_id = auth.uid()) WITH CHECK (sender_id = auth.uid());
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Senders or recipients can delete shared secrets' AND tablename = 'shared_secrets') THEN
+    CREATE POLICY "Senders or recipients can delete shared secrets" ON public.shared_secrets
+      FOR DELETE USING (sender_id = auth.uid() OR recipient_id = auth.uid());
+  END IF;
+END $$;
+
+
 
