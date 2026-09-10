@@ -71,8 +71,8 @@ export function clearFailedAttempts(userId) {
  */
 export const AUTOLOCK_OPTIONS = [
   { value: 1, label: "1 minute" },
-  { value: 5, label: "5 minutes" },
-  { value: 15, label: "15 minutes (Default)" },
+  { value: 5, label: "5 minutes (Default)" },
+  { value: 15, label: "15 minutes" },
   { value: 30, label: "30 minutes" },
   { value: 0, label: "Never" },
 ];
@@ -85,7 +85,7 @@ export function getAutoLockMinutes(userId) {
       if (!isNaN(parsed)) return parsed;
     }
   } catch {}
-  return 15; // default 15 minutes
+  return 5; // default 5 minutes
 }
 
 export function setAutoLockMinutes(userId, minutes) {

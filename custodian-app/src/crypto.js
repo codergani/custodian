@@ -208,26 +208,78 @@ export async function deriveSharedSecretKey(myPrivateKey, theirPublicKey) {
 }
 
 /**
- * Asymmetrically encrypts a secret payload for a recipient using ECDH P-256.
- * @param {CryptoKey} myPrivateKey
- * @param {CryptoKey} recipientPublicKey
- * @param {object} payloadObj
- * @returns {Promise<string>} Encrypted ciphertext blob
+ * Asymmetrically encrypts a secret payload for a recipient using ECDH P-256 key agreement.
+ * @param {string|object} secretPlaintext - The plaintext string or JSON object.
+ * @param {string|CryptoKey} recipientPublicKeyBase64 - Recipient's public key (raw base64, JWK, or CryptoKey).
+ * @param {CryptoKey} senderPrivateKey - Sender's unlocked ECDH private key.
+ * @returns {Promise<{ iv: string, ct: string }>} Encrypted payload object with iv and ct strings.
  */
-export async function encryptSharedPayload(myPrivateKey, recipientPublicKey, payloadObj) {
-  const sharedKey = await deriveSharedSecretKey(myPrivateKey, recipientPublicKey);
-  return encryptJSON(sharedKey, payloadObj);
+export async function shareSecret(secretPlaintext, recipientPublicKeyBase64, senderPrivateKey) {
+  const recipientPublicKey = typeof recipientPublicKeyBase64 === "string" || (recipientPublicKeyBase64 && recipientPublicKeyBase64.kty)
+    ? await importPublicKey(recipientPublicKeyBase64)
+    : recipientPublicKeyBase64;
+
+  const sharedKey = await crypto.subtle.deriveKey(
+    { name: "ECDH", public: recipientPublicKey },
+    senderPrivateKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt"]
+  );
+
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const rawBytes = typeof secretPlaintext === "string"
+    ? enc.encode(secretPlaintext)
+    : enc.encode(JSON.stringify(secretPlaintext));
+
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, sharedKey, rawBytes);
+  return {
+    iv: b64(iv),
+    ct: b64(ct),
+  };
 }
 
 /**
- * Asymmetrically decrypts a secret payload from a sender using ECDH P-256.
- * @param {CryptoKey} myPrivateKey
- * @param {CryptoKey} senderPublicKey
- * @param {string} encryptedBlob
- * @returns {Promise<object>} Decrypted payload object
+ * Asymmetrically decrypts a secret payload received from a sender using ECDH P-256.
+ * @param {string|object} encryptedPayload - Ciphertext object { iv, ct } or JSON string.
+ * @param {string|CryptoKey} senderPublicKeyBase64 - Sender's public key (raw base64, JWK, or CryptoKey).
+ * @param {CryptoKey} recipientPrivateKey - Recipient's unlocked ECDH private key.
+ * @returns {Promise<any>} Decrypted plaintext string or object.
  */
-export async function decryptSharedPayload(myPrivateKey, senderPublicKey, encryptedBlob) {
-  const sharedKey = await deriveSharedSecretKey(myPrivateKey, senderPublicKey);
-  return decryptJSON(sharedKey, encryptedBlob);
+export async function receiveSharedSecret(encryptedPayload, senderPublicKeyBase64, recipientPrivateKey) {
+  const senderPublicKey = typeof senderPublicKeyBase64 === "string" || (senderPublicKeyBase64 && senderPublicKeyBase64.kty)
+    ? await importPublicKey(senderPublicKeyBase64)
+    : senderPublicKeyBase64;
+
+  const sharedKey = await crypto.subtle.deriveKey(
+    { name: "ECDH", public: senderPublicKey },
+    recipientPrivateKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["decrypt"]
+  );
+
+  const payload = typeof encryptedPayload === "string" ? JSON.parse(encryptedPayload) : encryptedPayload;
+  const iv = new Uint8Array(unb64(payload.iv));
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, sharedKey, unb64(payload.ct));
+  const decodedText = dec.decode(pt);
+  try {
+    return JSON.parse(decodedText);
+  } catch {
+    return decodedText;
+  }
 }
+
+/**
+ * Legacy aliases for backwards compatibility.
+ */
+export async function encryptSharedPayload(myPrivateKey, recipientPublicKey, payloadObj) {
+  const res = await shareSecret(payloadObj, recipientPublicKey, myPrivateKey);
+  return JSON.stringify(res);
+}
+
+export async function decryptSharedPayload(myPrivateKey, senderPublicKey, encryptedBlob) {
+  return receiveSharedSecret(encryptedBlob, senderPublicKey, myPrivateKey);
+}
+
 

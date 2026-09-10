@@ -1170,6 +1170,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
           <ProfilePanel
             profile={profile}
             defaultCurrency={defaultCurrency}
+            vaultKey={vaultKey}
             onSetCurrency={handleSetCurrency}
             onSignedOut={onLock}
             onOpenUpgrade={() => setModal({ type: "upgrade" })}

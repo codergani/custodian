@@ -108,8 +108,8 @@ describe("Security Hardening - Auto-Lock Settings", () => {
     expect(values).toContain(0);
   });
 
-  it("defaults to 15 minutes when no preference is saved", () => {
-    expect(getAutoLockMinutes(testUserId)).toBe(15);
+  it("defaults to 5 minutes when no preference is saved", () => {
+    expect(getAutoLockMinutes(testUserId)).toBe(5);
   });
 
   it("saves and retrieves custom auto-lock preferences", () => {

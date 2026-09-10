@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Lock, AlertTriangle, Eye, EyeOff, LogOut, ShieldCheck, Download, KeyRound, AlertOctagon, CheckSquare, Square } from "lucide-react";
+import { Lock, AlertTriangle, Eye, EyeOff, LogOut, ShieldCheck, Download, KeyRound, AlertOctagon, CheckSquare, Square, Fingerprint } from "lucide-react";
 import { supabase } from "./supabaseClient";
 import {
   deriveKey,
@@ -11,8 +11,10 @@ import {
   exportPublicKeyJWK,
   exportEncryptedPrivateKey,
   importDecryptedPrivateKey,
+  importKeyRaw,
 } from "./crypto";
 import { getLockoutState, recordFailedAttempt, clearFailedAttempts } from "./security";
+import { isBiometricsAvailable, isBiometricEnabled, unlockWithBiometrics } from "./native/nativeBridge";
 import { S, COLORS } from "./styles";
 
 // profile: the current user's row from `profiles` (has vault_salt / vault_check, may be null on first run)
@@ -26,6 +28,15 @@ export default function VaultUnlock({ userId, profile, onUnlocked }) {
   const [err, setErr] = useState("");
   const [savedKit, setSavedKit] = useState(false);
   const [lockoutRemaining, setLockoutRemaining] = useState(() => getLockoutState(userId).remainingSeconds);
+  const [bioAvailable, setBioAvailable] = useState(false);
+
+  const isBioEnrolled = isBiometricEnabled(userId);
+
+  useEffect(() => {
+    isBiometricsAvailable().then((avail) => {
+      setBioAvailable(avail && isBioEnrolled);
+    });
+  }, [userId, isBioEnrolled]);
 
   useEffect(() => {
     if (lockoutRemaining <= 0) return;
@@ -181,6 +192,64 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
     setBusy(false);
   }
 
+  async function handleBiometricUnlock() {
+    if (lockoutRemaining > 0) {
+      return setErr(`Too many attempts, try again in ${lockoutRemaining}s`);
+    }
+    setErr("");
+    setBusy(true);
+    try {
+      const rawVaultKeyB64 = await unlockWithBiometrics(userId);
+      if (!rawVaultKeyB64) {
+        setErr("Biometric authentication canceled or failed. Please enter your passcode.");
+        setBusy(false);
+        return;
+      }
+
+      const key = await importKeyRaw(rawVaultKeyB64);
+
+      // Verify check if available
+      const check = profile?.vault_check || JSON.parse(localStorage.getItem(`demo_vault_check_${userId}`) || "null");
+      if (check) {
+        try {
+          const result = await decryptJSON(key, check);
+          if (result?.marker !== "ok") throw new Error("Vault check failed.");
+        } catch {
+          throw new Error("Biometric key mismatch. Please enter your master passcode.");
+        }
+      }
+
+      // Provision or decrypt ECDH asymmetric private key
+      let ecdhPrivKey = null;
+      let pubKeyJWK = profile?.public_key || localStorage.getItem(`demo_vault_ecdh_pub_${userId}`);
+      const encryptedPrivKey = profile?.encrypted_private_key || localStorage.getItem(`demo_vault_ecdh_priv_${userId}`);
+
+      if (encryptedPrivKey) {
+        try {
+          ecdhPrivKey = await importDecryptedPrivateKey(encryptedPrivKey, key);
+        } catch (privErr) {
+          console.warn("[VaultUnlock] Private key import error with biometric key:", privErr);
+        }
+      }
+
+      if (!ecdhPrivKey) {
+        const ecdhPair = await generateECDHKeyPair();
+        ecdhPrivKey = ecdhPair.privateKey;
+        pubKeyJWK = await exportPublicKeyJWK(ecdhPair.publicKey);
+        const newEncPrivKey = await exportEncryptedPrivateKey(ecdhPair.privateKey, key);
+
+        localStorage.setItem(`demo_vault_ecdh_pub_${userId}`, pubKeyJWK);
+        localStorage.setItem(`demo_vault_ecdh_priv_${userId}`, newEncPrivKey);
+      }
+
+      clearFailedAttempts(userId);
+      onUnlocked(key, ecdhPrivKey, pubKeyJWK);
+    } catch (e) {
+      setErr(e.message || "Biometric unlock failed. Please use your master passcode.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function handleSignOut() {
     sessionStorage.removeItem("custodian_session_vault_key");
@@ -322,9 +391,32 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
           <div style={S.errBox}><AlertTriangle size={14} /> Too many attempts, try again in {lockoutRemaining}s</div>
         )}
 
+        {!isFirstTime && isBioEnrolled && (
+          <button
+            type="button"
+            style={{
+              ...S.secondaryBtn,
+              marginTop: 14,
+              padding: "11px 16px",
+              fontSize: 13,
+              fontWeight: 600,
+              justifyContent: "center",
+              background: "rgba(176,141,87,0.12)",
+              borderColor: COLORS.brass,
+              color: COLORS.brass,
+              width: "100%",
+            }}
+            disabled={busy || lockoutRemaining > 0}
+            onClick={handleBiometricUnlock}
+          >
+            <Fingerprint size={17} />
+            <span>{busy ? "Authenticating…" : "Unlock with Fingerprint / Face ID"}</span>
+          </button>
+        )}
+
         <button
           type="button"
-          style={{ ...S.primaryBtn, marginTop: 14 }}
+          style={{ ...S.primaryBtn, marginTop: (!isFirstTime && isBioEnrolled) ? 8 : 14 }}
           disabled={busy || lockoutRemaining > 0 || (isFirstTime && !ackLoss)}
           onClick={isFirstTime ? handleFirstTimeSetup : handleUnlock}
         >
@@ -332,7 +424,7 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
             ? (isFirstTime ? "Deriving AES Key…" : "Decrypting Vault…")
             : lockoutRemaining > 0
             ? `Temporarily Locked (${lockoutRemaining}s)`
-            : (isFirstTime ? "Initialize Secure Vault" : "Unlock Vault")}
+            : (isFirstTime ? "Initialize Secure Vault" : (!isFirstTime && isBioEnrolled ? "Unlock with Master Passcode" : "Unlock Vault"))}
         </button>
 
         <div style={S.securityGuaranteeBadge}>

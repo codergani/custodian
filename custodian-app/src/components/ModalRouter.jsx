@@ -13,7 +13,7 @@ import { openLemonCheckout } from "../utils/lemonsqueezy";
 import { isNative } from "../native/nativeBridge";
 import { purchaseSubscriptionPackage, restoreNativePurchases } from "../native/revenueCat";
 
-import { encryptSharedPayload, importPublicKeyJWK } from "../crypto";
+import { shareSecret, importPublicKey } from "../crypto";
 
 export default function ModalRouter({ modal, currentPlan, defaultCurrency, userId, userEmail, ecdhPrivateKey, onClose, onAddClient, onAddProject, onUpdateProjectDetails, onAddCred, onUpdateCred, onImportEnv, onUpgradePlan, onOpenUpgrade, showSuccess }) {
 
@@ -1997,10 +1997,7 @@ function ShareSecretModalContent({ userId, ecdhPrivateKey, initialCred, onClose,
 
     setSharing(true);
     try {
-      // 1. Import recipient's ECDH public key
-      const recipientPubKey = await importPublicKeyJWK(selectedRecipient.public_key);
-
-      // 2. Encrypt payload with derived ECDH shared key
+      // 1. Prepare secret payload
       const payloadObj = {
         title: title.trim(),
         category,
@@ -2009,7 +2006,9 @@ function ShareSecretModalContent({ userId, ecdhPrivateKey, initialCred, onClose,
         sharedAt: new Date().toISOString(),
       };
 
-      const encryptedBlob = await encryptSharedPayload(ecdhPrivateKey, recipientPubKey, payloadObj);
+      // 2. Encrypt payload client-side via ECDH P-256 derived shared key
+      const encryptedRes = await shareSecret(payloadObj, selectedRecipient.public_key, ecdhPrivateKey);
+      const cipherString = JSON.stringify(encryptedRes);
 
       // 3. Get sender's public key
       const { data: myProfile } = await supabase
@@ -2022,14 +2021,16 @@ function ShareSecretModalContent({ userId, ecdhPrivateKey, initialCred, onClose,
         throw new Error("Sender public key not found. Please re-lock your vault to refresh keys.");
       }
 
-      // 4. Save to shared_secrets table
+      // 4. Save to shared_secrets table (supporting both secret_ciphertext and encrypted_payload columns)
       const { error: insertErr } = await supabase.from("shared_secrets").insert({
         sender_id: userId,
         recipient_id: selectedRecipient.id,
         title: title.trim(),
         category,
-        encrypted_payload: encryptedBlob,
+        encrypted_payload: cipherString,
+        secret_ciphertext: cipherString,
         sender_public_key: myProfile.public_key,
+        sender_public_key_snapshot: myProfile.public_key,
       });
 
       if (insertErr) throw insertErr;

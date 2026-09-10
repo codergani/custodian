@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from "react";
 import {
-  Sparkles, AlertTriangle, ShieldCheck, LogOut, Bell, Check, Sun, Moon, Trash2, Clock, Lock, Crown, Zap, ShieldAlert
+  Sparkles, AlertTriangle, ShieldCheck, LogOut, Bell, Check, Sun, Moon, Trash2, Clock, Lock, Crown, Zap, ShieldAlert, Fingerprint
 } from "lucide-react";
 
 import { supabase } from "../supabaseClient";
 import { S, COLORS } from "../styles";
 import { CustomDropdown, ToggleSwitch, ConfirmModal, PromptModal } from "./shared";
 import { getAutoLockMinutes, setAutoLockMinutes, AUTOLOCK_OPTIONS } from "../security";
+import { isBiometricsAvailable, isBiometricEnabled, enableBiometricUnlock, disableBiometricUnlock } from "../native/nativeBridge";
+import { exportKeyRaw } from "../crypto";
 
 export default function ProfilePanel({
   profile,
   defaultCurrency,
+  vaultKey,
   onSetCurrency,
   onSignedOut,
   onOpenUpgrade,
@@ -23,6 +26,47 @@ export default function ProfilePanel({
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
+
+  // Biometric convenience toggle
+  const [bioAvailable, setBioAvailable] = useState(false);
+  const [bioEnabled, setBioEnabled] = useState(() => isBiometricEnabled(profile?.id));
+  const [bioMsg, setBioMsg] = useState("");
+  const [bioErr, setBioErr] = useState("");
+
+  useEffect(() => {
+    isBiometricsAvailable().then((avail) => {
+      setBioAvailable(avail);
+    });
+  }, []);
+
+  async function handleToggleBiometric(enable) {
+    setBioMsg("");
+    setBioErr("");
+    if (enable) {
+      if (!vaultKey) {
+        setBioErr("Vault key not held in active memory. Please unlock vault first.");
+        return;
+      }
+      try {
+        const rawKeyB64 = await exportKeyRaw(vaultKey);
+        const ok = await enableBiometricUnlock(profile?.id, rawKeyB64);
+        if (ok) {
+          setBioEnabled(true);
+          setBioMsg("Biometric unlock enabled securely for this device.");
+          setTimeout(() => setBioMsg(""), 3000);
+        } else {
+          setBioErr("Could not enable biometric key binding on this device.");
+        }
+      } catch (e) {
+        setBioErr("Biometric enrollment error: " + e.message);
+      }
+    } else {
+      disableBiometricUnlock(profile?.id);
+      setBioEnabled(false);
+      setBioMsg("Biometric unlock disabled.");
+      setTimeout(() => setBioMsg(""), 3000);
+    }
+  }
 
   // Auto-lock inactivity preference
   const [autoLockMins, setLocalAutoLockMins] = useState(() => getAutoLockMinutes(profile?.id));
@@ -74,7 +118,15 @@ export default function ProfilePanel({
     if (newPw.length < 8) return setErr("Use at least 8 characters.");
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password: newPw });
-    if (error) setErr(error.message); else { setMsg("Password updated."); setNewPw(""); }
+    if (error) {
+      setErr(error.message);
+    } else {
+      // Invalidate stored biometric key so it requires re-setup
+      disableBiometricUnlock(profile?.id);
+      setBioEnabled(false);
+      setMsg("Password updated. Biometric unlock invalidated & requires re-setup.");
+      setNewPw("");
+    }
     setBusy(false);
   }
 
@@ -249,6 +301,39 @@ export default function ProfilePanel({
               style={{ width: 170 }}
             />
           </div>
+        </div>
+
+        {/* Biometric Unlock (Android Keystore / Device Biometrics) */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, background: COLORS.panelAlt, padding: "14px", borderRadius: 8, border: `1px solid ${COLORS.line}` }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ ...S.dialRing, width: 34, height: 34, background: "rgba(176,141,87,0.12)", borderColor: COLORS.brass }}>
+                <Fingerprint size={17} color={COLORS.brass} />
+              </div>
+              <div>
+                <span style={{ fontSize: 11, color: COLORS.textFaint, fontFamily: "IBM Plex Mono, monospace", display: "block" }}>
+                  DEVICE BIOMETRICS (ANDROID / PLATFORM)
+                </span>
+                <span style={{ fontSize: 12.5, color: COLORS.text, fontWeight: 500 }}>
+                  Enable Fingerprint / Face Unlock
+                </span>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {bioMsg && <span style={{ fontSize: 11, color: "#8FA98C", display: "flex", alignItems: "center", gap: 3 }}><Check size={11} /> {bioMsg}</span>}
+              <ToggleSwitch checked={bioEnabled} onChange={handleToggleBiometric} />
+            </div>
+          </div>
+
+          <p style={{ fontSize: 11.5, color: COLORS.textDim, margin: "2px 0 0", lineHeight: 1.45 }}>
+            Fast convenience unlock after auto-lock. Your vault key is encrypted on-device via secure hardware keystore bindings and never stored in plaintext.
+          </p>
+
+          {bioErr && (
+            <div style={{ ...S.errBox, fontSize: 11.5, padding: "6px 10px", margin: 0 }}>
+              <AlertTriangle size={13} /> {bioErr}
+            </div>
+          )}
         </div>
 
         {/* Email Notification Preferences (Renewal Alerts) */}

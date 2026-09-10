@@ -9,6 +9,7 @@ import { ThemeProvider } from "./ThemeContext";
 import { initNativePlugins, setupBackButtonListener, setupDeepLinkAuthListener, setupAppStateAutoLock } from "./native/nativeBridge";
 import { initLemonSqueezy } from "./utils/lemonsqueezy";
 import { initRevenueCat, identifyUser, resetPurchasesUser } from "./native/revenueCat";
+import { getAutoLockMinutes } from "./security";
 import { S } from "./styles";
 
 
@@ -120,6 +121,45 @@ function AppContent() {
     setupAppStateAutoLock(handleLock);
     initLemonSqueezy();
   }, []);
+
+  // Auto-Lock Inactivity & Web Visibility Controller
+  useEffect(() => {
+    if (!vaultKey || !session?.user?.id) return;
+
+    const timeoutMinutes = getAutoLockMinutes(session.user.id);
+    if (timeoutMinutes <= 0) return; // 0 = Never
+
+    let timer = null;
+
+    function resetInactivityTimer() {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        console.log(`[AutoLock] Inactivity timeout (${timeoutMinutes}m) triggered, locking vault...`);
+        handleLock();
+      }, timeoutMinutes * 60 * 1000);
+    }
+
+    function handleVisibility() {
+      if (document.visibilityState === "hidden") {
+        console.log("[AutoLock] Web tab hidden/backgrounded, engaging auto-lock...");
+        handleLock();
+      }
+    }
+
+    // Start timer on mount/unlock
+    resetInactivityTimer();
+
+    // User interaction events
+    const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart", "click"];
+    events.forEach((evt) => window.addEventListener(evt, resetInactivityTimer, { passive: true }));
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      events.forEach((evt) => window.removeEventListener(evt, resetInactivityTimer));
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [vaultKey, session?.user?.id]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {

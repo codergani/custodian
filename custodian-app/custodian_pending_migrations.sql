@@ -180,6 +180,17 @@ ALTER TABLE public.profiles
 -- Unique case-insensitive index on username (lowercase only)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_username_lower ON public.profiles (lower(username)) WHERE username IS NOT NULL;
 
+-- Database-level constraint: enforces lowercase alphanumeric + underscore, 3-20 chars, and blocks reserved usernames
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_username_format_check;
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_username_format_check 
+  CHECK (username IS NULL OR (username ~ '^[a-z0-9_]{3,20}$' AND username NOT IN ('admin', 'administrator', 'support', 'custodian', 'root', 'system', 'help', 'official', 'owner', 'security', 'founder', 'api', 'auth')));
+
+-- Database-level constraint: display name length (max 30 chars)
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_display_name_length_check;
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_display_name_length_check 
+  CHECK (display_name IS NULL OR length(display_name) <= 30);
+
+
 -- ---------- 8. ZERO-KNOWLEDGE SHARED SECRETS TABLE (ECDH P-256) ----------
 CREATE TABLE IF NOT EXISTS public.shared_secrets (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -188,10 +199,17 @@ CREATE TABLE IF NOT EXISTS public.shared_secrets (
   title text NOT NULL,
   category text NOT NULL DEFAULT 'SHARED',
   encrypted_payload text NOT NULL,
+  secret_ciphertext text,
   sender_public_key text NOT NULL,
+  sender_public_key_snapshot text,
   created_at timestamptz NOT NULL DEFAULT now(),
   revoked_at timestamptz DEFAULT null
 );
+
+-- Ensure existing shared_secrets tables gain alias columns idempotently
+ALTER TABLE public.shared_secrets
+  ADD COLUMN IF NOT EXISTS secret_ciphertext text,
+  ADD COLUMN IF NOT EXISTS sender_public_key_snapshot text;
 
 ALTER TABLE public.shared_secrets ENABLE ROW LEVEL SECURITY;
 
@@ -216,6 +234,7 @@ DO $$ BEGIN
       FOR DELETE USING (sender_id = auth.uid() OR recipient_id = auth.uid());
   END IF;
 END $$;
+
 
 
 

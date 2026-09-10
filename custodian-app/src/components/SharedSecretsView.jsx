@@ -4,7 +4,7 @@ import {
   Trash2, AlertTriangle, Clock, RefreshCw, Send, UserX, KeyRound, Sparkles, AtSign, User
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
-import { decryptSharedPayload, importPublicKeyJWK } from "../crypto";
+import { receiveSharedSecret, importPublicKey } from "../crypto";
 import { S, COLORS } from "../styles";
 
 export default function SharedSecretsView({ userId, profile, ecdhPrivateKey, onOpenShareModal }) {
@@ -33,7 +33,9 @@ export default function SharedSecretsView({ userId, profile, ecdhPrivateKey, onO
           title,
           category,
           encrypted_payload,
+          secret_ciphertext,
           sender_public_key,
+          sender_public_key_snapshot,
           created_at,
           revoked_at,
           sender:sender_id (id, email, username, display_name)
@@ -91,8 +93,9 @@ export default function SharedSecretsView({ userId, profile, ecdhPrivateKey, onO
 
     setDecryptingId(item.id);
     try {
-      const senderPubKey = await importPublicKeyJWK(item.sender_public_key);
-      const decrypted = await decryptSharedPayload(ecdhPrivateKey, senderPubKey, item.encrypted_payload);
+      const senderPubKey = item.sender_public_key_snapshot || item.sender_public_key;
+      const cipherBlob = item.secret_ciphertext || item.encrypted_payload;
+      const decrypted = await receiveSharedSecret(cipherBlob, senderPubKey, ecdhPrivateKey);
       setDecryptedCache((prev) => ({ ...prev, [item.id]: decrypted }));
     } catch (dErr) {
       console.error("[SharedSecretsView] Decryption error:", dErr);

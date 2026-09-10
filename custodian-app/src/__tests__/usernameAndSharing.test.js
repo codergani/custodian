@@ -157,4 +157,30 @@ describe("Zero-Knowledge Asymmetric Cryptography (ECDH P-256)", () => {
     const plaintext = await decryptSharedPayload(restoredPrivKey, restoredPubKey, ciphertext);
     expect(plaintext).toEqual(payload);
   });
+
+  it("shares and receives secrets using shareSecret and receiveSharedSecret directly", async () => {
+    const { shareSecret, receiveSharedSecret, exportPublicKeyRaw } = await import("../crypto");
+
+    const alice = await generateECDHKeyPair();
+    const bob = await generateECDHKeyPair();
+
+    const alicePubB64 = await exportPublicKeyRaw(alice.publicKey);
+    const bobPubB64 = await exportPublicKeyRaw(bob.publicKey);
+
+    const secretData = {
+      apiKey: "sk-live-992837198237912837",
+      env: "production",
+      details: { db: "postgresql://user:pass@host:5432/db" }
+    };
+
+    // Alice shares secret with Bob's base64 public key
+    const encryptedBlob = await shareSecret(secretData, bobPubB64, alice.privateKey);
+    expect(encryptedBlob).toHaveProperty("iv");
+    expect(encryptedBlob).toHaveProperty("ct");
+
+    // Bob receives and decrypts secret using Alice's base64 public key
+    const decrypted = await receiveSharedSecret(encryptedBlob, alicePubB64, bob.privateKey);
+    expect(decrypted).toEqual(secretData);
+    expect(decrypted.apiKey).toBe("sk-live-992837198237912837");
+  });
 });
