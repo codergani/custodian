@@ -9,7 +9,7 @@ import {
   CheckSquare, Square, Target, Hourglass, ArrowRight, ArrowLeft, TrendingUp, BarChart3, Database, Lock,
   PackageCheck, Package, Command, Activity, Compass, Terminal,
   Paperclip, Pin, File, Link2, FileCheck, Maximize2, Minimize2,
-  Menu, Sun, Moon, Layers, Rocket
+  Menu, Sun, Moon, Layers, Rocket, Share2
 } from "lucide-react";
 import { supabase } from "./supabaseClient";
 import { encryptJSON, decryptJSON } from "./crypto";
