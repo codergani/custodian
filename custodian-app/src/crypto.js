@@ -93,6 +93,33 @@ export async function generateECDHKeyPair() {
 }
 
 /**
+ * Exports an ECDH public key as a base64-encoded raw uncompressed point.
+ * @param {CryptoKey} publicKey
+ * @returns {Promise<string>}
+ */
+export async function exportPublicKeyRaw(publicKey) {
+  const rawBytes = await crypto.subtle.exportKey("raw", publicKey);
+  return b64(rawBytes);
+}
+
+/**
+ * Imports an ECDH public key from either a raw base64 string or a JWK JSON string.
+ * @param {string|object} keyData
+ * @returns {Promise<CryptoKey>}
+ */
+export async function importPublicKey(keyData) {
+  if (typeof keyData === "string" && keyData.trim().startsWith("{")) {
+    const jwk = JSON.parse(keyData);
+    return crypto.subtle.importKey("jwk", jwk, { name: "ECDH", namedCurve: "P-256" }, true, []);
+  } else if (typeof keyData === "object" && keyData !== null && keyData.kty) {
+    return crypto.subtle.importKey("jwk", keyData, { name: "ECDH", namedCurve: "P-256" }, true, []);
+  } else {
+    const buf = unb64(typeof keyData === "string" ? keyData.trim() : "");
+    return crypto.subtle.importKey("raw", buf, { name: "ECDH", namedCurve: "P-256" }, true, []);
+  }
+}
+
+/**
  * Exports an ECDH public key as a serialized JWK string (safe to store openly in database).
  * @param {CryptoKey} publicKey
  * @returns {Promise<string>}
@@ -108,14 +135,18 @@ export async function exportPublicKeyJWK(publicKey) {
  * @returns {Promise<CryptoKey>}
  */
 export async function importPublicKeyJWK(jwkString) {
-  const jwk = typeof jwkString === "string" ? JSON.parse(jwkString) : jwkString;
-  return crypto.subtle.importKey(
-    "jwk",
-    jwk,
-    { name: "ECDH", namedCurve: "P-256" },
-    true,
-    []
-  );
+  return importPublicKey(jwkString);
+}
+
+/**
+ * Exports an ECDH private key as PKCS#8 bytes, base64-encoded, then encrypted with the master vault key.
+ * @param {CryptoKey} privateKey
+ * @param {CryptoKey} vaultKey
+ * @returns {Promise<string>} Encrypted ciphertext blob JSON string
+ */
+export async function exportEncryptedPrivateKeyPKCS8(privateKey, vaultKey) {
+  const pkcs8Bytes = await crypto.subtle.exportKey("pkcs8", privateKey);
+  return encryptJSON(vaultKey, { pkcs8: b64(pkcs8Bytes) });
 }
 
 /**
@@ -130,20 +161,34 @@ export async function exportEncryptedPrivateKey(privateKey, vaultKey) {
 }
 
 /**
- * Decrypts an encrypted private key blob using the master vault key, then imports the ECDH private key.
+ * Decrypts an encrypted private key blob using the master vault key, then imports the ECDH private key
+ * (supports both PKCS#8 payload format and legacy JWK format).
  * @param {string} encryptedBlob
  * @param {CryptoKey} vaultKey
  * @returns {Promise<CryptoKey>}
  */
 export async function importDecryptedPrivateKey(encryptedBlob, vaultKey) {
-  const jwk = await decryptJSON(vaultKey, encryptedBlob);
-  return crypto.subtle.importKey(
-    "jwk",
-    jwk,
-    { name: "ECDH", namedCurve: "P-256" },
-    true,
-    ["deriveKey", "deriveBits"]
-  );
+  const decryptedData = await decryptJSON(vaultKey, encryptedBlob);
+  if (decryptedData && decryptedData.pkcs8) {
+    const pkcs8Buf = unb64(decryptedData.pkcs8);
+    return crypto.subtle.importKey(
+      "pkcs8",
+      pkcs8Buf,
+      { name: "ECDH", namedCurve: "P-256" },
+      true,
+      ["deriveKey", "deriveBits"]
+    );
+  } else {
+    // JWK fallback
+    const jwk = typeof decryptedData === "string" ? JSON.parse(decryptedData) : decryptedData;
+    return crypto.subtle.importKey(
+      "jwk",
+      jwk,
+      { name: "ECDH", namedCurve: "P-256" },
+      true,
+      ["deriveKey", "deriveBits"]
+    );
+  }
 }
 
 /**

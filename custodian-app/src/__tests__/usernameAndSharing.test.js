@@ -131,4 +131,30 @@ describe("Zero-Knowledge Asymmetric Cryptography (ECDH P-256)", () => {
     const decrypted = await decryptSharedPayload(importedPrivKey, importedPubKey, encrypted);
     expect(decrypted).toEqual(testSecret);
   });
+
+  it("supports raw base64 public key export/import and PKCS#8 private key encryption", async () => {
+    const { exportPublicKeyRaw, importPublicKey, exportEncryptedPrivateKeyPKCS8 } = await import("../crypto");
+    const salt = newSalt();
+    const vaultKey = await deriveKey("VaultPassphrase2026!", salt);
+
+    const keyPair = await generateECDHKeyPair();
+    const rawPubKeyB64 = await exportPublicKeyRaw(keyPair.publicKey);
+    expect(typeof rawPubKeyB64).toBe("string");
+    expect(rawPubKeyB64.length).toBeGreaterThan(20);
+
+    const encryptedPkcs8Blob = await exportEncryptedPrivateKeyPKCS8(keyPair.privateKey, vaultKey);
+    expect(typeof encryptedPkcs8Blob).toBe("string");
+
+    // Decrypt and re-import
+    const restoredPubKey = await importPublicKey(rawPubKeyB64);
+    const restoredPrivKey = await importDecryptedPrivateKey(encryptedPkcs8Blob, vaultKey);
+
+    expect(restoredPubKey.algorithm.name).toBe("ECDH");
+    expect(restoredPrivKey.algorithm.name).toBe("ECDH");
+
+    const payload = { test: "PKCS8 and Raw Base64 working seamlessly" };
+    const ciphertext = await encryptSharedPayload(restoredPrivKey, restoredPubKey, payload);
+    const plaintext = await decryptSharedPayload(restoredPrivKey, restoredPubKey, ciphertext);
+    expect(plaintext).toEqual(payload);
+  });
 });
