@@ -1,15 +1,20 @@
 import React, { useState } from "react";
-import { Trash2, KeyRound, Folder, Building2, RotateCcw } from "lucide-react";
+import { Trash2, KeyRound, Folder, Building2, RotateCcw, Ghost, Download, Crown, Sparkles } from "lucide-react";
 import { S, COLORS } from "../styles";
 import { ConfirmModal } from "./shared";
 
 export default function TrashView({
   trashedItems = {},
+  ghostedClients = [],
   onRestoreCred,
   onRestoreProject,
   onRestoreClient,
+  onReactivateGhostedClient,
+  onDownloadGhostedZip,
   onPermanentDelete,
-  onEmptyTrash
+  onEmptyTrash,
+  currentPlan = "free",
+  onOpenUpgrade,
 }) {
   const [activeTab, setActiveTab] = useState("all");
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: "", message: "", onConfirm: () => {} });
@@ -24,8 +29,10 @@ export default function TrashView({
   }
 
   const { credentials = [], projects = [], clients = [] } = trashedItems;
-  const totalCount = credentials.length + projects.length + clients.length;
+  const regularTrashCount = credentials.length + projects.length + clients.length;
+  const grandTotalCount = regularTrashCount + ghostedClients.length;
 
+  const showGhosted = activeTab === "all" || activeTab === "ghosted";
   const showCreds = activeTab === "all" || activeTab === "secrets";
   const showProjects = activeTab === "all" || activeTab === "projects";
   const showClients = activeTab === "all" || activeTab === "clients";
@@ -40,7 +47,7 @@ export default function TrashView({
             Deleted items remain safely here for 30 days before being automatically purged.
           </div>
         </div>
-        {totalCount > 0 && (
+        {regularTrashCount > 0 && (
           <button
             style={S.dangerBtn}
             onClick={() => {
@@ -57,9 +64,10 @@ export default function TrashView({
         )}
       </div>
 
-      <div style={{ display: "flex", gap: 8, borderBottom: `1px solid ${COLORS.line}`, paddingBottom: 10 }}>
+      <div style={{ display: "flex", gap: 8, borderBottom: `1px solid ${COLORS.line}`, paddingBottom: 10, flexWrap: "wrap" }}>
         {[
-          { id: "all", label: `All (${totalCount})` },
+          { id: "all", label: `All (${grandTotalCount})` },
+          { id: "ghosted", label: `👻 Ghosted Vault (${ghostedClients.length})` },
           { id: "secrets", label: `Secrets (${credentials.length})` },
           { id: "projects", label: `Projects (${projects.length})` },
           { id: "clients", label: `Clients (${clients.length})` },
@@ -83,7 +91,7 @@ export default function TrashView({
         ))}
       </div>
 
-      {totalCount === 0 ? (
+      {grandTotalCount === 0 ? (
         <div style={S.welcomeState}>
           <Trash2 size={36} color="#3A3835" />
           <div style={S.welcomeTitle}>Trash is empty</div>
@@ -91,8 +99,108 @@ export default function TrashView({
             When you delete a secret, project, or client, you'll have 30 days to restore it from here.
           </div>
         </div>
+      ) : activeTab === "ghosted" && ghostedClients.length === 0 ? (
+        <div style={S.welcomeState}>
+          <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(176,141,87,0.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+            <Ghost size={24} color={COLORS.brass} />
+          </div>
+          <div style={S.welcomeTitle}>No Ghosted Clients</div>
+          <div style={S.welcomeSub}>
+            When a client cancels or pauses their project, Pro and Team users can archive their workspace into a compressed .zip vault. When the client returns, restore them here in 1 click!
+          </div>
+          {currentPlan === "free" && onOpenUpgrade && (
+            <button
+              style={{ ...S.primaryBtnSm, marginTop: 14 }}
+              onClick={onOpenUpgrade}
+            >
+              <Crown size={13} /> Upgrade to Pro to Enable Ghosted Vault
+            </button>
+          )}
+        </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {showGhosted &&
+            ghostedClients.map((client) => {
+              const totalSecrets = (client.projects || []).reduce((acc, p) => acc + (p.credentials?.length || 0), 0);
+              const formattedGhostDate = client.ghosted_at
+                ? new Date(client.ghosted_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+                : "Archived";
+              return (
+                <div
+                  key={"ghost-" + client.id}
+                  style={{
+                    ...S.trashCard,
+                    border: "1px solid rgba(176,141,87,0.3)",
+                    background: "rgba(176,141,87,0.03)",
+                    flexDirection: "column",
+                    alignItems: "stretch",
+                    gap: 12,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                      <div style={{ ...S.dialRing, width: 38, height: 38, background: "rgba(176,141,87,0.12)", flexShrink: 0 }}>
+                        <Ghost size={18} color="#B08D57" />
+                      </div>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>{client.name}</span>
+                          <span style={{ ...S.trashBadge, background: "rgba(176,141,87,0.15)", color: COLORS.brass, borderColor: COLORS.brassDim }}>
+                            👻 GHOSTED / CANCELLED
+                          </span>
+                          <span style={{ fontSize: 11, color: COLORS.textFaint, fontFamily: "IBM Plex Mono, monospace" }}>
+                            {formattedGhostDate}
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11.5, color: COLORS.textDim, marginTop: 4 }}>
+                          <span>📁 {client.projects?.length || 0} Projects</span>
+                          <span>•</span>
+                          <span>🔑 {totalSecrets} Encrypted Secrets</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <button
+                        style={{ ...S.primaryBtnSm, padding: "5px 12px", fontSize: 11.5 }}
+                        onClick={() => onReactivateGhostedClient(client)}
+                        title="Restore this client to active vault"
+                      >
+                        <RotateCcw size={12} /> Reactivate Client
+                      </button>
+                      <button
+                        style={{ ...S.secondaryBtn, padding: "5px 10px", fontSize: 11.5 }}
+                        onClick={() => onDownloadGhostedZip(client)}
+                        title="Download .zip archive of all credentials and project specs"
+                      >
+                        <Download size={12} /> Download ZIP
+                      </button>
+                      <button
+                        style={{ ...S.dangerBtn, padding: "5px 10px", fontSize: 11.5 }}
+                        onClick={() => {
+                          setConfirmModal({
+                            isOpen: true,
+                            title: "Delete Ghosted Client Forever",
+                            message: `Are you sure you want to permanently delete ghosted client "${client.name}" and all associated data?`,
+                            onConfirm: () => onPermanentDelete("client", client.id, client.name),
+                          });
+                        }}
+                        title="Permanently Delete"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {client.ghost_notes && (
+                    <div style={{ padding: "8px 12px", background: COLORS.panelAlt, borderRadius: 6, border: `1px solid ${COLORS.line}`, fontSize: 11.5, color: COLORS.textDim, fontStyle: "italic" }}>
+                      <span style={{ color: COLORS.brass, fontStyle: "normal", fontWeight: 600, marginRight: 6 }}>Notes:</span>
+                      "{client.ghost_notes}"
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           {showCreds &&
             credentials.map((cred) => {
               const days = getDaysRemaining(cred.deletedAt);

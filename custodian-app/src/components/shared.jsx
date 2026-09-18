@@ -5,9 +5,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Check, ChevronDown, X, Eye, EyeOff, Copy, Edit3, Trash2,
-  Clock, RefreshCw, ExternalLink, CheckCircle, AlertTriangle, HelpCircle
+  Clock, RefreshCw, ExternalLink, CheckCircle, AlertTriangle, HelpCircle, ShieldCheck,
+  History, Calendar
 } from "lucide-react";
 import { S, COLORS } from "../styles";
+import { formatDateUSA, formatDateTimeUSA } from "../utils/dateFormatter";
 
 // ──── Custom Dropdown ────
 export function CustomDropdown({ value, onChange, options, style, buttonStyle, dropdownStyle, placeholder = "Select option..." }) {
@@ -350,6 +352,8 @@ export function PromptModal({
 
 // ──── Credential Card ────
 export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, onDelete }) {
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [showFormatInfo, setShowFormatInfo] = useState(false);
   const renewal = cred.renewalInfo;
   const cost = parseFloat(cred.cost);
   const currency = cred.currency || "$";
@@ -498,6 +502,141 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
           <span>{copiedId === cred.id + "-json" ? "Copied" : "JSON"}</span>
         </button>
       </div>
+
+      {/* Secret Timeline & Modification Metadata (USA Format: MM/DD/YYYY • HH:MM) */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, paddingTop: 6, borderTop: `1px solid ${COLORS.line}`, flexWrap: "wrap", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: COLORS.textFaint, position: "relative" }}>
+          <Clock size={11} color={COLORS.brass} />
+          <span style={{ color: COLORS.text, fontWeight: 500 }}>
+            {cred.updatedAt ? `Updated: ${formatDateTimeUSA(cred.updatedAt)}` : cred.createdAt ? `Created: ${formatDateTimeUSA(cred.createdAt)}` : "Created: N/A"}
+          </span>
+
+          {/* "i" in a Circle Info Button (Hover on Desktop, Tap/Click on Mobile) */}
+          <div
+            style={{ position: "relative", display: "inline-flex", alignItems: "center" }}
+            onMouseEnter={() => setShowFormatInfo(true)}
+            onMouseLeave={() => setShowFormatInfo(false)}
+          >
+            <button
+              type="button"
+              style={{
+                background: showFormatInfo ? "rgba(176,141,87,0.25)" : "rgba(255,255,255,0.06)",
+                border: `1px solid ${showFormatInfo ? COLORS.brass : COLORS.line}`,
+                borderRadius: "50%",
+                width: 16,
+                height: 16,
+                padding: 0,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                color: showFormatInfo ? COLORS.brass : COLORS.textDim,
+                fontSize: 10,
+                fontWeight: 700,
+                fontFamily: "serif",
+                lineHeight: 1,
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowFormatInfo(!showFormatInfo);
+              }}
+              title="Click or hover to view date & time format details"
+              aria-label="Date and time format details"
+            >
+              i
+            </button>
+
+            {/* Floating Tooltip / Popover */}
+            {showFormatInfo && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "calc(100% + 8px)",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  background: "rgba(22, 19, 15, 0.97)",
+                  border: "1px solid rgba(176, 141, 87, 0.75)",
+                  borderRadius: 6,
+                  padding: "8px 12px",
+                  color: "#FAF8F5",
+                  fontSize: 10.5,
+                  whiteSpace: "nowrap",
+                  zIndex: 9999,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+                  backdropFilter: "blur(10px)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                  minWidth: 175,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ fontWeight: 700, color: "#D4AF37", fontSize: 9.5, letterSpacing: "0.05em", borderBottom: "1px solid rgba(176,141,87,0.3)", paddingBottom: 3 }}>
+                  USA STANDARD FORMAT
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, color: "#C5BEB3" }}>
+                  <span>📅 Date:</span>
+                  <strong style={{ color: "#FFFFFF", fontFamily: "IBM Plex Mono, monospace", letterSpacing: "0.02em" }}>MM/DD/YYYY</strong>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, color: "#C5BEB3" }}>
+                  <span>⏰ Time:</span>
+                  <strong style={{ color: "#FFFFFF", fontFamily: "IBM Plex Mono, monospace", letterSpacing: "0.02em" }}>HH:MM AM/PM</strong>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          style={{
+            background: showTimeline ? "rgba(176,141,87,0.15)" : "transparent",
+            border: `1px solid ${showTimeline ? COLORS.brass : COLORS.line}`,
+            borderRadius: 4,
+            color: showTimeline ? COLORS.brass : COLORS.textDim,
+            fontSize: 10.5,
+            padding: "2px 7px",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+          onClick={() => setShowTimeline(!showTimeline)}
+          title="View Update Timeline"
+        >
+          <History size={11} /> {showTimeline ? "Hide Timeline" : "Timeline"}
+        </button>
+      </div>
+
+      {/* Expandable Chronological Timeline */}
+      {showTimeline && (
+        <div style={{ marginTop: 8, background: "rgba(0,0,0,0.2)", border: `1px solid ${COLORS.line}`, borderRadius: 6, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: COLORS.brass, letterSpacing: "0.04em", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span>AUDIT TIMELINE</span>
+            <span style={{ fontSize: 9.5, color: COLORS.textFaint, fontWeight: 400, fontFamily: "IBM Plex Mono, monospace" }}>MM/DD/YYYY • HH:MM</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            {(Array.isArray(cred.history) && cred.history.length > 0 ? cred.history : [
+              ...(cred.createdAt ? [{ action: "Created", timestamp: cred.createdAt }] : []),
+              ...(cred.updatedAt && cred.updatedAt !== cred.createdAt ? [{ action: "Updated", timestamp: cred.updatedAt }] : []),
+            ]).map((entry, idx) => (
+              <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11, padding: "3px 0", borderBottom: idx < (cred.history?.length || 1) - 1 ? `1px dashed ${COLORS.line}` : "none" }}>
+                <span style={{ color: entry.action === "Created" ? "#8FA98C" : COLORS.brass, fontWeight: 500 }}>
+                  • {entry.action || "Updated"}
+                </span>
+                <span style={{ color: COLORS.textDim, fontFamily: "IBM Plex Mono, monospace", fontSize: 10.5 }}>
+                  {formatDateTimeUSA(entry.timestamp)}
+                </span>
+              </div>
+            ))}
+            {(!cred.history || cred.history.length === 0) && !cred.createdAt && !cred.updatedAt && (
+              <div style={{ fontSize: 11, color: COLORS.textFaint, fontStyle: "italic" }}>
+                No prior revision timeline recorded for this secret.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

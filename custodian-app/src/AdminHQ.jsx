@@ -10,6 +10,7 @@ import { supabase } from "./supabaseClient";
 import { hashText } from "./crypto";
 import { S, COLORS } from "./styles";
 import { CustomDropdown, ConfirmModal, Overlay } from "./components/shared";
+import { formatDateUSA, formatDateTimeUSA } from "./utils/dateFormatter";
 
 // Timezone to Country mapping helper for geographic analytics
 function getCountryFromTimezone(tz) {
@@ -191,13 +192,25 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
     setLoading(true);
     setActionErr("");
     try {
-      // 1. Fetch user profiles with storage bytes
-      const { data: profiles, error: pErr } = await supabase
-        .from("profiles")
-        .select("id, email, plan, role, created_at, storage_used_bytes")
-        .order("created_at", { ascending: false });
-      if (pErr) throw pErr;
-      setUsers(profiles || []);
+      // 1. Fetch user profiles with storage bytes (Try admin RPC first, then fallback to direct query)
+      let loadedProfiles = [];
+      try {
+        const { data: rpcProfiles, error: rpcErr } = await supabase.rpc("admin_get_all_users");
+        if (!rpcErr && rpcProfiles && rpcProfiles.length > 0) {
+          loadedProfiles = rpcProfiles;
+        }
+      } catch {}
+
+      if (loadedProfiles.length === 0) {
+        const { data: profiles, error: pErr } = await supabase
+          .from("profiles")
+          .select("id, email, plan, role, created_at, storage_used_bytes")
+          .order("created_at", { ascending: false });
+        if (pErr) throw pErr;
+        loadedProfiles = profiles || [];
+      }
+
+      setUsers(loadedProfiles);
 
       // 2. Fetch system records count
       const [cRes, prRes, crRes, wsRes] = await Promise.all([
@@ -987,7 +1000,7 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
                             {u.email || u.id}
                           </div>
                           <div style={{ fontSize: 11, color: COLORS.textFaint, marginTop: 2 }}>
-                            Joined: {u.created_at ? new Date(u.created_at).toLocaleDateString() : "N/A"} • Storage: {formatBytes(u.storage_used_bytes)}
+                            Joined: {formatDateUSA(u.created_at)} (MM/DD/YYYY) • Storage: {formatBytes(u.storage_used_bytes)}
                           </div>
                         </div>
                       </div>
@@ -1261,7 +1274,7 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
                     </div>
 
                     <div style={{ fontSize: 11, color: COLORS.textFaint, textAlign: "right" }}>
-                      {log.created_at ? new Date(log.created_at).toLocaleString() : "Just now"}
+                      {log.created_at ? `${formatDateTimeUSA(log.created_at)} (MM/DD/YYYY)` : "N/A"}
                     </div>
                   </div>
                 ))}

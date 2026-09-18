@@ -72,8 +72,12 @@ export default function CommandPalette({ clients, onClose, onSelectProject, onCo
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <div style={S.cmdItem} onClick={() => onNavigate("vault")} tabIndex={0} role="button">
-                  <ShieldCheck size={14} color="#B08D57" />
+                  <Crown size={14} color="#B08D57" />
                   <span style={{ flex: 1, fontSize: 13, color: COLORS.text }}>Vault Projects Overview</span>
+                </div>
+                <div style={S.cmdItem} onClick={() => onNavigate("personal")} tabIndex={0} role="button">
+                  <ShieldCheck size={14} color="#B08D57" />
+                  <span style={{ flex: 1, fontSize: 13, color: COLORS.text }}>Personal Space (Logins, PINs, Seed Words)</span>
                 </div>
                 <div style={S.cmdItem} onClick={() => onNavigate("watchdog")} tabIndex={0} role="button">
                   <Bell size={14} color="#B08D57" />

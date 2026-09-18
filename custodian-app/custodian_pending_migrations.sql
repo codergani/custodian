@@ -26,7 +26,10 @@ ALTER TABLE public.profiles ADD CONSTRAINT profiles_plan_check CHECK (plan IN ('
 
 -- ---------- 2. SOFT DELETES & RECYCLE BIN ----------
 ALTER TABLE public.clients
-  ADD COLUMN IF NOT EXISTS deleted_at timestamptz DEFAULT null;
+  ADD COLUMN IF NOT EXISTS deleted_at timestamptz DEFAULT null,
+  ADD COLUMN IF NOT EXISTS status text DEFAULT 'active',
+  ADD COLUMN IF NOT EXISTS ghosted_at timestamptz DEFAULT null,
+  ADD COLUMN IF NOT EXISTS ghost_notes text DEFAULT null;
 
 ALTER TABLE public.projects
   ADD COLUMN IF NOT EXISTS deleted_at timestamptz DEFAULT null,
@@ -235,6 +238,55 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- ---------- 9. FOUNDER ACCESS TO ALL PROFILES & TELEMETRY (ADMIN HQ) ----------
+-- Enables the founder account to see all registered platform users in Admin HQ.
+-- Regular users continue to see ONLY their own row.
+DROP POLICY IF EXISTS "Founders can view all profiles" ON public.profiles;
+CREATE POLICY "Founders can view all profiles"
+  ON public.profiles
+  FOR SELECT
+  USING (
+    auth.uid() = id
+    OR (auth.jwt() ->> 'email') = 'ygpksr456@gmail.com'
+  );
 
+DROP POLICY IF EXISTS "Founders can update all profiles" ON public.profiles;
+CREATE POLICY "Founders can update all profiles"
+  ON public.profiles
+  FOR UPDATE
+  USING (
+    auth.uid() = id
+    OR (auth.jwt() ->> 'email') = 'ygpksr456@gmail.com'
+  );
 
+-- Admin RPC function bypassing RLS with SECURITY DEFINER for Founder
+CREATE OR REPLACE FUNCTION public.admin_get_all_users()
+RETURNS TABLE (
+  id uuid,
+  email text,
+  plan text,
+  role text,
+  created_at timestamptz,
+  storage_used_bytes bigint
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+BEGIN
+  IF (COALESCE(auth.jwt() ->> 'email', '') != 'ygpksr456@gmail.com') AND
+     NOT EXISTS (
+       SELECT 1 FROM public.profiles 
+       WHERE id = auth.uid() AND (plan = 'founder' OR role = 'founder' OR role = 'admin')
+     ) THEN
+    RAISE EXCEPTION 'Access Denied: Founder privileges required.';
+  END IF;
 
+  RETURN QUERY
+  SELECT p.id, p.email, p.plan, p.role, p.created_at, p.storage_used_bytes
+  FROM public.profiles p
+  ORDER BY p.created_at DESC;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_get_all_users() TO authenticated;

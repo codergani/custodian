@@ -5,11 +5,13 @@ import AuthScreen from "./AuthScreen";
 import VaultUnlock from "./VaultUnlock";
 import Vault from "./Vault";
 import AdminHQ from "./AdminHQ";
+import ResetPasswordScreen from "./ResetPasswordScreen";
 import { ThemeProvider } from "./ThemeContext";
 import { initNativePlugins, setupBackButtonListener, setupDeepLinkAuthListener, setupAppStateAutoLock } from "./native/nativeBridge";
 import { initLemonSqueezy } from "./utils/lemonsqueezy";
 import { initRevenueCat, identifyUser, resetPurchasesUser } from "./native/revenueCat";
 import { getAutoLockMinutes } from "./security";
+import { exportKeyRaw, importKeyRaw } from "./crypto";
 import { S } from "./styles";
 
 
@@ -86,10 +88,22 @@ function AppContent() {
   const [vaultKey, setVaultKey] = useState(null);
   const [ecdhPrivateKey, setEcdhPrivateKey] = useState(null);
   const [route, setRoute] = useState(() => window.location.hash || window.location.pathname);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => {
+    return (
+      window.location.hash.includes("type=recovery") ||
+      window.location.search.includes("type=recovery")
+    );
+  });
 
   useEffect(() => {
     function handleLocationChange() {
       setRoute(window.location.hash || window.location.pathname);
+      if (
+        window.location.hash.includes("type=recovery") ||
+        window.location.search.includes("type=recovery")
+      ) {
+        setIsPasswordRecovery(true);
+      }
     }
     window.addEventListener("hashchange", handleLocationChange);
     window.addEventListener("popstate", handleLocationChange);
@@ -103,15 +117,84 @@ function AppContent() {
     // Purge in-memory keys immediately on lock
     setVaultKey(null);
     setEcdhPrivateKey(null);
-    sessionStorage.removeItem("custodian_session_vault_key");
+    try {
+      sessionStorage.removeItem("custodian_session_vault_key");
+      sessionStorage.removeItem("custodian_session_ecdh_key");
+      sessionStorage.removeItem("custodian_session_user_id");
+      sessionStorage.removeItem("custodian_session_last_active");
+    } catch {}
   }
 
-  function handleUnlocked(key, ecdhKey) {
+  async function handleUnlocked(key, ecdhKey) {
     // In-memory key retention during active session
     setVaultKey(key);
     if (ecdhKey) setEcdhPrivateKey(ecdhKey);
-    sessionStorage.removeItem("custodian_session_vault_key");
+    try {
+      if (session?.user?.id) {
+        const rawB64 = await exportKeyRaw(key);
+        sessionStorage.setItem("custodian_session_vault_key", rawB64);
+        sessionStorage.setItem("custodian_session_user_id", session.user.id);
+        sessionStorage.setItem("custodian_session_last_active", String(Date.now()));
+        if (ecdhKey) {
+          const ecdhJwk = await crypto.subtle.exportKey("jwk", ecdhKey);
+          sessionStorage.setItem("custodian_session_ecdh_key", JSON.stringify(ecdhJwk));
+        }
+      }
+    } catch (e) {
+      console.warn("[App] Failed to save session vault key:", e);
+    }
   }
+
+  // Restore active vault session across page refreshes if within inactivity timeout
+  useEffect(() => {
+    if (!session?.user?.id || vaultKey) return;
+
+    async function restoreSessionKey() {
+      try {
+        const savedUserId = sessionStorage.getItem("custodian_session_user_id");
+        const savedVaultKey = sessionStorage.getItem("custodian_session_vault_key");
+        const savedLastActive = sessionStorage.getItem("custodian_session_last_active");
+
+        if (!savedVaultKey || savedUserId !== session.user.id) return;
+
+        const timeoutMinutes = getAutoLockMinutes(session.user.id);
+        if (timeoutMinutes > 0 && savedLastActive) {
+          const elapsedMins = (Date.now() - Number(savedLastActive)) / (1000 * 60);
+          if (elapsedMins >= timeoutMinutes) {
+            console.log(`[AutoLock] Inactivity expired across refresh (${Math.round(elapsedMins)}m), clearing session.`);
+            handleLock();
+            return;
+          }
+        }
+
+        // Within timeout OR Auto-Lock is "Never" (timeoutMinutes === 0)
+        const key = await importKeyRaw(savedVaultKey);
+        setVaultKey(key);
+        sessionStorage.setItem("custodian_session_last_active", String(Date.now()));
+
+        const savedEcdhKey = sessionStorage.getItem("custodian_session_ecdh_key");
+        if (savedEcdhKey) {
+          try {
+            const jwk = JSON.parse(savedEcdhKey);
+            const ecdh = await crypto.subtle.importKey(
+              "jwk",
+              jwk,
+              { name: "ECDH", namedCurve: "P-256" },
+              true,
+              ["deriveKey", "deriveBits"]
+            );
+            setEcdhPrivateKey(ecdh);
+          } catch (ecdhErr) {
+            console.warn("[App] Could not restore ECDH key:", ecdhErr);
+          }
+        }
+      } catch (err) {
+        console.warn("[App] Session key restoration error:", err);
+      }
+    }
+
+    restoreSessionKey();
+  }, [session?.user?.id, vaultKey]);
 
   // Initialize native mobile features, listeners, and web payment scripts
   useEffect(() => {
@@ -130,19 +213,30 @@ function AppContent() {
     if (timeoutMinutes <= 0) return; // 0 = Never
 
     let timer = null;
+    let lastActiveTimestamp = Date.now();
 
     function resetInactivityTimer() {
+      lastActiveTimestamp = Date.now();
+      try {
+        sessionStorage.setItem("custodian_session_last_active", String(lastActiveTimestamp));
+      } catch {}
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
-        console.log(`[AutoLock] Inactivity timeout (${timeoutMinutes}m) triggered, locking vault...`);
+        console.log(`[AutoLock] Inactivity timeout (${timeoutMinutes}m) reached, locking vault...`);
         handleLock();
       }, timeoutMinutes * 60 * 1000);
     }
 
-    function handleVisibility() {
-      if (document.visibilityState === "hidden") {
-        console.log("[AutoLock] Web tab hidden/backgrounded, engaging auto-lock...");
-        handleLock();
+    function handleVisibilityCheck() {
+      // When user returns to tab, only lock if inactivity duration was exceeded while away
+      if (document.visibilityState === "visible") {
+        const elapsedMinutes = (Date.now() - lastActiveTimestamp) / (1000 * 60);
+        if (elapsedMinutes >= timeoutMinutes) {
+          console.log(`[AutoLock] Away for ${Math.round(elapsedMinutes)}m (timeout: ${timeoutMinutes}m), locking vault...`);
+          handleLock();
+        } else {
+          resetInactivityTimer();
+        }
       }
     }
 
@@ -152,12 +246,12 @@ function AppContent() {
     // User interaction events
     const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart", "click"];
     events.forEach((evt) => window.addEventListener(evt, resetInactivityTimer, { passive: true }));
-    document.addEventListener("visibilitychange", handleVisibility);
+    document.addEventListener("visibilitychange", handleVisibilityCheck);
 
     return () => {
       if (timer) clearTimeout(timer);
       events.forEach((evt) => window.removeEventListener(evt, resetInactivityTimer));
-      document.removeEventListener("visibilitychange", handleVisibility);
+      document.removeEventListener("visibilitychange", handleVisibilityCheck);
     };
   }, [vaultKey, session?.user?.id]);
 
@@ -168,15 +262,16 @@ function AppContent() {
         initRevenueCat(data.session.user.id);
       }
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsPasswordRecovery(true);
+      }
       setSession(sess);
       if (sess?.user?.id) {
         identifyUser(sess.user.id);
       } else {
         setProfile(null);
-        setVaultKey(null);
-        setEcdhPrivateKey(null);
-        sessionStorage.removeItem("custodian_session_vault_key");
+        handleLock();
         resetPurchasesUser();
       }
     });
@@ -192,7 +287,9 @@ function AppContent() {
       .eq("id", session.user.id)
       .single()
       .then(({ data, error }) => {
-        const isFounderEmail = import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase();
+        const isFounderEmail =
+          (import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
+          session.user.email?.toLowerCase() === "ygpksr456@gmail.com";
         let loaded = data || { id: session.user.id, email: session.user.email, role: "member" };
         if (isFounderEmail) {
           loaded = { ...loaded, plan: "founder", role: "founder" };
@@ -201,7 +298,9 @@ function AppContent() {
       })
       .catch((err) => {
         console.error("Profile query exception, using fallback:", err);
-        const isFounderEmail = import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase();
+        const isFounderEmail =
+          (import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
+          session.user.email?.toLowerCase() === "ygpksr456@gmail.com";
         setProfile({
           id: session.user.id,
           email: session.user.email,
@@ -222,6 +321,30 @@ function AppContent() {
       </ErrorBoundary>
     );
   }
+
+  // Password Recovery Flow
+  if (isPasswordRecovery && session) {
+    return (
+      <ErrorBoundary>
+        <ResetPasswordScreen
+          session={session}
+          onComplete={() => {
+            setIsPasswordRecovery(false);
+            if (window.location.hash.includes("type=recovery") || window.location.hash.includes("access_token=")) {
+              window.history.replaceState(null, "", window.location.pathname);
+            }
+          }}
+          onCancel={() => {
+            setIsPasswordRecovery(false);
+            if (window.location.hash.includes("type=recovery") || window.location.hash.includes("access_token=")) {
+              window.history.replaceState(null, "", window.location.pathname);
+            }
+          }}
+        />
+      </ErrorBoundary>
+    );
+  }
+
   if (!profile) {
     return <div style={S.centerScreen}><div style={{ color: "#A8A399", fontSize: 13 }}>Loading profile…</div></div>;
   }
@@ -233,7 +356,8 @@ function AppContent() {
       profile?.role === "founder" ||
       profile?.role === "admin" ||
       profile?.plan === "founder" ||
-      (import.meta.env.VITE_FOUNDER_EMAIL && session.user.email === import.meta.env.VITE_FOUNDER_EMAIL);
+      (import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
+      session.user.email?.toLowerCase() === "ygpksr456@gmail.com";
 
     if (!isAuthorized) {
       return (

@@ -9,7 +9,7 @@ import {
   CheckSquare, Square, Target, Hourglass, ArrowRight, ArrowLeft, TrendingUp, BarChart3, Database, Lock,
   PackageCheck, Package, Command, Activity, Compass, Terminal,
   Paperclip, Pin, File, Link2, FileCheck, Maximize2, Minimize2,
-  Menu, Sun, Moon, Layers, Rocket, Share2
+  Menu, Sun, Moon, Layers, Rocket, Share2, Dices, Ghost
 } from "lucide-react";
 import { supabase } from "./supabaseClient";
 import { encryptJSON, decryptJSON } from "./crypto";
@@ -18,6 +18,7 @@ import { S, COLORS } from "./styles";
 import { useTheme } from "./ThemeContext";
 import { throttle } from "./utils/rateLimit";
 import { registerBackButtonHandler } from "./native/nativeBridge";
+import { downloadClientArchiveZip } from "./utils/clientArchive";
 
 // Modular sub-components
 import {
@@ -38,6 +39,15 @@ import CommandPalette from "./components/CommandPalette";
 import OnboardingTour from "./components/OnboardingTour";
 import FloatingStickyNotes from "./components/FloatingStickyNotes";
 import SharedSecretsView from "./components/SharedSecretsView";
+import PasswordGenerator from "./components/PasswordGenerator";
+import PersonalSpaceView from "./components/PersonalSpaceView";
+import {
+  isPersonalClient,
+  classifyPersonalSecret,
+  getFreelanceClients,
+  PERSONAL_WORKSPACE_NAME,
+  PERSONAL_PROJECT_NAME
+} from "./utils/personalSpace";
 
 export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLock, onProfileUpdate }) {
   const { theme, toggleTheme } = useTheme();
@@ -66,6 +76,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
 
   const initialNav = getSavedNav();
   const [clients, setClients] = useState([]); // [{id, name, projects: [{id, name, details, credentials: [{id, ...decrypted}]}]}]
+  const [ghostedClients, setGhostedClients] = useState([]);
   const [trashedItems, setTrashedItems] = useState({ clients: [], projects: [], credentials: [] });
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState("");
@@ -203,8 +214,41 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
       const { data: allClients, error: cErr } = await supabase.from("clients").select("*").order("created_at");
       if (cErr) throw cErr;
 
-      const activeClients = (allClients || []).filter((c) => !c.deleted_at);
+      // Check localStorage for ghosted flags
+      const ghostMap = new Map();
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith("custodian_ghosted_client_")) {
+            const cId = key.replace("custodian_ghosted_client_", "");
+            try {
+              const val = JSON.parse(localStorage.getItem(key));
+              ghostMap.set(cId, val);
+            } catch {}
+          }
+        }
+      } catch {}
+
       const trashedClients = (allClients || []).filter((c) => !!c.deleted_at);
+      const notDeletedClients = (allClients || []).filter((c) => !c.deleted_at);
+
+      const ghostedClientsRaw = [];
+      const activeClients = [];
+
+      for (const c of notDeletedClients) {
+        const localGhost = ghostMap.get(c.id);
+        const isGhosted = c.status === "ghosted" || !!localGhost;
+        if (isGhosted) {
+          ghostedClientsRaw.push({
+            ...c,
+            status: "ghosted",
+            ghosted_at: c.ghosted_at || localGhost?.ghosted_at || new Date().toISOString(),
+            ghost_notes: c.ghost_notes || localGhost?.ghost_notes || "",
+          });
+        } else {
+          activeClients.push(c);
+        }
+      }
 
       // 2. Fetch Projects
       const { data: allProjects, error: pErr } = await supabase.from("projects").select("*").order("created_at");
@@ -212,6 +256,38 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
 
       const activeProjectsRaw = (allProjects || []).filter((p) => !p.deleted_at);
       const trashedProjects = (allProjects || []).filter((p) => !!p.deleted_at);
+
+      // Auto-provision user's Personal Space if not existing
+      let personalClientRecord = activeClients.find(isPersonalClient);
+      if (!personalClientRecord && userId) {
+        try {
+          const { data: newPC, error: pcErr } = await supabase
+            .from("clients")
+            .insert({ owner_id: userId, name: PERSONAL_WORKSPACE_NAME })
+            .select()
+            .single();
+          if (!pcErr && newPC) {
+            personalClientRecord = newPC;
+            activeClients.unshift(newPC);
+          }
+        } catch {}
+      }
+
+      if (personalClientRecord) {
+        const hasProj = activeProjectsRaw.some((p) => p.client_id === personalClientRecord.id);
+        if (!hasProj) {
+          try {
+            const { data: newPP, error: ppErr } = await supabase
+              .from("projects")
+              .insert({ client_id: personalClientRecord.id, name: PERSONAL_PROJECT_NAME })
+              .select()
+              .single();
+            if (!ppErr && newPP) {
+              activeProjectsRaw.push(newPP);
+            }
+          } catch {}
+        }
+      }
 
       // Decrypt project details
       const activeProjects = await Promise.all(
@@ -271,10 +347,20 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
               alertIntent: data.alertIntent || "review_cancel",
             } : null);
 
+            const initialCreatedAt = data.createdAt || row.created_at || new Date().toISOString();
+            const initialUpdatedAt = data.updatedAt || row.created_at || initialCreatedAt;
+            const historyList = Array.isArray(data.history) && data.history.length > 0
+              ? data.history
+              : [{ action: "Created", timestamp: initialCreatedAt }];
+
             return {
               id: row.id,
               projectId: row.project_id,
+              created_at: row.created_at,
               ...data,
+              createdAt: initialCreatedAt,
+              updatedAt: initialUpdatedAt,
+              history: historyList,
               cost: sanitizedCost,
               planHistory: [],
               renewalInfo: rInfo,
@@ -321,6 +407,24 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
       const built = activeClients.map((c) => ({
         id: c.id,
         name: c.name,
+        is_personal: isPersonalClient(c),
+        projects: activeProjects
+          .filter((p) => p.client_id === c.id)
+          .map((p) => ({
+            id: p.id,
+            name: p.name,
+            details: p.details,
+            created_at: p.created_at,
+            credentials: decryptedActiveCreds.filter((cr) => cr.projectId === p.id),
+          })),
+      }));
+
+      const builtGhosted = ghostedClientsRaw.map((c) => ({
+        id: c.id,
+        name: c.name,
+        status: "ghosted",
+        ghosted_at: c.ghosted_at,
+        ghost_notes: c.ghost_notes,
         projects: activeProjects
           .filter((p) => p.client_id === c.id)
           .map((p) => ({
@@ -333,6 +437,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
       }));
 
       setClients(built);
+      setGhostedClients(builtGhosted);
       if (activeClients.length > 0) {
         try {
           localStorage.setItem("custodian_tour_completed", "true");
@@ -368,12 +473,125 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
     loadAll();
   }
 
+  function handleDeleteClient(clientId) {
+    const targetClient = clients.find((c) => c.id === clientId);
+    if (!targetClient) return;
+
+    const isFreePlan = !profile?.plan || profile.plan === "free";
+    if (isFreePlan) {
+      setModal({
+        type: "client_delete_options",
+        client: targetClient,
+      });
+    } else {
+      setModal({
+        type: "ghost_client",
+        client: targetClient,
+      });
+    }
+  }
+
+  async function ghostClient(client, reasonNotes = "") {
+    setActionErr("");
+    try {
+      // 1. Generate & download zero-knowledge ZIP package for client
+      await downloadClientArchiveZip(client, { reasonNotes });
+
+      const now = new Date().toISOString();
+
+      // 2. Persist in localStorage for resilient zero-knowledge archive
+      try {
+        localStorage.setItem(
+          `custodian_ghosted_client_${client.id}`,
+          JSON.stringify({
+            status: "ghosted",
+            ghosted_at: now,
+            ghost_notes: reasonNotes || "",
+            client_id: client.id,
+          })
+        );
+      } catch {}
+
+      // 3. Update Supabase public.clients
+      try {
+        await supabase
+          .from("clients")
+          .update({
+            status: "ghosted",
+            ghosted_at: now,
+            ghost_notes: reasonNotes || null,
+            deleted_at: null,
+          })
+          .eq("id", client.id);
+      } catch (dbErr) {
+        console.warn("Could not update client status in Supabase:", dbErr);
+      }
+
+      // 4. If current client was selected, unselect it
+      if (selectedClient === client.id) {
+        setSelectedClient(null);
+        setSelectedProject(null);
+      }
+
+      setModal(null);
+      showSuccess(`👻 Archived "${client.name}" to Ghosted Vault & downloaded ZIP package!`);
+      loadAll();
+    } catch (e) {
+      setActionErr("Failed to archive client: " + e.message);
+    }
+  }
+
+  async function reactivateClient(client) {
+    setActionErr("");
+    try {
+      // 1. Remove from localStorage
+      try {
+        localStorage.removeItem(`custodian_ghosted_client_${client.id}`);
+      } catch {}
+
+      // 2. Update Supabase
+      try {
+        await supabase
+          .from("clients")
+          .update({
+            status: "active",
+            ghosted_at: null,
+            ghost_notes: null,
+            deleted_at: null,
+          })
+          .eq("id", client.id);
+      } catch (dbErr) {
+        console.warn("Could not reactivate client in Supabase:", dbErr);
+      }
+
+      showSuccess(`✨ Reactivated "${client.name}"! Workspace restored to active vault.`);
+      loadAll();
+    } catch (e) {
+      setActionErr("Failed to reactivate client: " + e.message);
+    }
+  }
+
   async function deleteClient(id) {
     setActionErr("");
-    const { error } = await supabase.from("clients").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    if (error) { setActionErr(error.message); return; }
+    const target = clients.find((c) => c.id === id) || ghostedClients.find((c) => c.id === id);
+    const clientName = target?.name || "Client";
+    try {
+      try {
+        localStorage.removeItem(`custodian_ghosted_client_${id}`);
+      } catch {}
+      const { error } = await supabase.from("clients").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      if (error) {
+        await supabase.from("clients").delete().eq("id", id);
+        showSuccess(`"${clientName}" permanently deleted.`);
+      } else {
+        showSuccess(`"${clientName}" moved to Recycle Bin (recoverable for 30 days)`);
+      }
+    } catch {
+      await supabase.from("clients").delete().eq("id", id);
+      showSuccess(`"${clientName}" deleted.`);
+    }
     if (selectedClient === id) { setSelectedClient(null); setSelectedProject(null); }
-    showSuccess("Client moved to Recycle Bin (recoverable for 30 days)");
+    setModal(null);
     loadAll();
   }
 
@@ -422,7 +640,20 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
   }
 
   async function addCredential(projectId, cred) {
-    const blob = await encryptJSON(vaultKey, cred);
+    const nowISO = new Date().toISOString();
+    const payload = {
+      ...cred,
+      createdAt: cred.createdAt || nowISO,
+      updatedAt: nowISO,
+      history: [
+        {
+          action: "Created",
+          timestamp: nowISO,
+          label: cred.label || "Secret",
+        },
+      ],
+    };
+    const blob = await encryptJSON(vaultKey, payload);
     const { error } = await supabase.from("credentials").insert({ project_id: projectId, encrypted_blob: blob });
     if (error) { setActionErr(error.message); return; }
     setModal(null);
@@ -433,7 +664,22 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
   async function updateCredential(id, updatedCred) {
     setActionErr("");
     try {
-      const blob = await encryptJSON(vaultKey, updatedCred);
+      const nowISO = new Date().toISOString();
+      const existingHistory = Array.isArray(updatedCred.history) ? updatedCred.history : [];
+      const payload = {
+        ...updatedCred,
+        createdAt: updatedCred.createdAt || nowISO,
+        updatedAt: nowISO,
+        history: [
+          ...existingHistory,
+          {
+            action: "Updated",
+            timestamp: nowISO,
+            label: updatedCred.label || "Secret",
+          },
+        ],
+      };
+      const blob = await encryptJSON(vaultKey, payload);
       const { error } = await supabase.from("credentials").update({ encrypted_blob: blob }).eq("id", id);
       if (error) throw error;
       setModal(null);
@@ -447,10 +693,21 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
   async function toggleCancelCredential(cred, markCanceled = true) {
     setActionErr("");
     try {
+      const nowISO = new Date().toISOString();
+      const existingHistory = Array.isArray(cred.history) ? cred.history : [];
       const updated = {
         ...cred,
         isCanceled: markCanceled,
-        canceledAt: markCanceled ? new Date().toISOString() : null,
+        canceledAt: markCanceled ? nowISO : null,
+        updatedAt: nowISO,
+        history: [
+          ...existingHistory,
+          {
+            action: markCanceled ? "Canceled Subscription" : "Reactivated Subscription",
+            timestamp: nowISO,
+            label: cred.label || "Secret",
+          },
+        ],
       };
       delete updated.renewalInfo;
       delete updated.clientName;
@@ -524,6 +781,11 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
 
   async function permanentlyDelete(type, id, name) {
     setActionErr("");
+    if (type === "client") {
+      try {
+        localStorage.removeItem(`custodian_ghosted_client_${id}`);
+      } catch {}
+    }
     const table = type === "credential" ? "credentials" : type === "project" ? "projects" : "clients";
     const { error } = await supabase.from(table).delete().eq("id", id);
     if (error) { setActionErr(error.message); return; }
@@ -618,13 +880,27 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
     return [];
   });
 
+  const personalClient = useMemo(() => {
+    return (clients || []).find(isPersonalClient) || null;
+  }, [clients]);
+
+  const personalProject = useMemo(() => {
+    if (!personalClient) return null;
+    return (personalClient.projects || [])[0] || null;
+  }, [personalClient]);
+
+  const freelanceClients = useMemo(() => {
+    return getFreelanceClients(clients);
+  }, [clients]);
+
   const effectiveActiveClientIds = React.useMemo(() => {
     if (!isFree) return (clients || []).map((c) => c.id);
-    if ((clients || []).length <= 2) return (clients || []).map((c) => c.id);
-    const validSaved = activeClientIds.filter((id) => (clients || []).some((c) => c.id === id));
-    if (validSaved.length === 2) return validSaved;
-    return (clients || []).slice(0, 2).map((c) => c.id);
-  }, [isFree, clients, activeClientIds]);
+    const personalIds = (clients || []).filter(isPersonalClient).map((c) => c.id);
+    if (freelanceClients.length <= 2) return (clients || []).map((c) => c.id);
+    const validSaved = activeClientIds.filter((id) => freelanceClients.some((c) => c.id === id));
+    if (validSaved.length === 2) return [...validSaved, ...personalIds];
+    return [...freelanceClients.slice(0, 2).map((c) => c.id), ...personalIds];
+  }, [isFree, clients, freelanceClients, activeClientIds]);
 
   function handleToggleActiveClient(clientId) {
     let updated;
@@ -733,9 +1009,9 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
 
   const currentClient = (clients || []).find((c) => c.id === selectedClient) || null;
   const currentProject = (currentClient?.projects || []).find((p) => p.id === selectedProject) || null;
-  const atFreeLimit = profile?.plan === "free" && (clients || []).length >= 2;
-  const isCurrentClientLocked = isFree && (clients || []).length > 2 && currentClient && !effectiveActiveClientIds.includes(currentClient.id);
-  const totalTrashCount = (trashedItems?.clients || []).length + (trashedItems?.projects || []).length + (trashedItems?.credentials || []).length;
+  const atFreeLimit = profile?.plan === "free" && freelanceClients.length >= 2;
+  const isCurrentClientLocked = isFree && freelanceClients.length > 2 && currentClient && !isPersonalClient(currentClient) && !effectiveActiveClientIds.includes(currentClient.id);
+  const totalTrashCount = (trashedItems?.clients || []).length + (trashedItems?.projects || []).length + (trashedItems?.credentials || []).length + (ghostedClients || []).length;
 
   // Selected client active API monthly spend string
   const currentClientTracked = currentClient
@@ -759,6 +1035,20 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
             <span style={S.brandText}>CUSTODIAN</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            {(profile?.plan === "founder" ||
+              profile?.role === "founder" ||
+              profile?.role === "admin" ||
+              profile?.email?.toLowerCase() === "ygpksr456@gmail.com") && (
+              <button
+                type="button"
+                style={{ ...S.iconBtnGhost, color: "#FFD700" }}
+                onClick={() => { window.location.hash = "#/admin"; }}
+                title="Founder SuperAdmin HQ & Telemetry Control Room"
+                aria-label="Founder HQ"
+              >
+                <Crown size={15} color="#FFD700" />
+              </button>
+            )}
             <button
               type="button"
               style={S.iconBtnGhost}
@@ -865,6 +1155,20 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
           <button
             style={{
               ...S.secondaryBtn,
+              flex: "1 1 calc(50% - 4px)",
+              justifyContent: "center",
+              padding: "6px 4px",
+              fontSize: 11.5,
+              ...(view === "generator" ? { borderColor: COLORS.brass, color: COLORS.text, background: "rgba(176,141,87,0.12)" } : {}),
+            }}
+            onClick={() => { setView("generator"); setMobileSidebarOpen(false); }}
+            title="Secure Password & API Key Generator"
+          >
+            <Dices size={13} color={COLORS.brass} /> Generator
+          </button>
+          <button
+            style={{
+              ...S.secondaryBtn,
               flex: "1 1 100%",
               justifyContent: "center",
               padding: "6px 4px",
@@ -898,30 +1202,8 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
           </button>
         </div>
 
-        {view === "vault" && (
+        {(view === "vault" || view === "personal") && (
           <>
-            <button
-              style={S.addClientBtn}
-              onClick={() => {
-                setMobileSidebarOpen(false);
-                if (atFreeLimit) {
-                  setModal({ type: "upgrade" });
-                } else {
-                  setModal({ type: "client" });
-                }
-              }}
-            >
-              <Plus size={13} /> New client
-            </button>
-            {atFreeLimit && (
-              <div
-                style={{ fontSize: 11, color: COLORS.brass, padding: "2px 4px", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
-                onClick={() => { setModal({ type: "upgrade" }); setMobileSidebarOpen(false); }}
-              >
-                <Sparkles size={12} /> Free plan limit reached (2/2) — Upgrade
-              </div>
-            )}
-
             <div
               style={{
                 ...S.treeClientRow,
@@ -937,24 +1219,108 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
               </span>
             </div>
 
+            {/* Dedicated Top-Pinned Personal Space (My Vault) */}
+            <div
+              id="sidebar-personal-space-btn"
+              style={{
+                ...S.treeClientRow,
+                marginBottom: 10,
+                background: (view === "personal" || (personalClient && selectedClient === personalClient.id))
+                  ? "var(--highlight-bg, rgba(148,110,55,0.12))"
+                  : "transparent",
+                border: `1px solid ${(view === "personal" || (personalClient && selectedClient === personalClient.id)) ? COLORS.brassDim : "transparent"}`,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+              onClick={() => {
+                if (personalClient) {
+                  setSelectedClient(personalClient.id);
+                  setSelectedProject(personalProject ? personalProject.id : null);
+                }
+                setView("personal");
+                setMobileSidebarOpen(false);
+              }}
+            >
+              <ShieldCheck size={14} color={COLORS.brass} />
+              <span style={{
+                ...S.treeLabel,
+                fontWeight: 600,
+                color: (view === "personal" || (personalClient && selectedClient === personalClient.id)) ? COLORS.brass : COLORS.text,
+              }}>
+                Personal Space
+              </span>
+              <span style={{
+                fontSize: 10,
+                fontWeight: 700,
+                padding: "1px 6px",
+                borderRadius: 10,
+                background: (view === "personal" || (personalClient && selectedClient === personalClient.id)) ? COLORS.brass : "rgba(128,128,128,0.12)",
+                color: (view === "personal" || (personalClient && selectedClient === personalClient.id)) ? "#FFFFFF" : COLORS.textFaint,
+                marginLeft: "auto",
+              }}>
+                {personalProject?.credentials?.length || 0}
+              </span>
+            </div>
+
+            {/* Freelance Client Workspaces Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "6px 4px 6px" }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", color: COLORS.textFaint, textTransform: "uppercase" }}>
+                Client Workspaces
+              </span>
+              <button
+                style={{
+                  ...S.secondaryBtn,
+                  padding: "2px 8px",
+                  fontSize: 10.5,
+                  borderRadius: 5,
+                  gap: 3,
+                }}
+                onClick={() => {
+                  setMobileSidebarOpen(false);
+                  if (atFreeLimit) {
+                    setModal({ type: "upgrade" });
+                  } else {
+                    setModal({ type: "client" });
+                  }
+                }}
+              >
+                <Plus size={11} /> New
+              </button>
+            </div>
+            {atFreeLimit && (
+              <div
+                style={{ fontSize: 10.5, color: COLORS.brass, padding: "2px 4px", marginBottom: 6, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                onClick={() => { setModal({ type: "upgrade" }); setMobileSidebarOpen(false); }}
+              >
+                <Sparkles size={11} /> Free client limit reached (2/2) — Upgrade
+              </div>
+            )}
+
             <div style={S.tree} className="custodian-tree-scroll">
               {loading && <div style={S.emptyTree}>Loading…</div>}
               {loadErr && <div style={S.errBox}><AlertTriangle size={14} /> {loadErr}</div>}
-              {!loading && clients.length === 0 && <div style={S.emptyTree}>No clients yet.</div>}
-              {clients.map((c) => {
-                const isClientLocked = isFree && clients.length > 2 && !effectiveActiveClientIds.includes(c.id);
+              {!loading && freelanceClients.length === 0 && (
+                <div style={{ ...S.emptyTree, padding: "10px 4px", fontSize: 11 }}>
+                  No client workspaces yet.
+                </div>
+              )}
+              {freelanceClients.map((c) => {
+                const isClientLocked = isFree && freelanceClients.length > 2 && !effectiveActiveClientIds.includes(c.id);
                 return (
                   <div key={c.id}>
                     <div
                       style={{
                         ...S.treeClientRow,
-                        ...(selectedClient === c.id && !selectedProject ? S.treeRowActive : {}),
+                        ...(selectedClient === c.id && !selectedProject && view === "vault" ? S.treeRowActive : {}),
                         opacity: isClientLocked ? 0.75 : 1,
                       }}
                       onClick={() => {
                         setExpanded((e) => ({ ...e, [c.id]: !e[c.id] }));
                         setSelectedClient(c.id);
                         setSelectedProject(null);
+                        setView("vault");
                       }}
                     >
                       {expanded[c.id] ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
@@ -973,13 +1339,14 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
                         key={p.id}
                         style={{
                           ...S.treeProjectRow,
-                          ...(selectedProject === p.id ? S.treeRowActive : {}),
+                          ...(selectedProject === p.id && view === "vault" ? S.treeRowActive : {}),
                           opacity: isClientLocked ? 0.7 : 1,
                         }}
                         onClick={() => {
                           setSelectedClient(c.id);
                           setSelectedProject(p.id);
                           setProjectTab("creds");
+                          setView("vault");
                           setMobileSidebarOpen(false);
                         }}
                       >
@@ -1049,7 +1416,10 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {(profile?.plan === "founder" || profile?.role === "founder" || profile?.role === "admin") && (
+            {(profile?.plan === "founder" ||
+              profile?.role === "founder" ||
+              profile?.role === "admin" ||
+              profile?.email?.toLowerCase() === "ygpksr456@gmail.com") && (
               <button
                 type="button"
                 style={{ ...S.iconBtnGhost, padding: 6, color: "#FFD700" }}
@@ -1143,7 +1513,53 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
           </div>
         )}
 
-        {view === "watchdog" ? (
+        {view === "personal" || (currentClient && isPersonalClient(currentClient)) ? (
+          <PersonalSpaceView
+            personalClient={personalClient}
+            personalProject={personalProject}
+            creds={personalProject?.credentials || []}
+            onAddCred={async (initial) => {
+              let targetProjId = personalProject?.id || personalClient?.projects?.[0]?.id;
+              if (!targetProjId) {
+                try {
+                  let cId = personalClient?.id;
+                  if (!cId) {
+                    const { data: newPC } = await supabase
+                      .from("clients")
+                      .insert({ owner_id: userId, name: PERSONAL_WORKSPACE_NAME })
+                      .select()
+                      .single();
+                    if (newPC) cId = newPC.id;
+                  }
+                  if (cId) {
+                    const { data: newPP } = await supabase
+                      .from("projects")
+                      .insert({ client_id: cId, name: PERSONAL_PROJECT_NAME })
+                      .select()
+                      .single();
+                    if (newPP) {
+                      targetProjId = newPP.id;
+                      await loadAll();
+                    }
+                  }
+                } catch {}
+              }
+              if (targetProjId) {
+                setModal({
+                  type: "cred",
+                  projectId: targetProjId,
+                  initialData: initial || { secretType: "login" },
+                });
+              } else {
+                setModal({ type: "client" });
+              }
+            }}
+            onEditCred={(cred) => setModal({ type: "edit_cred", cred, projectId: cred.projectId })}
+            onDeleteCred={(credId) => deleteCredential(credId)}
+            onCopy={copyText}
+            copiedId={copiedId}
+          />
+        ) : view === "watchdog" ? (
           <WatchdogView
             allCreds={allActiveCreds}
             trackedCreds={activeTrackedCreds}
@@ -1160,11 +1576,23 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
         ) : view === "trash" ? (
           <TrashView
             trashedItems={trashedItems}
+            ghostedClients={ghostedClients}
             onRestoreCred={restoreCredential}
             onRestoreProject={restoreProject}
             onRestoreClient={restoreClient}
+            onReactivateGhostedClient={reactivateClient}
+            onDownloadGhostedZip={async (client) => {
+              try {
+                await downloadClientArchiveZip(client, { reasonNotes: client.ghost_notes });
+                showSuccess(`Downloaded ZIP archive for ${client.name}!`);
+              } catch (e) {
+                setActionErr(e.message);
+              }
+            }}
             onPermanentDelete={permanentlyDelete}
             onEmptyTrash={emptyTrash}
+            currentPlan={profile?.plan || "free"}
+            onOpenUpgrade={() => setModal({ type: "upgrade" })}
           />
         ) : view === "profile" ? (
           <ProfilePanel
@@ -1194,6 +1622,8 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
             ecdhPrivateKey={ecdhPrivateKey}
             onOpenShareModal={() => setModal({ type: "share_secret" })}
           />
+        ) : view === "generator" ? (
+          <PasswordGenerator compact={false} />
         ) : !currentClient ? (
           <OwnerCommandCenter
             clients={clients}
@@ -1819,9 +2249,10 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
           onImportEnv={handleImportEnv}
           onUpgradePlan={handleUpgradePlan}
           onOpenUpgrade={() => setModal({ type: "upgrade" })}
+          onGhostClient={ghostClient}
+          onMoveClientToTrash={deleteClient}
           showSuccess={showSuccess}
         />
-
       )}
 
       {showTour && !loading && clients.length === 0 && (

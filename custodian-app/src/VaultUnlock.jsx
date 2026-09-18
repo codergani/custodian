@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Lock, AlertTriangle, Eye, EyeOff, LogOut, ShieldCheck, Download, KeyRound, AlertOctagon, CheckSquare, Square, Fingerprint } from "lucide-react";
+import { Lock, AlertTriangle, Eye, EyeOff, LogOut, ShieldCheck, Download, KeyRound, AlertOctagon, CheckSquare, Square, Fingerprint, HelpCircle, Info, X } from "lucide-react";
 import { supabase } from "./supabaseClient";
 import {
   deriveKey,
@@ -16,6 +16,7 @@ import {
 import { getLockoutState, recordFailedAttempt, clearFailedAttempts } from "./security";
 import { isBiometricsAvailable, isBiometricEnabled, unlockWithBiometrics } from "./native/nativeBridge";
 import { S, COLORS } from "./styles";
+import { Overlay } from "./components/shared";
 
 // profile: the current user's row from `profiles` (has vault_salt / vault_check, may be null on first run)
 export default function VaultUnlock({ userId, profile, onUnlocked }) {
@@ -29,6 +30,7 @@ export default function VaultUnlock({ userId, profile, onUnlocked }) {
   const [savedKit, setSavedKit] = useState(false);
   const [lockoutRemaining, setLockoutRemaining] = useState(() => getLockoutState(userId).remainingSeconds);
   const [bioAvailable, setBioAvailable] = useState(false);
+  const [showForgotHelp, setShowForgotHelp] = useState(false);
 
   const isBioEnrolled = isBiometricEnabled(userId);
 
@@ -390,6 +392,19 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
         {lockoutRemaining > 0 && !err && (
           <div style={S.errBox}><AlertTriangle size={14} /> Too many attempts, try again in {lockoutRemaining}s</div>
         )}
+        {import.meta.env.DEV && lockoutRemaining > 0 && (
+          <button
+            type="button"
+            style={{ ...S.iconBtnGhost, fontSize: 11, color: COLORS.brass, marginTop: 4, alignSelf: "center" }}
+            onClick={() => {
+              clearFailedAttempts(userId);
+              setLockoutRemaining(0);
+              setErr("");
+            }}
+          >
+            Reset Lockout (Dev)
+          </button>
+        )}
 
         {!isFirstTime && isBioEnrolled && (
           <button
@@ -427,6 +442,30 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
             : (isFirstTime ? "Initialize Secure Vault" : (!isFirstTime && isBioEnrolled ? "Unlock with Master Passcode" : "Unlock Vault"))}
         </button>
 
+        {!isFirstTime && (
+          <div style={{ marginTop: 8, textAlign: "center" }}>
+            <button
+              type="button"
+              style={{
+                background: "none",
+                border: "none",
+                color: COLORS.textFaint,
+                fontSize: 11.5,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                padding: "4px 8px",
+                textDecoration: "underline",
+                textUnderlineOffset: 3
+              }}
+              onClick={() => setShowForgotHelp(true)}
+            >
+              <HelpCircle size={13} /> Forgot Master Passcode?
+            </button>
+          </div>
+        )}
+
         <div style={S.securityGuaranteeBadge}>
           <ShieldCheck size={16} color={COLORS.brass} style={{ flexShrink: 0, marginTop: 1 }} />
           <div>
@@ -449,6 +488,70 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
           </button>
         </div>
       </div>
+
+      {/* Zero-Knowledge Master Passcode Assistance Modal */}
+      {showForgotHelp && (
+        <Overlay
+          onClose={() => setShowForgotHelp(false)}
+          title="Master Passcode Recovery"
+          icon={<KeyRound size={18} color={COLORS.brass} />}
+          cardStyle={{ ...S.modalCard, maxWidth: 480 }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, fontSize: 12.5, lineHeight: 1.5, color: COLORS.textDim }}>
+            <div style={{
+              background: "rgba(176, 141, 87, 0.08)",
+              border: `1px solid ${COLORS.brassDim}`,
+              borderRadius: 8,
+              padding: "12px 14px",
+              color: COLORS.text,
+              display: "flex",
+              gap: 10
+            }}>
+              <Info size={18} color={COLORS.brass} style={{ flexShrink: 0, marginTop: 1 }} />
+              <div>
+                <strong style={{ color: COLORS.brass, display: "block", marginBottom: 3 }}>
+                  Cloud Account Password vs. Master Vault Passcode
+                </strong>
+                Your <strong>Account Password</strong> signs you into the cloud. Your <strong>Master Passcode</strong> is your local zero-knowledge decryption key.
+              </div>
+            </div>
+
+            <div>
+              <h4 style={{ color: COLORS.text, fontSize: 13, fontWeight: 600, margin: "0 0 6px" }}>
+                Can Custodian reset my Master Passcode?
+              </h4>
+              <p style={{ margin: 0, color: COLORS.textDim }}>
+                No. Because Custodian is strictly <strong>Zero-Knowledge</strong>, your master passcode is never sent to our servers. We cannot reset it or decrypt your data if it is lost.
+              </p>
+            </div>
+
+            <div>
+              <h4 style={{ color: COLORS.text, fontSize: 13, fontWeight: 600, margin: "0 0 6px" }}>
+                Recommended Recovery Options:
+              </h4>
+              <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 6 }}>
+                <li>
+                  <strong>Emergency Recovery Kit:</strong> Search your downloads or files for <code>custodian-recovery-kit-*.txt</code> created during vault setup.
+                </li>
+                <li>
+                  <strong>Another Active Device:</strong> If you are already unlocked on another computer or browser, you can export your secrets from there.
+                </li>
+                <li>
+                  <strong>Forgot Account Password instead?</strong> If you forgot your login password, sign out and click "Forgot password?" on the sign-in screen.
+                </li>
+              </ul>
+            </div>
+
+            <button
+              type="button"
+              style={{ ...S.primaryBtn, justifyContent: "center", marginTop: 4 }}
+              onClick={() => setShowForgotHelp(false)}
+            >
+              Got it
+            </button>
+          </div>
+        </Overlay>
+      )}
     </div>
   );
 }

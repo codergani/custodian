@@ -3,8 +3,10 @@ import {
   PackageCheck, ShieldCheck, Download, Upload, Users, FileText, Sparkles,
   Building2, Folder, KeyRound, Check, Copy, AlertTriangle, Eye, EyeOff, Plus,
   Trash2, Calendar, DollarSign, Clock, ExternalLink, RefreshCw, X, UserPlus,
-  ShieldAlert, Zap, CheckCircle2, Bell, BellRing, Crown, User, RotateCcw
+  ShieldAlert, Zap, CheckCircle2, Bell, BellRing, Crown, User, RotateCcw, Dices,
+  Ghost, FileArchive
 } from "lucide-react";
+import PasswordGenerator from "./PasswordGenerator";
 import { supabase } from "../supabaseClient";
 import { S, COLORS } from "../styles";
 import { CustomDropdown, ToggleSwitch, Overlay, calculateSecurityHealth } from "./shared";
@@ -15,9 +17,17 @@ import { purchaseSubscriptionPackage, restoreNativePurchases } from "../native/r
 
 import { shareSecret, importPublicKey } from "../crypto";
 
-export default function ModalRouter({ modal, currentPlan, defaultCurrency, userId, userEmail, ecdhPrivateKey, onClose, onAddClient, onAddProject, onUpdateProjectDetails, onAddCred, onUpdateCred, onImportEnv, onUpgradePlan, onOpenUpgrade, showSuccess }) {
+export default function ModalRouter({ modal, currentPlan, defaultCurrency, userId, userEmail, ecdhPrivateKey, onClose, onAddClient, onAddProject, onUpdateProjectDetails, onAddCred, onUpdateCred, onImportEnv, onUpgradePlan, onOpenUpgrade, onGhostClient, onMoveClientToTrash, showSuccess }) {
 
   const [name, setName] = useState("");
+
+  if (modal.type === "generator") {
+    return (
+      <Overlay onClose={onClose} title="Secure Generator" icon={<Dices size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 600 }}>
+        <PasswordGenerator compact={false} />
+      </Overlay>
+    );
+  }
 
   if (modal.type === "share_secret") {
     return (
@@ -151,7 +161,7 @@ export default function ModalRouter({ modal, currentPlan, defaultCurrency, userI
         cardStyle={{ ...S.modalCard, maxWidth: 520, maxHeight: "90vh" }}
       >
         <CredFormContent
-          initialData={modal.cred}
+          initialData={modal.cred || modal.initialData}
           isEdit={modal.type === "edit_cred"}
           currentPlan={currentPlan}
           defaultCurrency={defaultCurrency}
@@ -167,6 +177,43 @@ export default function ModalRouter({ modal, currentPlan, defaultCurrency, userI
       </Overlay>
     );
   }
+
+  if (modal.type === "ghost_client") {
+    return (
+      <Overlay
+        onClose={onClose}
+        title={`Archive & Ghost Client — ${modal.client.name}`}
+        icon={<Ghost size={18} color="#B08D57" />}
+        cardStyle={{ ...S.modalCard, maxWidth: 540 }}
+      >
+        <GhostClientModalContent
+          client={modal.client}
+          onGhost={(client, notes) => onGhostClient(client, notes)}
+          onMoveToTrash={(clientId) => onMoveClientToTrash(clientId)}
+          onClose={onClose}
+        />
+      </Overlay>
+    );
+  }
+
+  if (modal.type === "client_delete_options") {
+    return (
+      <Overlay
+        onClose={onClose}
+        title={`Delete Client — ${modal.client.name}`}
+        icon={<Trash2 size={18} color={COLORS.red} />}
+        cardStyle={{ ...S.modalCard, maxWidth: 520 }}
+      >
+        <ClientDeleteFreeModalContent
+          client={modal.client}
+          onOpenUpgrade={onOpenUpgrade}
+          onMoveToTrash={(clientId) => onMoveClientToTrash(clientId)}
+          onClose={onClose}
+        />
+      </Overlay>
+    );
+  }
+
   return null;
 }
 
@@ -307,9 +354,11 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
   const [username, setUsername] = useState(initialData?.username || "");
   const [password, setPassword] = useState(initialData?.password || "");
   const [showPassword, setShowPassword] = useState(false);
+  const [showInlineGenerator, setShowInlineGenerator] = useState(false);
   const [url, setUrl] = useState(initialData?.url || "");
   const [showMoreOptions, setShowMoreOptions] = useState(!!initialData?.url);
   const [environment, setEnvironment] = useState(initialData?.environment || "global");
+
   const [trackRenewal, setTrackRenewal] = useState(!!initialData?.renewalDate || (initialData?.cost !== undefined && initialData?.cost !== null && initialData?.cost !== ""));
   const [renewalDate, setRenewalDate] = useState(initialData?.renewalDate || "");
   const [billingFrequency, setBillingFrequency] = useState(initialData?.billingFrequency || "monthly");
@@ -325,7 +374,19 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
   const applyPreset = (type) => {
     setSecretType(type);
     if (!label && !username) {
-      if (type === "database") {
+      if (type === "login") {
+        setLabel("Personal Account");
+        setUsername("");
+      } else if (type === "pin") {
+        setLabel("Mobile PIN");
+        setUsername("PIN");
+      } else if (type === "note") {
+        setLabel("Secure Note");
+        setUsername("Recovery Words");
+      } else if (type === "card") {
+        setLabel("Bank Card");
+        setUsername("");
+      } else if (type === "database") {
         setLabel("Production Database");
         setUsername("DATABASE_URL");
       } else if (type === "stripe") {
@@ -346,6 +407,48 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
       }
     }
   };
+
+  const isPersonalType = ["login", "pin", "note", "card"].includes(secretType);
+
+  const keyTitle = isPersonalType
+    ? secretType === "login"
+      ? "ACCOUNT IDENTIFIER (USERNAME / EMAIL)"
+      : secretType === "pin"
+      ? "PIN LABEL / IDENTIFIER"
+      : secretType === "note"
+      ? "NOTE TOPIC / SUB-TITLE"
+      : "CARD DETAILS (HOLDER / LAST 4)"
+    : "ENVIRONMENT VARIABLE (KEY = VALUE)";
+
+  const keyPlaceholder = isPersonalType
+    ? secretType === "login"
+      ? "e.g. user@gmail.com or @handle"
+      : secretType === "pin"
+      ? "e.g. App PIN, Wi-Fi SSID"
+      : secretType === "note"
+      ? "e.g. Seed Phrase, Backup Key"
+      : "e.g. Cardholder Name / Last 4"
+    : "VARIABLE_KEY";
+
+  const valPlaceholder = isPersonalType
+    ? secretType === "login"
+      ? "Account Password"
+      : secretType === "pin"
+      ? "Secret PIN or Passcode"
+      : secretType === "note"
+      ? "Enter secret notes or 12/24 seed words..."
+      : "CVV, PIN or Card Security Code"
+    : "secret_token_value";
+
+  const purposePlaceholder = isPersonalType
+    ? secretType === "login"
+      ? "e.g. Personal Gmail, Netflix, Twitter"
+      : secretType === "pin"
+      ? "e.g. Banking App PIN, Home Wi-Fi"
+      : secretType === "note"
+      ? "e.g. Crypto Recovery Phrase, Safe Code"
+      : "e.g. ICICI Bank Credit Card"
+    : "e.g. Stripe Prod, OpenAI, Postgres URL";
 
   function handleCostChange(e) {
     const val = e.target.value;
@@ -402,23 +505,31 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
       <div>
         <label style={{ ...S.label, marginBottom: 4 }}>Secret Type</label>
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", overflowX: "auto" }} className="custodian-hscroll">
-          {[
-            { id: "env_var", label: "📦 Env Var" },
-            { id: "database", label: "🗄️ Database" },
-            { id: "api_key", label: "🔑 API Key" },
-            { id: "stripe", label: "💳 Stripe" },
-            { id: "supabase", label: "⚡ Supabase" },
-            { id: "aws", label: "☁️ AWS" },
-            { id: "ssh", label: "🔒 SSH" },
-            { id: "generic", label: "🌐 Generic" },
-          ].map((t) => (
+          {(isPersonalType
+            ? [
+                { id: "login", label: "📧 Login / Account" },
+                { id: "pin", label: "📱 PIN / Wi-Fi" },
+                { id: "note", label: "📝 Note / Seed Words" },
+                { id: "card", label: "💳 Card & Bank" },
+              ]
+            : [
+                { id: "env_var", label: "📦 Env Var" },
+                { id: "database", label: "🗄️ Database" },
+                { id: "api_key", label: "🔑 API Key" },
+                { id: "stripe", label: "💳 Stripe" },
+                { id: "supabase", label: "⚡ Supabase" },
+                { id: "aws", label: "☁️ AWS" },
+                { id: "ssh", label: "🔒 SSH" },
+                { id: "generic", label: "🌐 Generic" },
+              ]
+          ).map((t) => (
             <button
               key={t.id}
               type="button"
               style={{
                 ...S.secondaryBtn,
-                padding: "3px 8px",
-                fontSize: 11,
+                padding: "4px 9px",
+                fontSize: 11.5,
                 borderRadius: 6,
                 background: secretType === t.id ? "rgba(176,141,87,0.18)" : "transparent",
                 borderColor: secretType === t.id ? COLORS.brass : COLORS.line,
@@ -435,62 +546,66 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
 
       {/* 1. Service / Title & Environment Scope */}
       <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
-        <div style={{ flex: 1.2 }}>
-          <label style={{ ...S.label, marginBottom: 4 }}>Secret Name / Purpose *</label>
+        <div style={{ flex: isPersonalType ? 1 : 1.2 }}>
+          <label style={{ ...S.label, marginBottom: 4 }}>
+            {isPersonalType ? "Item Name / Title *" : "Secret Name / Purpose *"}
+          </label>
           <input
             style={{ ...S.input, padding: "8px 12px", fontSize: 13 }}
             autoFocus
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            placeholder="e.g. Stripe Prod, OpenAI, Postgres URL"
+            placeholder={purposePlaceholder}
             required
           />
         </div>
-        <div style={{ flex: 1 }}>
-          <label style={{ ...S.label, marginBottom: 4 }}>Environment Scope</label>
-          <CustomDropdown
-            value={environment}
-            onChange={setEnvironment}
-            options={[
-              { value: "global", label: "🌐 Global / All Envs" },
-              { value: "prod", label: "🚀 Production (Live)" },
-              { value: "staging", label: "🧪 Staging / UAT" },
-              { value: "dev", label: "💻 Development (Local)" },
-            ]}
-            buttonStyle={{ padding: "8px 10px", fontSize: 12 }}
-          />
-        </div>
+        {!isPersonalType && (
+          <div style={{ flex: 1 }}>
+            <label style={{ ...S.label, marginBottom: 4 }}>Environment Scope</label>
+            <CustomDropdown
+              value={environment}
+              onChange={setEnvironment}
+              options={[
+                { value: "global", label: "🌐 Global / All Envs" },
+                { value: "prod", label: "🚀 Production (Live)" },
+                { value: "staging", label: "🧪 Staging / UAT" },
+                { value: "dev", label: "💻 Development (Local)" },
+              ]}
+              buttonStyle={{ padding: "8px 10px", fontSize: 12 }}
+            />
+          </div>
+        )}
       </div>
 
-      {/* 2. Developer Key = Value Pair */}
+      {/* 2. Developer Key = Value Pair / Personal Credentials */}
       <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
-        <div style={{ fontSize: 10.5, color: COLORS.textFaint, fontFamily: "IBM Plex Mono, monospace", letterSpacing: "0.04em" }}>
-          ENVIRONMENT VARIABLE (KEY = VALUE)
+        <div style={{ fontSize: 10.5, color: COLORS.textFaint, fontFamily: isPersonalType ? "inherit" : "IBM Plex Mono, monospace", letterSpacing: "0.04em" }}>
+          {keyTitle}
         </div>
 
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {/* Key / Variable Name */}
           <div style={{ flex: 1 }}>
             <input
-              style={{ ...S.input, padding: "8px 10px", fontSize: 12.5, fontFamily: "IBM Plex Mono, monospace" }}
+              style={{ ...S.input, padding: "8px 10px", fontSize: 12.5, fontFamily: isPersonalType ? "inherit" : "IBM Plex Mono, monospace" }}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="VARIABLE_KEY"
+              placeholder={keyPlaceholder}
             />
           </div>
 
           <span style={{ color: COLORS.brass, fontWeight: 700, fontSize: 16, fontFamily: "IBM Plex Mono, monospace" }}>
-            =
+            {isPersonalType ? "•" : "="}
           </span>
 
           {/* Secret Value with Show/Hide Eye */}
           <div style={{ flex: 1.3, position: "relative", display: "flex", alignItems: "center" }}>
             <input
-              style={{ ...S.input, padding: "8px 32px 8px 10px", fontSize: 12.5, fontFamily: "IBM Plex Mono, monospace", width: "100%" }}
+              style={{ ...S.input, padding: "8px 32px 8px 10px", fontSize: 12.5, fontFamily: isPersonalType && secretType === "note" ? "inherit" : "IBM Plex Mono, monospace", width: "100%" }}
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="secret_token_value"
+              placeholder={valPlaceholder}
             />
             <button
               type="button"
@@ -502,6 +617,49 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
             </button>
           </div>
         </div>
+
+        {/* Generate Button */}
+        <button
+          type="button"
+          style={{
+            ...S.secondaryBtn,
+            padding: "4px 10px",
+            fontSize: 11,
+            borderRadius: 6,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            color: COLORS.brass,
+            borderColor: COLORS.brassDim,
+            background: showInlineGenerator ? "rgba(176,141,87,0.12)" : "transparent",
+            alignSelf: "flex-start",
+          }}
+          onClick={() => setShowInlineGenerator(!showInlineGenerator)}
+          title="Generate a secure random value"
+        >
+          <Dices size={12} /> {showInlineGenerator ? "Hide Generator" : "⚡ Generate"}
+        </button>
+
+        {/* Inline Compact Generator */}
+        {showInlineGenerator && (
+          <div style={{
+            background: COLORS.panel,
+            border: `1.5px solid ${COLORS.brassDim}`,
+            borderRadius: 10,
+            padding: "12px 14px",
+            marginTop: 2,
+          }}>
+            <PasswordGenerator
+              compact={true}
+              onUseValue={(val) => {
+                setPassword(val);
+                setShowPassword(true);
+                setShowInlineGenerator(false);
+              }}
+              onClose={() => setShowInlineGenerator(false)}
+            />
+          </div>
+        )}
 
         {/* Live Client-Side Encryption Trust Indicator */}
         <div style={S.formSecurityNotice}>
@@ -2251,5 +2409,159 @@ function ShareSecretModalContent({ userId, ecdhPrivateKey, initialCred, onClose,
     </form>
   );
 }
+
+function GhostClientModalContent({ client, onGhost, onMoveToTrash, onClose }) {
+  const [reasonNotes, setReasonNotes] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const projects = client?.projects || [];
+  const totalSecrets = projects.reduce((acc, p) => acc + (p.credentials?.length || 0), 0);
+
+  const handleGhostSubmit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      await onGhost(client, reasonNotes);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleGhostSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ fontSize: 13, color: COLORS.textDim, lineHeight: 1.5 }}>
+        Archive and compress this workspace if the client cancelled or paused their project. All project secrets, <code style={{ color: COLORS.brass }}>.env</code> files, and contract checklists are compiled into a secure <code style={{ color: COLORS.brass }}>.zip</code> package.
+      </div>
+
+      {/* Metrics overview */}
+      <div style={{ display: "flex", gap: 10, background: COLORS.panelAlt, padding: "10px 14px", borderRadius: 8, border: `1px solid ${COLORS.line}` }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, color: COLORS.textFaint, fontFamily: "IBM Plex Mono, monospace" }}>PROJECTS</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.text }}>{projects.length}</div>
+        </div>
+        <div style={{ width: 1, background: COLORS.line }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, color: COLORS.textFaint, fontFamily: "IBM Plex Mono, monospace" }}>ENCRYPTED SECRETS</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.text }}>{totalSecrets}</div>
+        </div>
+        <div style={{ width: 1, background: COLORS.line }} />
+        <div style={{ flex: 1.2 }}>
+          <div style={{ fontSize: 10, color: COLORS.textFaint, fontFamily: "IBM Plex Mono, monospace" }}>VAULT TARGET</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.brass, display: "flex", alignItems: "center", gap: 4 }}>
+            <Ghost size={12} /> Ghosted Vault
+          </div>
+        </div>
+      </div>
+
+      {/* Reason textarea */}
+      <div>
+        <label style={S.label}>Cancellation / Ghosting Notes (Saved with Archive)</label>
+        <textarea
+          style={{ ...S.input, height: 75, resize: "vertical", fontSize: 12.5 }}
+          value={reasonNotes}
+          onChange={(e) => setReasonNotes(e.target.value)}
+          placeholder="e.g. Client paused budget until Q2; Ghosted after delivering milestone 2; Mutual contract cancellation..."
+        />
+        <div style={{ fontSize: 11, color: COLORS.textFaint, marginTop: 4 }}>
+          Included in the archive's <code>CLIENT_SUMMARY.md</code> and preserved in your Ghosted Clients Vault.
+        </div>
+      </div>
+
+      {/* Feature highlights callout */}
+      <div style={{ background: "rgba(176,141,87,0.06)", border: `1px solid ${COLORS.brassDim}`, borderRadius: 8, padding: "10px 12px", fontSize: 11.5, color: COLORS.textDim, lineHeight: 1.6 }}>
+        <div style={{ fontWeight: 600, color: COLORS.brass, marginBottom: 2 }}>What happens when you archive:</div>
+        <div>✓ Automatically downloads <code>{client.name?.replace(/[^a-zA-Z0-9_-]/g, "_")}-Archive.zip</code> with all <code>.env</code> configs.</div>
+        <div>✓ Moves client out of active workspace view into your <strong>Ghosted Clients Vault</strong>.</div>
+        <div>✓ When the client returns, restore their entire workspace in <strong>1 click</strong> with all secrets intact.</div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
+        <button
+          type="submit"
+          style={{ ...S.primaryBtn, justifyContent: "center", padding: "10px 16px" }}
+          disabled={busy}
+        >
+          <Ghost size={15} /> {busy ? "Packaging & Downloading ZIP…" : "👻 Archive, Download ZIP & Ghost Client"}
+        </button>
+
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            type="button"
+            style={{ ...S.secondaryBtn, flex: 1, justifyContent: "center", fontSize: 11.5 }}
+            onClick={() => onMoveToTrash(client.id)}
+            disabled={busy}
+          >
+            <Trash2 size={12} /> Move to 30-Day Recycle Bin
+          </button>
+          <button
+            type="button"
+            style={{ ...S.iconBtnGhost, flex: "0 0 auto", padding: "6px 14px", fontSize: 11.5 }}
+            onClick={onClose}
+            disabled={busy}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </form>
+  );
+}
+
+function ClientDeleteFreeModalContent({ client, onOpenUpgrade, onMoveToTrash, onClose }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ fontSize: 13, color: COLORS.textDim, lineHeight: 1.5 }}>
+        Choose how you would like to handle deleting <strong>{client.name}</strong>.
+      </div>
+
+      {/* Pro / Team spotlight */}
+      <div style={{ background: "rgba(176,141,87,0.08)", border: `1px solid ${COLORS.brassDim}`, borderRadius: 10, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, color: COLORS.brass, fontWeight: 700, fontSize: 13 }}>
+          <Crown size={15} /> Did this client cancel or ghost their project?
+        </div>
+        <div style={{ fontSize: 12, color: COLORS.textDim, lineHeight: 1.5 }}>
+          With <strong>Custodian Pro or Team</strong>, you never lose project data. Automatically package client secrets, <code style={{ color: COLORS.brass }}>.env</code> files, and contract specs into a compressed <code style={{ color: COLORS.brass }}>.zip</code> archive, stored in your Ghosted Vault for instant 1-click reactivation when they return.
+        </div>
+        <button
+          type="button"
+          style={{ ...S.primaryBtnSm, alignSelf: "flex-start", marginTop: 4 }}
+          onClick={() => {
+            onClose();
+            onOpenUpgrade();
+          }}
+        >
+          <Sparkles size={13} /> Upgrade to Pro / Team
+        </button>
+      </div>
+
+      {/* Free option */}
+      <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 10, padding: "12px 14px" }}>
+        <div style={{ fontSize: 12.5, fontWeight: 600, color: COLORS.text, marginBottom: 4 }}>
+          Standard Recycle Bin (Free Plan)
+        </div>
+        <div style={{ fontSize: 11.5, color: COLORS.textFaint, lineHeight: 1.4, marginBottom: 10 }}>
+          Moves <strong>{client.name}</strong> and its projects to the Recycle Bin. You can restore it within 30 days before it is permanently purged.
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            type="button"
+            style={{ ...S.dangerBtn, padding: "7px 14px", fontSize: 12 }}
+            onClick={() => onMoveToTrash(client.id)}
+          >
+            <Trash2 size={13} /> Move to Recycle Bin
+          </button>
+          <button
+            type="button"
+            style={{ ...S.secondaryBtn, padding: "7px 14px", fontSize: 12 }}
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 

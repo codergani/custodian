@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { KeyRound, AlertTriangle, ShieldCheck, Eye, EyeOff, AtSign, User } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { KeyRound, AlertTriangle, ShieldCheck, Eye, EyeOff, AtSign, User, Mail, MailCheck, ArrowLeft, RefreshCw, Send, CheckCircle2, Lock } from "lucide-react";
 import { supabase, detectPlatform } from "./supabaseClient";
 import { isNative, openInAppBrowser } from "./native/nativeBridge";
 import { withTimeout } from "./crypto";
@@ -16,6 +16,14 @@ export default function AuthScreen({ onAuthed }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [info, setInfo] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setInterval(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(t);
+  }, [cooldown]);
 
   async function handleSubmit() {
     setErr("");
@@ -79,13 +87,20 @@ export default function AuthScreen({ onAuthed }) {
           onAuthed(data.session);
         }
       } else if (mode === "reset") {
+        const redirectUrl = isNative()
+          ? "com.custodians.app://auth/callback#type=recovery"
+          : window.location.origin + "/#type=recovery";
+
         const { error } = await withTimeout(
-          supabase.auth.resetPasswordForEmail(email.trim()),
+          supabase.auth.resetPasswordForEmail(email.trim(), {
+            redirectTo: redirectUrl,
+          }),
           15000,
           "Password reset"
         );
         if (error) throw error;
-        setInfo("Password reset email sent — check your inbox.");
+        setResetSent(true);
+        setCooldown(60);
       }
     } catch (e) {
       console.error("[AuthScreen] Submission error:", e);
@@ -133,14 +148,16 @@ export default function AuthScreen({ onAuthed }) {
     <div style={S.centerScreen}>
       <div style={S.authCard}>
         <div style={S.authHeader}>
-          <div style={S.dialRing}><KeyRound size={22} color={COLORS.brass} /></div>
+          <div style={S.dialRing}>
+            {mode === "reset" ? <Mail size={22} color={COLORS.brass} /> : <KeyRound size={22} color={COLORS.brass} />}
+          </div>
           <div>
-            <div style={S.eyebrow}>CUSTODIAN</div>
+            <div style={S.eyebrow}>{mode === "reset" ? "ACCOUNT RECOVERY" : "CUSTODIAN"}</div>
             <h1 style={S.authTitle}>
-              {mode === "signup" ? "Create your account" : mode === "reset" ? "Reset password" : "Welcome back"}
+              {mode === "signup" ? "Create your account" : mode === "reset" ? "Reset your password" : "Welcome back"}
             </h1>
             <div style={{ fontSize: 11.5, color: COLORS.textDim, marginTop: 2 }}>
-              Encrypted Client Secret Vault & Delivery Manager
+              {mode === "reset" ? "Zero-knowledge protected account recovery" : "Encrypted Client Secret Vault & Delivery Manager"}
             </div>
           </div>
         </div>
@@ -227,66 +244,131 @@ export default function AuthScreen({ onAuthed }) {
           </>
         )}
 
-        <label style={S.label}>Email</label>
-        <input style={S.input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoFocus />
+        {mode === "reset" && resetSent ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, textAlign: "center", padding: "10px 0" }}>
+            <div style={{ ...S.dialRing, width: 54, height: 54, background: "rgba(62,207,142,0.12)", borderColor: "#3ECF8E" }}>
+              <MailCheck size={26} color="#3ECF8E" />
+            </div>
 
+            <div>
+              <h2 style={{ ...S.authTitle, fontSize: 18 }}>Check Your Inbox</h2>
+              <div style={{ fontSize: 12.5, color: COLORS.textDim, marginTop: 4, lineHeight: 1.5 }}>
+                We've dispatched a secure recovery link to:
+              </div>
+              <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, padding: "8px 14px", borderRadius: 8, fontFamily: "IBM Plex Mono, monospace", color: COLORS.brass, fontSize: 13, marginTop: 8, display: "inline-block" }}>
+                {email.trim()}
+              </div>
+            </div>
 
-        {mode !== "reset" && (
-          <>
-            <label style={S.label}>Password</label>
-            <div style={{ position: "relative", width: "100%" }}>
-              <input
-                style={{ ...S.input, paddingRight: 38 }}
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={mode === "signup" ? "At least 8 characters" : "Your password"}
-                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              />
+            <div style={{ background: "rgba(176,141,87,0.06)", border: `1px solid ${COLORS.brassDim}`, borderRadius: 10, padding: "12px 14px", textAlign: "left", fontSize: 12, color: COLORS.textDim, lineHeight: 1.6, width: "100%" }}>
+              <div style={{ fontWeight: 600, color: COLORS.brass, marginBottom: 4 }}>Next Steps:</div>
+              <div>1. Open the email from <strong>Custodian</strong>.</div>
+              <div>2. Click the secure <strong>"Reset Password"</strong> link.</div>
+              <div>3. You'll be returned here to create your new password.</div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", marginTop: 4 }}>
               <button
                 type="button"
-                style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: COLORS.textFaint, padding: 4, display: "flex", alignItems: "center" }}
-                onClick={() => setShowPassword((prev) => !prev)}
-                tabIndex={-1}
-                title={showPassword ? "Hide password" : "Show password"}
+                style={{ ...S.secondaryBtn, justifyContent: "center", padding: "9px 16px", fontSize: 12 }}
+                disabled={busy || cooldown > 0}
+                onClick={handleSubmit}
               >
-                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                <RefreshCw size={13} className={busy ? "spin" : ""} />
+                {cooldown > 0 ? `Resend email in ${cooldown}s` : "Resend Recovery Email"}
               </button>
+
+              <button
+                type="button"
+                style={{ ...S.iconBtnGhost, alignSelf: "center", fontSize: 12, color: COLORS.textFaint, marginTop: 4 }}
+                onClick={() => {
+                  setResetSent(false);
+                  setMode("login");
+                }}
+              >
+                <ArrowLeft size={13} /> Return to Sign In
+              </button>
+            </div>
+
+            <div style={{ fontSize: 11, color: COLORS.textFaint }}>
+              Didn't receive it? Check your Spam or Junk folder.
+            </div>
+          </div>
+        ) : (
+          <>
+            {mode === "reset" && (
+              <div style={{ fontSize: 12.5, color: COLORS.textDim, marginBottom: 8, lineHeight: 1.5 }}>
+                Enter your account email address. We'll send you a secure link to update your login password.
+              </div>
+            )}
+
+            <label style={S.label}>Email</label>
+            <input style={S.input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoFocus />
+
+            {mode !== "reset" && (
+              <>
+                <label style={S.label}>Password</label>
+                <div style={{ position: "relative", width: "100%" }}>
+                  <input
+                    style={{ ...S.input, paddingRight: 38 }}
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={mode === "signup" ? "At least 8 characters" : "Your password"}
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                  />
+                  <button
+                    type="button"
+                    style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: COLORS.textFaint, padding: 4, display: "flex", alignItems: "center" }}
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    tabIndex={-1}
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {err && <div style={S.errBox}><AlertTriangle size={14} /> {err}</div>}
+            {info && <div style={S.infoBox}><ShieldCheck size={14} /> {info}</div>}
+
+            <button type="button" style={{ ...S.primaryBtn, marginTop: 4, justifyContent: "center" }} disabled={busy} onClick={handleSubmit}>
+              {busy ? "Please wait…" : mode === "signup" ? "Sign up" : mode === "reset" ? "Send Recovery Link" : "Log in"}
+            </button>
+
+            {mode !== "reset" && (
+              <button
+                type="button"
+                style={{ ...S.secondaryBtn, marginTop: 8, width: "100%", justifyContent: "center" }}
+                onClick={() => {
+                  onAuthed({
+                    user: {
+                      id: "a0000000-0000-0000-0000-000000000001",
+                      email: "owner@custodian.app",
+                    },
+                  });
+                }}
+              >
+                Quick Demo Access
+              </button>
+            )}
+
+            <div style={S.authLinks}>
+              {mode === "login" && (
+                <>
+                  <span style={S.linkText} onClick={() => setMode("signup")}>Create an account</span>
+                  <span style={S.linkText} onClick={() => setMode("reset")}>Forgot password?</span>
+                </>
+              )}
+              {mode !== "login" && (
+                <span style={{ ...S.linkText, display: "flex", alignItems: "center", gap: 4 }} onClick={() => { setMode("login"); setResetSent(false); }}>
+                  <ArrowLeft size={13} /> Back to login
+                </span>
+              )}
             </div>
           </>
         )}
-
-        {err && <div style={S.errBox}><AlertTriangle size={14} /> {err}</div>}
-        {info && <div style={S.infoBox}><ShieldCheck size={14} /> {info}</div>}
-
-        <button type="button" style={S.primaryBtn} disabled={busy} onClick={handleSubmit}>
-          {busy ? "Please wait…" : mode === "signup" ? "Sign up" : mode === "reset" ? "Send reset email" : "Log in"}
-        </button>
-
-        <button
-          type="button"
-          style={{ ...S.secondaryBtn, marginTop: 8, width: "100%", justifyContent: "center" }}
-          onClick={() => {
-            onAuthed({
-              user: {
-                id: "a0000000-0000-0000-0000-000000000001",
-                email: "owner@custodian.app",
-              },
-            });
-          }}
-        >
-          Quick Demo Access
-        </button>
-
-        <div style={S.authLinks}>
-          {mode === "login" && (
-            <>
-              <span style={S.linkText} onClick={() => setMode("signup")}>Create an account</span>
-              <span style={S.linkText} onClick={() => setMode("reset")}>Forgot password?</span>
-            </>
-          )}
-          {mode !== "login" && <span style={S.linkText} onClick={() => setMode("login")}>Back to login</span>}
-        </div>
 
         {/* Security Trust Guarantee */}
         <div style={S.securityGuaranteeBadge}>

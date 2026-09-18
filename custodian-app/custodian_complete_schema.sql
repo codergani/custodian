@@ -608,6 +608,58 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- ---------- 10. FOUNDER ACCESS TO ALL PROFILES & TELEMETRY (ADMIN HQ) ----------
+-- Enables the founder account to see all registered platform users in Admin HQ.
+DROP POLICY IF EXISTS "Founders can view all profiles" ON public.profiles;
+CREATE POLICY "Founders can view all profiles"
+  ON public.profiles
+  FOR SELECT
+  USING (
+    auth.uid() = id
+    OR (auth.jwt() ->> 'email') = 'ygpksr456@gmail.com'
+  );
+
+DROP POLICY IF EXISTS "Founders can update all profiles" ON public.profiles;
+CREATE POLICY "Founders can update all profiles"
+  ON public.profiles
+  FOR UPDATE
+  USING (
+    auth.uid() = id
+    OR (auth.jwt() ->> 'email') = 'ygpksr456@gmail.com'
+  );
+
+CREATE OR REPLACE FUNCTION public.admin_get_all_users()
+RETURNS TABLE (
+  id uuid,
+  email text,
+  plan text,
+  role text,
+  created_at timestamptz,
+  storage_used_bytes bigint
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+BEGIN
+  IF (COALESCE(auth.jwt() ->> 'email', '') != 'ygpksr456@gmail.com') AND
+     NOT EXISTS (
+       SELECT 1 FROM public.profiles 
+       WHERE id = auth.uid() AND (plan = 'founder' OR role = 'founder' OR role = 'admin')
+     ) THEN
+    RAISE EXCEPTION 'Access Denied: Founder privileges required.';
+  END IF;
+
+  RETURN QUERY
+  SELECT p.id, p.email, p.plan, p.role, p.created_at, p.storage_used_bytes
+  FROM public.profiles p
+  ORDER BY p.created_at DESC;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_get_all_users() TO authenticated;
+
+
 
 -- ============================================================
 -- Notes:

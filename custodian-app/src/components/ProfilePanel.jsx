@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
-  Sparkles, AlertTriangle, ShieldCheck, LogOut, Bell, Check, Sun, Moon, Trash2, Clock, Lock, Crown, Zap, ShieldAlert, Fingerprint
+  Sparkles, AlertTriangle, ShieldCheck, LogOut, Bell, Check, Sun, Moon, Trash2, Clock, Lock, Crown, Zap, ShieldAlert, Fingerprint,
+  Eye, EyeOff, KeyRound, CheckCircle2
 } from "lucide-react";
 
 import { supabase } from "../supabaseClient";
@@ -9,6 +10,7 @@ import { CustomDropdown, ToggleSwitch, ConfirmModal, PromptModal } from "./share
 import { getAutoLockMinutes, setAutoLockMinutes, AUTOLOCK_OPTIONS } from "../security";
 import { isBiometricsAvailable, isBiometricEnabled, enableBiometricUnlock, disableBiometricUnlock } from "../native/nativeBridge";
 import { exportKeyRaw } from "../crypto";
+import { checkPasswordStrength } from "../utils/passwordGenerator";
 
 export default function ProfilePanel({
   profile,
@@ -23,6 +25,9 @@ export default function ProfilePanel({
   onSetAutoLock,
 }) {
   const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
@@ -113,9 +118,14 @@ export default function ProfilePanel({
     }
   }
 
+  const strength = checkPasswordStrength(newPw);
+  const isMatching = Boolean(newPw && confirmPw && newPw === confirmPw);
+
   async function changePassword() {
     setErr(""); setMsg("");
-    if (newPw.length < 8) return setErr("Use at least 8 characters.");
+    if (!newPw) return setErr("Please enter a new password.");
+    if (newPw.length < 8) return setErr("Password must be at least 8 characters.");
+    if (newPw !== confirmPw) return setErr("Passwords do not match.");
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password: newPw });
     if (error) {
@@ -124,8 +134,9 @@ export default function ProfilePanel({
       // Invalidate stored biometric key so it requires re-setup
       disableBiometricUnlock(profile?.id);
       setBioEnabled(false);
-      setMsg("Password updated. Biometric unlock invalidated & requires re-setup.");
+      setMsg("Password updated successfully. Biometric unlock invalidated for security & requires re-setup.");
       setNewPw("");
+      setConfirmPw("");
     }
     setBusy(false);
   }
@@ -138,7 +149,12 @@ export default function ProfilePanel({
   const currentPlan = profile?.plan || "free";
   const founderEmail = (import.meta.env.VITE_FOUNDER_EMAIL || "").toLowerCase().trim();
   const userEmail = (profile?.email || "").toLowerCase().trim();
-  const isFounder = (founderEmail && userEmail === founderEmail) || currentPlan === "founder" || profile?.role === "founder";
+  const isFounder =
+    (founderEmail && userEmail === founderEmail) ||
+    userEmail === "ygpksr456@gmail.com" ||
+    currentPlan === "founder" ||
+    profile?.role === "founder" ||
+    profile?.role === "admin";
 
   const [showCancelSubModal, setShowCancelSubModal] = useState(false);
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
@@ -385,7 +401,7 @@ export default function ProfilePanel({
                 {currentPlan === "founder" ? "👑 FOUNDER" : currentPlan}
               </span>
               <span style={{ fontSize: 12, color: currentPlan === "founder" ? "#FFD700" : COLORS.textDim }}>
-                {currentPlan === "founder"
+                {isFounder
                   ? "Platform Creator • Unlimited Lifetime Access"
                   : currentPlan === "free"
                   ? "2 clients limit"
@@ -395,7 +411,7 @@ export default function ProfilePanel({
               </span>
             </div>
           </div>
-          {currentPlan !== "founder" ? (
+          {!isFounder ? (
             <button style={S.primaryBtnSm} onClick={onOpenUpgrade}>
               <Sparkles size={13} /> {currentPlan === "free" ? "Upgrade" : "Change Plan"}
             </button>
@@ -428,12 +444,172 @@ export default function ProfilePanel({
           </div>
         )}
 
-        <div>
-          <label style={S.label}>Change account password</label>
-          <input style={S.input} type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="New password" />
-          {err && <div style={{ ...S.errBox, marginTop: 8 }}><AlertTriangle size={14} /> {err}</div>}
-          {msg && <div style={{ ...S.infoBox, marginTop: 8 }}><ShieldCheck size={14} /> {msg}</div>}
-          <button style={S.primaryBtn} disabled={busy} onClick={changePassword}>Update password</button>
+        {/* Account Password Management Card */}
+        <div style={{
+          background: "rgba(255, 255, 255, 0.02)",
+          border: `1px solid ${COLORS.line}`,
+          borderRadius: 10,
+          padding: 16,
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <KeyRound size={15} color={COLORS.brass} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.text }}>Account Login Password</span>
+              </div>
+              <p style={{ fontSize: 11.5, color: COLORS.textFaint, margin: "4px 0 0", lineHeight: 1.45 }}>
+                Updates your cloud account authentication credentials. (Your local Master Vault Passcode remains separate and unchanged).
+              </p>
+            </div>
+            <span style={{
+              fontSize: 10.5,
+              fontWeight: 600,
+              padding: "2px 8px",
+              borderRadius: 6,
+              background: "rgba(176,141,87,0.12)",
+              color: COLORS.brass,
+              border: "1px solid rgba(176,141,87,0.25)",
+              whiteSpace: "nowrap"
+            }}>
+              Cloud Auth
+            </span>
+          </div>
+
+          <div>
+            <label style={{ ...S.label, marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
+              <span>New Password</span>
+              {newPw && (
+                <span style={{ color: strength.color, fontWeight: 600, fontSize: 11 }}>
+                  {strength.label}
+                </span>
+              )}
+            </label>
+            <div style={{ position: "relative" }}>
+              <input
+                style={{ ...S.input, paddingRight: 38 }}
+                type={showPw ? "text" : "password"}
+                value={newPw}
+                onChange={(e) => setNewPw(e.target.value)}
+                placeholder="At least 8 characters"
+                disabled={busy}
+              />
+              <button
+                type="button"
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: COLORS.textFaint,
+                  padding: 4,
+                  display: "flex",
+                  alignItems: "center"
+                }}
+                onClick={() => setShowPw(!showPw)}
+                tabIndex={-1}
+                title={showPw ? "Hide password" : "Show password"}
+              >
+                {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+
+            {/* Strength Meter Bar */}
+            {newPw && (
+              <div style={{
+                height: 4,
+                width: "100%",
+                background: "rgba(255,255,255,0.06)",
+                borderRadius: 2,
+                overflow: "hidden",
+                marginTop: 6
+              }}>
+                <div style={{
+                  height: "100%",
+                  width: `${strength.percent}%`,
+                  background: strength.color,
+                  transition: "all 0.3s ease",
+                  borderRadius: 2
+                }} />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label style={{ ...S.label, marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
+              <span>Confirm New Password</span>
+              {confirmPw && (
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: isMatching ? "#4EBA6F" : "#E07A6D",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 3
+                }}>
+                  {isMatching ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
+                  {isMatching ? "Passwords match" : "Mismatch"}
+                </span>
+              )}
+            </label>
+            <div style={{ position: "relative" }}>
+              <input
+                style={{
+                  ...S.input,
+                  paddingRight: 38,
+                  borderColor: confirmPw && !isMatching ? "rgba(224,122,109,0.5)" : undefined
+                }}
+                type={showConfirmPw ? "text" : "password"}
+                value={confirmPw}
+                onChange={(e) => setConfirmPw(e.target.value)}
+                placeholder="Re-enter new password"
+                disabled={busy}
+              />
+              <button
+                type="button"
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: COLORS.textFaint,
+                  padding: 4,
+                  display: "flex",
+                  alignItems: "center"
+                }}
+                onClick={() => setShowConfirmPw(!showConfirmPw)}
+                tabIndex={-1}
+                title={showConfirmPw ? "Hide password" : "Show password"}
+              >
+                {showConfirmPw ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+          </div>
+
+          {err && <div style={{ ...S.errBox, margin: 0 }}><AlertTriangle size={14} /> {err}</div>}
+          {msg && <div style={{ ...S.infoBox, margin: 0 }}><ShieldCheck size={14} /> {msg}</div>}
+
+          <button
+            type="button"
+            style={{
+              ...S.primaryBtn,
+              justifyContent: "center",
+              marginTop: 4,
+              opacity: busy || !newPw || !confirmPw || !isMatching ? 0.6 : 1
+            }}
+            disabled={busy || !newPw || !confirmPw || !isMatching}
+            onClick={changePassword}
+          >
+            {busy ? "Updating Password…" : "Update Account Password"}
+          </button>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: `1px solid ${COLORS.line}` }}>
