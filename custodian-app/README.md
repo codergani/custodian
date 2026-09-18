@@ -1,63 +1,70 @@
-# Custodian
+# Custodian Web & Mobile App 🛡️
 
-Zero-knowledge credential vault — Supabase-backed, real accounts, encrypted client-side.
+Zero-knowledge freelance developer credential vault and deliverables management platform.
 
-## Setup
+For the full architectural and cryptographic overview, see the root [README.md](../README.md).
 
-1. **Run the two SQL files** in your Supabase project (SQL Editor → New query):
-   - `custodian_schema.sql` first
-   - `custodian_migration_2.sql` second
+---
 
-2. **Install dependencies:**
-   ```
-   npm install
-   ```
+## Quick Start
 
-3. **Set up your environment:**
-   ```
-   cp .env.example .env
-   ```
-   Then open `.env` and paste in your Supabase project's URL + anon key
-   (Supabase Dashboard → Settings → API). This file is gitignored — it
-   never gets committed or shared anywhere.
+### 1. Install Dependencies
+```bash
+npm install
+```
 
-4. **Run it:**
-   ```
-   npm run dev
-   ```
-   Opens at http://localhost:5173
+### 2. Configure Environment Variables
+Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
+```
+Provide your Supabase URL and public anonymous key:
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+VITE_FOUNDER_EMAIL=ygpksr456@gmail.com
+```
 
-## How the security model works
+### 3. Initialize Database
+Execute [`custodian_complete_schema.sql`](./custodian_complete_schema.sql) in your Supabase SQL Editor.
 
-- **Account login** (email/password via Supabase Auth) — this is just your
-  identity, it does NOT unlock your data.
-- **Vault password** (set on first login, separate from your account
-  password) — this is what actually derives the AES-256 encryption key,
-  entirely in your browser. It's never sent to Supabase in any form.
-- Supabase only ever stores encrypted blobs (`encrypted_blob` column).
-  Even with full database access, nobody can read your credentials
-  without your vault password.
+### 4. Development Server
+```bash
+npm run dev
+```
+Starts Vite dev server at `http://localhost:3000`.
 
-## What's built
+---
 
-- Signup / login / forgot-password (email)
-- Two-step unlock: account login → vault password
-- Client → Project → Credential CRUD, all encrypted
-- Free plan: 2 clients max (enforced both in the UI and server-side via
-  a Postgres trigger, so it can't be bypassed)
-- Profile page: view email/plan, change account password, sign out
+## Production Build & Tests
 
-## What's NOT built yet (next steps)
+- **Run all unit tests**:
+  ```bash
+  npm test -- --run
+  ```
+- **Compile production web bundle**:
+  ```bash
+  npm run build
+  ```
+- **Sync web assets to native Android project**:
+  ```bash
+  npm run cap:sync
+  ```
 
-- RevenueCat subscription integration (Pro/Team paywall)
-- Shared vaults (Team tier) — the `client_members` table and RLS
-  policies are already in the schema, just needs UI + invite flow
-- TOTP 2FA
-- Admin dashboard (web vs mobile signup counts) — needs a secure
-  server-side route using the `service_role` key (never expose that key
-  in this frontend code); a Supabase Edge Function is the right place
-  for it
-- Phone OTP (planned for right before Play Store submission)
-- Capacitor wrap for the Android build
-- `.env` file bulk-import (was in the Claude prototype — portable, just
-  needs re-wiring to `addCredential`)
+---
+
+## Android APK Build
+
+Compile the native Android debug APK:
+```bash
+cd android
+./gradlew.bat assembleDebug
+```
+Output path: `android/app/build/outputs/apk/debug/app-debug.apk`
+
+---
+
+## Vercel Deployment
+
+Deploy with zero configuration via Vercel CLI or GitHub Integration.  
+The included [`vercel.json`](./vercel.json) automatically enforces SPA rewrite rules and enterprise security headers.
