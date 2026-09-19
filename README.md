@@ -116,40 +116,39 @@ Custodian enforces a strict **Zero-Knowledge Architecture**. All encryption and 
 
 ```
 Custodian/
-├── custodian-app/
-│   ├── android/                  # Native Android Capacitor project
-│   ├── ios/                      # Native iOS Capacitor project
-│   ├── dist/                     # Optimized production bundle (Vercel target)
-│   ├── src/
-│   │   ├── components/           # UI components
-│   │   │   ├── shared.jsx        # CredCard, Date/Time popovers, Modal wrappers
-│   │   │   ├── ModalRouter.jsx   # Ghost client, Deliverables & sharing modals
-│   │   │   ├── TrashView.jsx     # Recycle bin & Ghosted Clients Vault
-│   │   │   ├── ProfilePanel.jsx  # Security settings & account password
-│   │   │   ├── PasswordGenerator.jsx # Entropy-based passphrase generator
-│   │   │   ├── PersonalSpaceView.jsx # Personal credential workspace
-│   │   │   └── CommandPalette.jsx# Quick navigation (Ctrl+K)
-│   │   ├── native/               # Capacitor native bridge & biometrics
-│   │   ├── utils/                # Pure logic utilities
-│   │   │   ├── dateFormatter.js  # Strict USA MM/DD/YYYY & HH:MM formatter
-│   │   │   ├── clientArchive.js  # JSZip client export & archive generator
-│   │   │   ├── passwordGenerator.js # Passphrase generator & entropy engine
-│   │   │   └── personalSpace.js  # Personal vault isolation
-│   │   ├── __tests__/            # 14 Vitest unit test suites (102 tests)
-│   │   ├── AdminHQ.jsx           # Founder administration & telemetry dashboard
-│   │   ├── App.jsx               # App container, auto-lock & session management
-│   │   ├── AuthScreen.jsx        # Cloud authentication & password recovery
-│   │   ├── ResetPasswordScreen.jsx # Dedicated password reset landing
-│   │   ├── Vault.jsx             # Main encrypted credential workspace
-│   │   ├── VaultUnlock.jsx       # Zero-knowledge master passcode unlock screen
-│   │   └── styles.js             # Design tokens & color system
-│   ├── custodian_complete_schema.sql # Master Supabase database schema
-│   ├── vercel.json               # Vercel SPA rewrites & security headers
-│   ├── capacitor.config.json     # Native mobile runtime configuration
-│   ├── package.json              # Dependencies & build scripts
-│   └── vite.config.js            # Vite bundler configuration
-├── custodian-latest.apk          # Fresh Android installable APK
-└── README.md                     # Master project documentation
+├── android/                  # Native Android Capacitor project
+├── ios/                      # Native iOS Capacitor project
+├── dist/                     # Optimized production bundle (Vercel target)
+├── src/
+│   ├── components/           # UI components
+│   │   ├── shared.jsx        # CredCard, Date/Time popovers, Modal wrappers
+│   │   ├── ModalRouter.jsx   # Ghost client, Deliverables & sharing modals
+│   │   ├── TrashView.jsx     # Recycle bin & Ghosted Clients Vault
+│   │   ├── ProfilePanel.jsx  # Security settings & account password
+│   │   ├── PasswordGenerator.jsx # Entropy-based passphrase generator
+│   │   ├── PersonalSpaceView.jsx # Personal credential workspace
+│   │   └── CommandPalette.jsx# Quick navigation (Ctrl+K)
+│   ├── native/               # Capacitor native bridge & biometrics
+│   ├── utils/                # Pure logic utilities
+│   │   ├── dateFormatter.js  # Strict USA MM/DD/YYYY & HH:MM formatter
+│   │   ├── clientArchive.js  # JSZip client export & archive generator
+│   │   ├── passwordGenerator.js # Passphrase generator & entropy engine
+│   │   └── personalSpace.js  # Personal vault isolation
+│   ├── __tests__/            # 14 Vitest unit test suites (102 tests)
+│   ├── AdminHQ.jsx           # Founder administration & telemetry dashboard
+│   ├── App.jsx               # App container, auto-lock & session management
+│   ├── AuthScreen.jsx        # Cloud authentication & password recovery
+│   ├── ResetPasswordScreen.jsx # Dedicated password reset landing
+│   ├── Vault.jsx             # Main encrypted credential workspace
+│   ├── VaultUnlock.jsx       # Zero-knowledge master passcode unlock screen
+│   └── styles.js             # Design tokens & color system
+├── custodian_complete_schema.sql # Master Supabase database schema
+├── vercel.json               # Vercel SPA rewrites & security headers
+├── capacitor.config.json     # Native mobile runtime configuration
+├── package.json              # Dependencies & build scripts
+├── vite.config.js            # Vite bundler configuration
+├── custodian-latest.apk      # Fresh Android installable APK
+└── README.md                 # Master project documentation
 ```
 
 ---
@@ -164,12 +163,12 @@ Custodian/
 ### 1. Clone & Install
 ```bash
 git clone https://github.com/codergani/custodian.git
-cd custodian/custodian-app
+cd custodian
 npm install
 ```
 
 ### 2. Configure Environment Variables
-Create a `.env` file inside `custodian-app/`:
+Create a `.env` file in the project root:
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
@@ -178,7 +177,7 @@ VITE_FOUNDER_EMAIL=ygpksr456@gmail.com
 
 ### 3. Initialize Database Schema
 1. Open your **Supabase Dashboard** → **SQL Editor**.
-2. Open [`custodian-app/custodian_complete_schema.sql`](file:///e:/CreateApps/Custodian/custodian-app/custodian_complete_schema.sql).
+2. Open [`custodian_complete_schema.sql`](file:///e:/CreateApps/Custodian/custodian_complete_schema.sql).
 3. Paste and run the entire script. This automatically creates:
    - All tables: `profiles`, `clients`, `projects`, `credentials`, `deliverables`, `shared_secrets`, `system_logs`.
    - Row-Level Security (RLS) policies for complete tenant isolation.
@@ -227,7 +226,7 @@ git push origin main
 3. Select your GitHub repository: `codergani/custodian`.
 4. In the **Configure Project** screen:
    - **Framework Preset**: `Vite`
-   - **Root Directory**: Click *Edit* and select **`custodian-app`**.
+   - **Root Directory**: `./` (Root directory)
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
    - **Install Command**: `npm install`
@@ -241,7 +240,7 @@ Under **Environment Variables**, add the following keys:
 | `VITE_FOUNDER_EMAIL` | `ygpksr456@gmail.com` | Founder account email for Admin HQ access |
 
 ### Step 4: Deploy
-Click **"Deploy"**. Vercel will build and serve your app. The included [`vercel.json`](file:///e:/CreateApps/Custodian/custodian-app/vercel.json) automatically enforces:
+Click **"Deploy"**. Vercel will build and serve your app. The included [`vercel.json`](file:///e:/CreateApps/Custodian/vercel.json) automatically enforces:
 - Single Page Application (SPA) routing for deep links.
 - High-grade security headers (`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Strict-Transport-Security`).
 
@@ -253,7 +252,6 @@ Custodian uses **Capacitor** to compile native mobile apps for Android and iOS f
 
 ### 1. Build and Sync Web Assets
 ```bash
-cd custodian-app
 npm run build
 npx cap sync android
 ```
@@ -265,7 +263,7 @@ cd android
 ./gradlew.bat assembleDebug
 ```
 The resulting APK is generated at:
-`custodian-app/android/app/build/outputs/apk/debug/app-debug.apk`
+`android/app/build/outputs/apk/debug/app-debug.apk`
 
 ### 3. Install on Samsung / Android Devices
 1. Connect your phone via USB or upload the APK to your Google Drive / Samsung Quick Share.
@@ -276,13 +274,14 @@ The resulting APK is generated at:
 1. Register at the [Samsung Galaxy Developers Seller Portal](https://seller.samsungapps.com/).
 2. In Android Studio, build a signed release bundle or APK:
    ```bash
+   cd android
    ./gradlew.bat assembleRelease
    ```
 3. Upload the signed APK/AAB to the Samsung Seller Portal.
 4. Set application metadata:
    - **Category**: Productivity / Tools & Utilities
    - **Content Rating**: All ages
-   - **Privacy Policy URL**: Link to [`PRIVACY_POLICY.md`](file:///e:/CreateApps/Custodian/custodian-app/PRIVACY_POLICY.md) hosted on your Vercel domain.
+   - **Privacy Policy URL**: Link to [`PRIVACY_POLICY.md`](file:///e:/CreateApps/Custodian/PRIVACY_POLICY.md) hosted on your Vercel domain.
 
 ---
 
