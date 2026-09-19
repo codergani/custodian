@@ -6,8 +6,8 @@
 [![Key Derivation: PBKDF2](https://img.shields.io/badge/Key%20Derivation-PBKDF2%20100k%20iters-darkgreen.svg)](#security-architecture)
 [![Key Exchange: ECDH P-256](https://img.shields.io/badge/Key%20Exchange-ECDH%20P--256-purple.svg)](#zero-knowledge-secret-sharing)
 [![Tests: 14/14 Passing](https://img.shields.io/badge/Tests-102%20Passed-brightgreen.svg)](#testing--verification)
-[![Platforms](https://img.shields.io/badge/Platforms-Web%20%7C%20Android%20%7C%20iOS-orange.svg)](#mobile-deployment-android--samsung-store)
-[![Deployment: Vercel Ready](https://img.shields.io/badge/Deployment-Vercel%20Ready-black.svg)](#vercel-hosting-deployment-guide)
+[![Deployment: Vercel](https://img.shields.io/badge/Deployment-custodian--swart.vercel.app-black.svg)](https://custodian-swart.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Online-brightgreen.svg)](https://custodian-swart.vercel.app/)
 
 ---
 
