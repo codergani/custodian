@@ -346,7 +346,7 @@ export default function FloatingStickyNotes({
       ref={containerRef}
       style={{
         ...containerStyle,
-        background: "var(--sticky-bg, " + (document.documentElement.getAttribute("data-theme") === "dark" ? activeTheme.darkBg : activeTheme.bg) + ")",
+        background: "var(--sticky-bg, " + ((typeof document !== "undefined" && document.documentElement.getAttribute("data-theme") === "dark") ? activeTheme.darkBg : activeTheme.bg) + ")",
         border: `1.5px solid ${activeTheme.border}`,
         borderRadius: 12,
         boxShadow: `0 14px 38px rgba(0,0,0,0.3), 0 2px 10px ${activeTheme.border}33`,
