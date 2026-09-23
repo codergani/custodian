@@ -1,3 +1,4 @@
+import React, { useState, useMemo } from "react";
 import {
   ShieldCheck, Plus, Search, Eye, EyeOff, Copy, Check, ExternalLink,
   Edit3, Trash2, Mail, Smartphone, FileText, CreditCard, KeyRound, Layers,

@@ -12,6 +12,7 @@ export default function AboutProjectView({ project, activeTab = "timeline", onUp
   const details = project.details || {};
   const [newChecklistText, setNewChecklistText] = useState("");
   const [previewDoc, setPreviewDoc] = useState(null);
+  const [isTheater, setIsTheater] = useState(false);
   const [showAddLinkModal, setShowAddLinkModal] = useState(false);
   const [linkTitle, setLinkTitle] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
