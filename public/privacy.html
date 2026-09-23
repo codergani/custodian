@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - Custodian</title>
+  <link rel="icon" type="image/svg+xml" href="/icons/shield.svg">
+  <style>
+    :root {
+      --bg: #121110;
+      --card-bg: #1A1918;
+      --text: #F5F2EB;
+      --text-dim: #A8A399;
+      --brass: #C29B38;
+      --line: rgba(255, 255, 255, 0.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      max-width: 780px;
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 36px 32px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .header {
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 26px;
+      color: var(--brass);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .meta {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+    h2 {
+      font-size: 18px;
+      color: var(--text);
+      margin-top: 24px;
+      margin-bottom: 10px;
+      border-left: 3px solid var(--brass);
+      padding-left: 10px;
+    }
+    p, ul {
+      color: var(--text-dim);
+      font-size: 14.5px;
+      margin-bottom: 14px;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    strong {
+      color: var(--text);
+    }
+    .badge {
+      background: rgba(194, 155, 56, 0.15);
+      color: var(--brass);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-block;
+      margin-bottom: 14px;
+    }
+    a {
+      color: var(--brass);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .footer {
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+      color: var(--text-dim);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🛡️ Custodian — Privacy Policy</h1>
+      <div class="meta">Effective Date: September 23, 2026 | Version 1.0</div>
+    </div>
+
+    <div class="badge">Zero-Knowledge Guaranteed</div>
+
+    <p>
+      Custodian ("we", "our", or "us") provides a zero-knowledge encrypted credential vault and project delivery manager application ("Custodian" or the "Service"). We are committed to protecting your privacy and ensuring you have complete, non-custodial control over your data.
+    </p>
+
+    <h2>1. Zero-Knowledge Cryptographic Architecture</h2>
+    <ul>
+      <li><strong>Client-Side Encryption:</strong> All sensitive credentials, API keys, passwords, database connections, and environment variables are encrypted and decrypted locally on your client device using <strong>AES-256-GCM</strong> with PBKDF2 key derivation (100,000 rounds).</li>
+      <li><strong>Zero-Knowledge Guarantee:</strong> We do not store, transmit, or have access to your vault master passcode or unencrypted secrets. No one—including Custodian administrators, hosting providers, or database operators—can decrypt or read your vault items.</li>
+    </ul>
+
+    <h2>2. Information We Collect</h2>
+    <ul>
+      <li><strong>Account Identification:</strong> When registering, we collect your email address and authentication tokens via Supabase Auth to maintain sessions across devices.</li>
+      <li><strong>Billing Information:</strong> Subscriptions on Android are processed directly through Google Play / Samsung Store in-app billing via RevenueCat. Web subscriptions are handled through Lemon Squeezy (Merchant of Record). We never collect or store your payment card numbers.</li>
+      <li><strong>Encrypted Vault Blobs:</strong> Our cloud database stores only opaque, encrypted ciphertext payloads, initialization vectors, and key derivation salts.</li>
+    </ul>
+
+    <h2>3. How We Use Your Information</h2>
+    <ul>
+      <li>To authenticate your identity and synchronize your encrypted vault blobs across your authorized devices.</li>
+      <li>To send essential transactional notifications (such as password recovery links and optional SSL/domain expiration alerts).</li>
+      <li><strong>We never sell, rent, monetize, or inspect your personal data or vault secrets.</strong></li>
+    </ul>
+
+    <h2>4. Account & Data Deletion Rights</h2>
+    <p>
+      You retain full ownership and the right to permanently purge your account and all associated data at any time:
+    </p>
+    <ul>
+      <li><strong>Direct In-App Deletion:</strong> Open Custodian → Profile & Settings → Click <strong>"Delete Account & Data"</strong>. This permanently and irrevocably deletes your profile, clients, projects, credentials, and encrypted records from our servers.</li>
+      <li><strong>Email Request:</strong> You may also request complete data deletion by emailing us at <a href="mailto:ygpksr456@gmail.com">ygpksr456@gmail.com</a>.</li>
+    </ul>
+
+    <h2>5. Contact Information</h2>
+    <p>
+      If you have questions regarding this Privacy Policy or security practices, contact:
+    </p>
+    <ul>
+      <li><strong>Founder Email:</strong> <a href="mailto:ygpksr456@gmail.com">ygpksr456@gmail.com</a></li>
+      <li><strong>Live Application:</strong> <a href="https://custodian-swart.vercel.app">https://custodian-swart.vercel.app</a></li>
+    </ul>
+
+    <div class="footer">
+      &copy; 2026 Custodian. All rights reserved. Zero-Knowledge Freelance Vault.
+    </div>
+  </div>
+</body>
+</html>

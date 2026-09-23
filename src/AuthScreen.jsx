@@ -382,6 +382,23 @@ export default function AuthScreen({ onAuthed }) {
             </span>
           </div>
         </div>
+
+        <div style={{ textAlign: "center", marginTop: 14 }}>
+          <a
+            href="/privacy.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: 11, color: COLORS.textFaint, textDecoration: "underline", cursor: "pointer" }}
+            onClick={(e) => {
+              if (isNative()) {
+                e.preventDefault();
+                openInAppBrowser("https://custodian-swart.vercel.app/privacy.html");
+              }
+            }}
+          >
+            Privacy Policy & Terms
+          </a>
+        </div>
       </div>
     </div>
   );
