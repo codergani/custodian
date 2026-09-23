@@ -2,13 +2,16 @@ import React, { useState, useEffect } from "react";
 import { Lock } from "lucide-react";
 import { supabase } from "./supabaseClient";
 import AuthScreen from "./AuthScreen";
+import WelcomeScreen from "./components/WelcomeScreen";
+import LandingPage from "./components/LandingPage";
 import VaultUnlock from "./VaultUnlock";
 import Vault from "./Vault";
 import AdminHQ from "./AdminHQ";
 import ResetPasswordScreen from "./ResetPasswordScreen";
 import { ThemeProvider } from "./ThemeContext";
-import { initNativePlugins, setupBackButtonListener, setupDeepLinkAuthListener, setupAppStateAutoLock } from "./native/nativeBridge";
+import { isNative, initNativePlugins, setupBackButtonListener, setupDeepLinkAuthListener, setupAppStateAutoLock } from "./native/nativeBridge";
 import { initLemonSqueezy } from "./utils/lemonsqueezy";
+
 import { initRevenueCat, identifyUser, resetPurchasesUser } from "./native/revenueCat";
 import { getAutoLockMinutes } from "./security";
 import { exportKeyRaw, importKeyRaw } from "./crypto";
@@ -88,7 +91,16 @@ function AppContent() {
   const [vaultKey, setVaultKey] = useState(null);
   const [ecdhPrivateKey, setEcdhPrivateKey] = useState(null);
   const [route, setRoute] = useState(() => window.location.hash || window.location.pathname);
+  const [hasSeenWelcome, setHasSeenWelcome] = useState(() => {
+    try {
+      return localStorage.getItem("custodian_has_seen_welcome") === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [authInitialMode, setAuthInitialMode] = useState("login");
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => {
+
     return (
       window.location.hash.includes("type=recovery") ||
       window.location.search.includes("type=recovery")
@@ -314,13 +326,109 @@ function AppContent() {
   if (session === undefined) {
     return <div style={S.centerScreen}><div style={{ color: "#A8A399", fontSize: 13 }}>Loading…</div></div>;
   }
-  if (!session) {
+
+  // Marketing Landing Page on explicit route (/welcome or #/welcome)
+  const isExplicitWelcomeRoute =
+    route === "/welcome" ||
+    route === "#/welcome" ||
+    window.location.pathname === "/welcome" ||
+    window.location.hash === "#/welcome";
+
+  if (isExplicitWelcomeRoute && session) {
     return (
       <ErrorBoundary>
-        <AuthScreen onAuthed={setSession} />
+        <LandingPage
+          onLogin={() => {
+            window.location.hash = "";
+            setRoute("");
+          }}
+          onSignup={() => {
+            window.location.hash = "";
+            setRoute("");
+          }}
+        />
       </ErrorBoundary>
     );
   }
+
+  if (!session) {
+    // 1. Mobile First-Launch Welcome Screen (React + Capacitor)
+    if (isNative()) {
+      if (!hasSeenWelcome) {
+        return (
+          <ErrorBoundary>
+            <WelcomeScreen
+              onSelect={(mode) => {
+                try {
+                  localStorage.setItem("custodian_has_seen_welcome", "true");
+                } catch {}
+                setHasSeenWelcome(true);
+                setAuthInitialMode(mode);
+              }}
+            />
+          </ErrorBoundary>
+        );
+      }
+      return (
+        <ErrorBoundary>
+          <AuthScreen onAuthed={setSession} initialMode={authInitialMode} />
+        </ErrorBoundary>
+      );
+    }
+
+    // 2. Web Marketing Landing Page vs Auth Screens
+    const isLoginRoute = route.includes("login") || window.location.hash === "#/login";
+    const isSignupRoute = route.includes("signup") || window.location.hash === "#/signup";
+
+    if (isLoginRoute) {
+      return (
+        <ErrorBoundary>
+          <AuthScreen
+            onAuthed={setSession}
+            initialMode="login"
+            onBackToHome={() => {
+              window.location.hash = "#/welcome";
+              setRoute("#/welcome");
+            }}
+          />
+        </ErrorBoundary>
+      );
+    }
+
+    if (isSignupRoute) {
+      return (
+        <ErrorBoundary>
+          <AuthScreen
+            onAuthed={setSession}
+            initialMode="signup"
+            onBackToHome={() => {
+              window.location.hash = "#/welcome";
+              setRoute("#/welcome");
+            }}
+          />
+        </ErrorBoundary>
+      );
+    }
+
+    // Default Web Public Landing Page (route / or /welcome)
+    return (
+      <ErrorBoundary>
+        <LandingPage
+          onLogin={() => {
+            window.location.hash = "#/login";
+            setRoute("#/login");
+            setAuthInitialMode("login");
+          }}
+          onSignup={() => {
+            window.location.hash = "#/signup";
+            setRoute("#/signup");
+            setAuthInitialMode("signup");
+          }}
+        />
+      </ErrorBoundary>
+    );
+  }
+
 
   // Password Recovery Flow
   if (isPasswordRecovery && session) {

@@ -19,6 +19,9 @@ import TrashView from "../components/TrashView";
 import WatchdogView from "../components/WatchdogView";
 import OnboardingTour from "../components/OnboardingTour";
 import ModalRouter from "../components/ModalRouter";
+import WelcomeScreen from "../components/WelcomeScreen";
+import LandingPage from "../components/LandingPage";
+
 
 // Mock localStorage and sessionStorage for Node.js test environment
 const memoryStore = {};
@@ -252,4 +255,28 @@ describe("All Components Smoke & Render Integrity Suite", () => {
     );
     expect(htmlAudit).toContain("Operational Readiness");
   });
+
+  it("renders WelcomeScreen without crashing and displays zero-knowledge tagline and buttons", () => {
+    const onSelect = vi.fn();
+    const html = renderToString(<WelcomeScreen onSelect={onSelect} />);
+    expect(html).toContain("CUSTODIAN");
+    expect(html).toContain("Your secrets, your keys. Not even we can see them.");
+    expect(html).toContain("Create Account");
+    expect(html).toContain("Log In");
+  });
+
+  it("renders LandingPage marketing page with nav, 3 feature cards, and 3 pricing tiers", () => {
+    const html = renderToString(<LandingPage onLogin={vi.fn()} onSignup={vi.fn()} />);
+    expect(html).toContain("CUSTODIAN");
+    expect(html).toContain("The Zero-Knowledge Secret Vault &amp; Client Handover Platform");
+    expect(html).toContain("Zero-Knowledge Encryption");
+    expect(html).toContain("Secure Sharing");
+    expect(html).toContain("Renewal Watchdog");
+    expect(html).toContain("Free");
+    expect(html).toContain("Pro");
+    expect(html).toContain("Team");
+    expect(html).toContain("Get Started Free");
+    expect(html).toContain("Privacy Policy");
+  });
 });
+

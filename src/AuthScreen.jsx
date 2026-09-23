@@ -6,8 +6,8 @@ import { withTimeout } from "./crypto";
 import { normalizeUsername, validateUsername } from "./utils/usernameValidation";
 import { S, COLORS } from "./styles";
 
-export default function AuthScreen({ onAuthed }) {
-  const [mode, setMode] = useState("login"); // login | signup | reset
+export default function AuthScreen({ onAuthed, initialMode = "login", onBackToHome }) {
+  const [mode, setMode] = useState(initialMode || "login"); // login | signup | reset
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -18,6 +18,13 @@ export default function AuthScreen({ onAuthed }) {
   const [info, setInfo] = useState("");
   const [resetSent, setResetSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (initialMode) {
+      setMode(initialMode);
+    }
+  }, [initialMode]);
+
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -399,7 +406,19 @@ export default function AuthScreen({ onAuthed }) {
             Privacy Policy & Terms
           </a>
         </div>
+
+        {onBackToHome && (
+          <div style={{ textAlign: "center", marginTop: 8 }}>
+            <span
+              onClick={onBackToHome}
+              style={{ fontSize: 11.5, color: COLORS.textDim, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}
+            >
+              <ArrowLeft size={12} /> Back to Overview
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+

@@ -16,6 +16,8 @@ import { isNative } from "../native/nativeBridge";
 import { purchaseSubscriptionPackage, restoreNativePurchases } from "../native/revenueCat";
 
 import { shareSecret, importPublicKey } from "../crypto";
+import { VAULT_PLANS } from "../config/plans";
+
 
 export default function ModalRouter({ modal, currentPlan, defaultCurrency, userId, userEmail, ecdhPrivateKey, onClose, onAddClient, onAddProject, onUpdateProjectDetails, onAddCred, onUpdateCred, onImportEnv, onUpgradePlan, onOpenUpgrade, onGhostClient, onMoveClientToTrash, showSuccess }) {
 
@@ -893,58 +895,8 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
 function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
   const [upgrading, setUpgrading] = useState(null);
 
-  const plans = [
-    {
-      id: "free",
-      name: "Free",
-      price: "$0",
-      period: "forever",
-      desc: "For solo developers managing basic personal credentials.",
-      features: [
-        "Up to 2 Clients",
-        "Unlimited Projects & Secrets",
-        "Delivery Timeline & Safety Buffer",
-        "Standard Docked Sticky Notes",
-        "AES-256 Zero-Knowledge Encryption",
-        "Basic .env Import / Export",
-      ],
-    },
-    {
-      id: "pro",
-      name: "Pro",
-      price: "$8",
-      period: "/ month",
-      desc: "For freelancers & solo power users needing complete client handover & secret protection.",
-      popular: true,
-      features: [
-        "Unlimited Clients & Projects",
-        "📌 Movable Floating Sticky Notes & Pet Mode",
-        "📦 1-Click Client Handover Package Generator",
-        "🔀 Multi-Environment Keys (Dev / Staging / Prod)",
-        "🛡️ Vault Security Health & Audit Score Meter",
-        "⚡ API Renewal Watchdog & Advance Alerts",
-        "🛡️ Delivery Safety Buffer Tracker",
-        "💰 Monthly Client Spend & Savings Tracker",
-        "Full Decrypted & Multi-Env .env Exports",
-      ],
-    },
-    {
-      id: "team",
-      name: "Team",
-      price: "$19",
-      period: "/ month",
-      desc: "For agencies and teams collaborating securely on client infrastructure.",
-      features: [
-        "Everything in Pro (Floating Stickies & Watchdog)",
-        "Shared Team Vaults (Owner covers all members)",
-        "Role Permissions (Full Access vs Skeleton Only)",
-        "Environment Role Scoping (Dev / Staging / Prod)",
-        "Team Deliverables Checklist & Milestone Sync",
-        "Skeleton .env.example for safe developer onboarding",
-        "Centralized Team Key Revocation",
-      ],
-    },
-  ];
+  const plans = VAULT_PLANS;
+
 
   const [restoring, setRestoring] = useState(false);
   const [paymentMsg, setPaymentMsg] = useState("");
