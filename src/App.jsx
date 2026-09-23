@@ -352,29 +352,34 @@ function AppContent() {
   }
 
   if (!session) {
-    // 1. Mobile First-Launch Welcome Screen (React + Capacitor)
+    // 1. First-Launch Welcome Screen (Native Mobile or explicit #/welcome-screen test route)
+    const isWelcomeScreenRoute = route.includes("welcome-screen") || window.location.hash === "#/welcome-screen";
+    if (isWelcomeScreenRoute || (isNative() && !hasSeenWelcome)) {
+      return (
+        <ErrorBoundary>
+          <WelcomeScreen
+            onSelect={(mode) => {
+              try {
+                localStorage.setItem("custodian_has_seen_welcome", "true");
+              } catch {}
+              setHasSeenWelcome(true);
+              setAuthInitialMode(mode);
+              window.location.hash = `#/${mode}`;
+              setRoute(`#/${mode}`);
+            }}
+          />
+        </ErrorBoundary>
+      );
+    }
+
     if (isNative()) {
-      if (!hasSeenWelcome) {
-        return (
-          <ErrorBoundary>
-            <WelcomeScreen
-              onSelect={(mode) => {
-                try {
-                  localStorage.setItem("custodian_has_seen_welcome", "true");
-                } catch {}
-                setHasSeenWelcome(true);
-                setAuthInitialMode(mode);
-              }}
-            />
-          </ErrorBoundary>
-        );
-      }
       return (
         <ErrorBoundary>
           <AuthScreen onAuthed={setSession} initialMode={authInitialMode} />
         </ErrorBoundary>
       );
     }
+
 
     // 2. Web Marketing Landing Page vs Auth Screens
     const isLoginRoute = route.includes("login") || window.location.hash === "#/login";
