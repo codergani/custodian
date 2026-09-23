@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Search, ShieldCheck, Bell, Plus, KeyRound, Copy, Folder,
-  Layers, Rocket, Terminal, Code, Cpu
+  Layers, Rocket, Terminal, Code, Cpu, Crown, Briefcase
 } from "lucide-react";
 import { S, COLORS } from "../styles";
 
-export default function CommandPalette({ clients, onClose, onSelectProject, onCopySecret, onNavigate, onOpenModal }) {
+export default function CommandPalette({ clients, onClose, onSelectClient, onSelectProject, onCopySecret, onNavigate, onOpenModal }) {
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
 
@@ -139,6 +139,25 @@ export default function CommandPalette({ clients, onClose, onSelectProject, onCo
                       <strong style={{ color: COLORS.brass }}>{p.clientName}</strong> &gt; {p.name}
                     </div>
                     <span style={{ fontSize: 11, color: COLORS.textFaint }}>{p.credentials?.length || 0} secrets</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {matchingClients.length > 0 && (
+            <div style={{ padding: "4px 14px 8px 14px" }}>
+              <div style={{ fontSize: 10.5, color: COLORS.textFaint, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
+                Clients ({matchingClients.length})
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {matchingClients.slice(0, 5).map((c) => (
+                  <div key={c.id} style={S.cmdItem} onClick={() => onSelectClient?.(c.id)} tabIndex={0} role="button">
+                    <Briefcase size={13} color="#B08D57" />
+                    <div style={{ flex: 1, fontSize: 13, color: COLORS.text, fontWeight: 600 }}>
+                      {c.name}
+                    </div>
+                    <span style={{ fontSize: 11, color: COLORS.textFaint }}>{c.projects?.length || 0} projects</span>
                   </div>
                 ))}
               </div>

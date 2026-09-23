@@ -2269,6 +2269,12 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
         <CommandPalette
           clients={clients}
           onClose={() => setOpenCmd(false)}
+          onSelectClient={(cId) => {
+            setSelectedClient(cId);
+            setSelectedProject(null);
+            setView("vault");
+            setOpenCmd(false);
+          }}
           onSelectProject={(cId, pId, tab = "env_studio") => {
             setSelectedClient(cId);
             setSelectedProject(pId);
