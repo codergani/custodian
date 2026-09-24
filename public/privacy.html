@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Privacy Policy - Custodian</title>
+  <title>Privacy Policy, Terms & Cookies - Custodian</title>
   <link rel="icon" type="image/svg+xml" href="/icons/shield.svg">
   <style>
     :root {
@@ -25,7 +25,7 @@
       justify-content: center;
     }
     .container {
-      max-width: 780px;
+      max-width: 820px;
       width: 100%;
       background: var(--card-bg);
       border: 1px solid var(--line);
@@ -50,13 +50,38 @@
       font-size: 13px;
       color: var(--text-dim);
     }
+    .nav-tabs {
+      display: flex;
+      gap: 12px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .nav-tabs a {
+      font-size: 12.5px;
+      color: var(--brass);
+      background: rgba(194, 155, 56, 0.1);
+      border: 1px solid rgba(194, 155, 56, 0.25);
+      padding: 4px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .nav-tabs a:hover {
+      background: rgba(194, 155, 56, 0.2);
+    }
     h2 {
-      font-size: 18px;
+      font-size: 19px;
       color: var(--text);
-      margin-top: 24px;
-      margin-bottom: 10px;
+      margin-top: 32px;
+      margin-bottom: 12px;
       border-left: 3px solid var(--brass);
       padding-left: 10px;
+    }
+    h3 {
+      font-size: 15px;
+      color: var(--text);
+      margin-top: 16px;
+      margin-bottom: 6px;
     }
     p, ul {
       color: var(--text-dim);
@@ -82,6 +107,15 @@
       display: inline-block;
       margin-bottom: 14px;
     }
+    .callout {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 16px 0;
+      font-size: 13.5px;
+      color: var(--text-dim);
+    }
     a {
       color: var(--brass);
       text-decoration: none;
@@ -90,8 +124,8 @@
       text-decoration: underline;
     }
     .footer {
-      margin-top: 32px;
-      padding-top: 16px;
+      margin-top: 40px;
+      padding-top: 20px;
       border-top: 1px solid var(--line);
       font-size: 13px;
       color: var(--text-dim);
@@ -102,52 +136,106 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>🛡️ Custodian — Privacy Policy</h1>
-      <div class="meta">Effective Date: September 23, 2026 | Version 1.0</div>
+      <h1>🛡️ Custodian — Legal & Privacy Center</h1>
+      <div class="meta">Effective Date: September 24, 2026 | Version 1.1</div>
+      <div class="nav-tabs">
+        <a href="#privacy">Privacy Policy</a>
+        <a href="#cookies">Cookie Policy</a>
+        <a href="#terms">Terms of Service</a>
+        <a href="#deletion">Data Deletion</a>
+      </div>
     </div>
 
     <div class="badge">Zero-Knowledge Guaranteed</div>
 
     <p>
-      Custodian ("we", "our", or "us") provides a zero-knowledge encrypted credential vault and project delivery manager application ("Custodian" or the "Service"). We are committed to protecting your privacy and ensuring you have complete, non-custodial control over your data.
+      Custodian ("we", "our", or "us") provides a zero-knowledge encrypted credential vault, API key manager, and client delivery platform ("Custodian" or the "Service"). We believe that your private credentials and infrastructure secrets belong only to you and your authorized clients.
     </p>
 
-    <h2>1. Zero-Knowledge Cryptographic Architecture</h2>
+    <!-- SECTION 1: PRIVACY POLICY -->
+    <h2 id="privacy">1. Privacy Policy</h2>
+    <p>
+      This policy explains what information we collect, why we collect it, and how your privacy is guaranteed by our cryptographic design.
+    </p>
+
+    <h3>A. Zero-Knowledge Cryptographic Architecture</h3>
     <ul>
-      <li><strong>Client-Side Encryption:</strong> All sensitive credentials, API keys, passwords, database connections, and environment variables are encrypted and decrypted locally on your client device using <strong>AES-256-GCM</strong> with PBKDF2 key derivation (100,000 rounds).</li>
-      <li><strong>Zero-Knowledge Guarantee:</strong> We do not store, transmit, or have access to your vault master passcode or unencrypted secrets. No one—including Custodian administrators, hosting providers, or database operators—can decrypt or read your vault items.</li>
+      <li><strong>Client-Side Encryption:</strong> All sensitive credentials, API keys, passwords, database URLs, and notes are encrypted locally in your web browser or mobile app before sync using <strong>AES-256-GCM</strong> with 100,000 PBKDF2 derivation rounds.</li>
+      <li><strong>Zero Server Access:</strong> Our database stores only encrypted ciphertext strings and cryptographic salts. Custodian operators, engineers, and cloud hosts have mathematically zero access to your plaintext secrets or master passwords.</li>
     </ul>
 
-    <h2>2. Information We Collect</h2>
+    <h3>B. Information We Collect</h3>
     <ul>
-      <li><strong>Account Identification:</strong> When registering, we collect your email address and authentication tokens via Supabase Auth to maintain sessions across devices.</li>
-      <li><strong>Billing Information:</strong> Subscriptions on Android are processed directly through Google Play / Samsung Store in-app billing via RevenueCat. Web subscriptions are handled through Lemon Squeezy (Merchant of Record). We never collect or store your payment card numbers.</li>
-      <li><strong>Encrypted Vault Blobs:</strong> Our cloud database stores only opaque, encrypted ciphertext payloads, initialization vectors, and key derivation salts.</li>
+      <li><strong>Account Details:</strong> Email address and username to manage authentication tokens securely via Supabase Auth.</li>
+      <li><strong>Encrypted Vault Data:</strong> Opaque, encrypted ciphertext payloads representing your stored clients, projects, and secrets.</li>
+      <li><strong>Billing Data:</strong> Subscriptions on Android mobile are processed directly by Google Play / Samsung Store in-app billing via RevenueCat. Web subscriptions are handled through Lemon Squeezy (Merchant of Record). We never collect or store your payment card numbers.</li>
     </ul>
 
-    <h2>3. How We Use Your Information</h2>
+    <h3>C. How We Use Information</h3>
     <ul>
-      <li>To authenticate your identity and synchronize your encrypted vault blobs across your authorized devices.</li>
-      <li>To send essential transactional notifications (such as password recovery links and optional SSL/domain expiration alerts).</li>
+      <li>To authenticate your session and sync your encrypted blobs across your authorized devices.</li>
+      <li>To send account recovery emails and optional advance renewal watchdog notices.</li>
       <li><strong>We never sell, rent, monetize, or inspect your personal data or vault secrets.</strong></li>
     </ul>
 
-    <h2>4. Account & Data Deletion Rights</h2>
+    <!-- SECTION 2: COOKIE & STORAGE POLICY -->
+    <h2 id="cookies">2. Cookie & Local Storage Policy</h2>
     <p>
-      You retain full ownership and the right to permanently purge your account and all associated data at any time:
+      Custodian adheres to strict data minimization principles. We do not use third-party tracking, advertising, or cross-site profiling cookies.
     </p>
     <ul>
-      <li><strong>Direct In-App Deletion:</strong> Open Custodian → Profile & Settings → Click <strong>"Delete Account & Data"</strong>. This permanently and irrevocably deletes your profile, clients, projects, credentials, and encrypted records from our servers.</li>
-      <li><strong>Email Request:</strong> You may also request complete data deletion by emailing us at <a href="mailto:ygpksr456@gmail.com">ygpksr456@gmail.com</a>.</li>
+      <li><strong>Zero Advertising Cookies:</strong> We do not deploy third-party advertising cookies (no Facebook Pixel, no ad trackers).</li>
+      <li><strong>Local Storage (Essential Only):</strong> On mobile and web, we use browser <code>localStorage</code> solely to remember essential user preferences (such as light/dark mode theme, sticky note positions, and whether the first-launch welcome screen has been viewed).</li>
+      <li><strong>Session Storage (Security In-Memory):</strong> We use browser <code>sessionStorage</code> to hold active, decrypted master keys in memory during an active logged-in session. These keys are purged automatically upon lock, tab closure, or inactivity timeout.</li>
     </ul>
 
-    <h2>5. Contact Information</h2>
+    <!-- SECTION 3: TERMS OF SERVICE -->
+    <h2 id="terms">3. Terms of Service & User Agreement</h2>
     <p>
-      If you have questions regarding this Privacy Policy or security practices, contact:
+      By creating an account or using Custodian, you agree to these Terms of Service.
+    </p>
+
+    <h3>A. Master Passcode & Non-Custodial Responsibility</h3>
+    <div class="callout">
+      <strong>⚠️ Critical Zero-Knowledge Notice:</strong> Because Custodian is strictly zero-knowledge, we cannot reset or recover your master passphrase if you lose it. You are solely responsible for securely storing your master password and your Emergency Recovery Kit.
+    </div>
+
+    <h3>B. Acceptable Use</h3>
+    <p>You agree not to use Custodian to:</p>
+    <ul>
+      <li>Store or distribute stolen credentials, malicious software, or unauthorized access tools.</li>
+      <li>Attempt to reverse engineer, disrupt, or compromise the platform's infrastructure or other users' encrypted records.</li>
+    </ul>
+
+    <h3>C. Subscriptions & Billing</h3>
+    <ul>
+      <li><strong>Free Plan:</strong> Provides access to up to 2 client vaults with zero payment required.</li>
+      <li><strong>Paid Plans (Pro & Team):</strong> Pro ($8/month) and Team ($19/month) are recurring subscriptions billed monthly. You may cancel your subscription at any time through your app store account (Google Play / Samsung Store) or via Lemon Squeezy customer portal on the web. Upon cancellation, you retain access until the end of your billing cycle.</li>
+    </ul>
+
+    <h3>D. Limitation of Liability</h3>
+    <p>
+      Custodian provides the service on an "as-is" and "as-available" basis. To the maximum extent permitted by applicable law, Custodian is not liable for data loss resulting from forgotten master passcodes, compromised local devices, or third-party infrastructure outages.
+    </p>
+
+    <!-- SECTION 4: DATA DELETION -->
+    <h2 id="deletion">4. Data Deletion Rights (GDPR & CCPA)</h2>
+    <p>
+      You have the absolute right to delete your account, remove your records, and export your data at any time:
+    </p>
+    <ul>
+      <li><strong>Instant In-App Deletion:</strong> Go to Profile & Settings → Click <strong>"Delete Account & Data"</strong>. This permanently purges your profile, clients, projects, credentials, and encrypted records from our cloud database.</li>
+      <li><strong>Manual Deletion Request:</strong> You may also email <a href="mailto:ygpksr456@gmail.com">ygpksr456@gmail.com</a> with subject "Data Deletion Request" and your account will be removed within 48 hours.</li>
+    </ul>
+
+    <!-- SECTION 5: CONTACT -->
+    <h2>5. Contact & Support</h2>
+    <p>
+      For security disclosures, billing queries, or legal requests:
     </p>
     <ul>
       <li><strong>Founder Email:</strong> <a href="mailto:ygpksr456@gmail.com">ygpksr456@gmail.com</a></li>
-      <li><strong>Live Application:</strong> <a href="https://custodian-swart.vercel.app">https://custodian-swart.vercel.app</a></li>
+      <li><strong>Live Platform:</strong> <a href="https://custodian-swart.vercel.app">https://custodian-swart.vercel.app</a></li>
     </ul>
 
     <div class="footer">
