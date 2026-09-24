@@ -19,7 +19,7 @@ export const VAULT_PLANS = [
   {
     id: "pro",
     name: "Pro",
-    price: "$9",
+    price: "$8",
     period: "/ mo",
     desc: "For freelancers & solo power users needing complete client handover & secret protection.",
     popular: true,
@@ -39,8 +39,9 @@ export const VAULT_PLANS = [
   {
     id: "team",
     name: "Team",
-    price: "$29",
+    price: "$19",
     period: "/ mo",
+
     desc: "For agencies and teams collaborating securely on client infrastructure.",
     popular: false,
     cta: "Start with Team",
