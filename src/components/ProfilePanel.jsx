@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Sparkles, AlertTriangle, ShieldCheck, LogOut, Bell, Check, Sun, Moon, Trash2, Clock, Lock, Crown, Zap, ShieldAlert, Fingerprint,
-  Eye, EyeOff, KeyRound, CheckCircle2
+  Eye, EyeOff, KeyRound, CheckCircle2, LifeBuoy, MessageSquare, Send, RefreshCw, Mail
 } from "lucide-react";
 
 import { supabase } from "../supabaseClient";
@@ -158,6 +158,92 @@ export default function ProfilePanel({
 
   const [showCancelSubModal, setShowCancelSubModal] = useState(false);
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+
+  // Customer Support & Tickets
+  const [ticketMsg, setTicketMsg] = useState("");
+  const [submittingTicket, setSubmittingTicket] = useState(false);
+  const [userTickets, setUserTickets] = useState([]);
+  const [loadingTickets, setLoadingTickets] = useState(false);
+  const [ticketNotice, setTicketNotice] = useState(null);
+
+  const loadUserTickets = useCallback(async () => {
+    if (!userEmail) return;
+    setLoadingTickets(true);
+    try {
+      const localData = JSON.parse(localStorage.getItem("custodian_support_requests") || "[]");
+      const userLocal = localData.filter((r) => (r.email || "").toLowerCase() === userEmail);
+
+      const { data, error } = await supabase
+        .from("support_requests")
+        .select("*")
+        .eq("email", userEmail)
+        .order("created_at", { ascending: false });
+
+      if (!error && data) {
+        const merged = [...data];
+        userLocal.forEach((loc) => {
+          if (!merged.some((m) => m.id === loc.id)) {
+            merged.push(loc);
+          }
+        });
+        merged.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        setUserTickets(merged);
+      } else {
+        setUserTickets(userLocal);
+      }
+    } catch (e) {
+      const localData = JSON.parse(localStorage.getItem("custodian_support_requests") || "[]");
+      setUserTickets(localData.filter((r) => (r.email || "").toLowerCase() === userEmail));
+    } finally {
+      setLoadingTickets(false);
+    }
+  }, [userEmail]);
+
+  useEffect(() => {
+    loadUserTickets();
+  }, [loadUserTickets]);
+
+  async function handleSubmitTicket(e) {
+    if (e) e.preventDefault();
+    if (!ticketMsg.trim()) return;
+    setSubmittingTicket(true);
+    setTicketNotice(null);
+
+    const newTicket = {
+      id: "ticket_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
+      user_id: profile?.id || null,
+      email: userEmail,
+      message: ticketMsg.trim(),
+      status: "open",
+      response: null,
+      resolved_at: null,
+      created_at: new Date().toISOString(),
+    };
+
+    // Save to localStorage immediately
+    try {
+      const allLocal = JSON.parse(localStorage.getItem("custodian_support_requests") || "[]");
+      allLocal.unshift(newTicket);
+      localStorage.setItem("custodian_support_requests", JSON.stringify(allLocal));
+    } catch (err) {}
+
+    // Save to Supabase (if available)
+    try {
+      await supabase.from("support_requests").insert([{
+        user_id: profile?.id || null,
+        email: userEmail,
+        message: ticketMsg.trim(),
+        status: "open",
+      }]);
+    } catch (dbErr) {
+      console.warn("Supabase support request insert fallback:", dbErr);
+    }
+
+    setTicketMsg("");
+    setTicketNotice("Support ticket submitted! Our security team has received your message.");
+    await loadUserTickets();
+    setSubmittingTicket(false);
+  }
 
   async function handleConfirmedDeleteAccount() {
     setBusy(true);
@@ -416,13 +502,29 @@ export default function ProfilePanel({
               <Sparkles size={13} /> {currentPlan === "free" ? "Upgrade" : "Change Plan"}
             </button>
           ) : (
-            <button
-              type="button"
-              style={{ ...S.primaryBtnSm, background: "rgba(255,215,0,0.15)", borderColor: "#FFD700", color: "#FFD700" }}
-              onClick={() => { window.location.hash = "#/admin"; }}
-            >
-              <Crown size={13} /> Founder HQ
-            </button>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                style={{ ...S.primaryBtnSm, background: "rgba(255,215,0,0.15)", borderColor: "#FFD700", color: "#FFD700" }}
+                onClick={() => { window.location.hash = "#/admin"; }}
+                title="Founder SuperAdmin HQ"
+              >
+                <Crown size={13} /> Founder HQ
+              </button>
+              <button
+                type="button"
+                style={{
+                  ...S.primaryBtnSm,
+                  background: "rgba(128,170,255,0.15)",
+                  border: "1px solid rgba(128,170,255,0.4)",
+                  color: "#80AAFF"
+                }}
+                onClick={() => { window.location.hash = "#/support"; }}
+                title="Founder Support Desk"
+              >
+                <LifeBuoy size={13} /> Support Desk
+              </button>
+            </div>
           )}
         </div>
 
@@ -610,6 +712,143 @@ export default function ProfilePanel({
           >
             {busy ? "Updating Password…" : "Update Account Password"}
           </button>
+        </div>
+
+        {/* Customer Support & Help Desk */}
+        <div style={{
+          background: "rgba(255, 255, 255, 0.02)",
+          border: `1px solid ${COLORS.line}`,
+          borderRadius: 10,
+          padding: 16,
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <LifeBuoy size={15} color={COLORS.brass} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.text }}>Support & Help Desk</span>
+              </div>
+              <p style={{ fontSize: 11.5, color: COLORS.textFaint, margin: "4px 0 0", lineHeight: 1.45 }}>
+                Need help or have questions? Submit a ticket directly to the Custodian founders.
+              </p>
+            </div>
+            <button
+              type="button"
+              style={{ ...S.secondaryBtn, padding: "5px 8px", fontSize: 11 }}
+              onClick={loadUserTickets}
+              disabled={loadingTickets}
+              title="Refresh tickets"
+            >
+              <RefreshCw size={11} className={loadingTickets ? "spin-animation" : ""} />
+            </button>
+          </div>
+
+          {ticketNotice && (
+            <div style={{ ...S.infoBox, margin: 0 }}>
+              <CheckCircle2 size={14} /> {ticketNotice}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmitTicket} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <textarea
+              style={{
+                ...S.input,
+                minHeight: 70,
+                resize: "vertical",
+                fontSize: 12.5,
+                lineHeight: 1.5,
+                fontFamily: "inherit",
+              }}
+              placeholder="Type your message, inquiry, or issue..."
+              value={ticketMsg}
+              onChange={(e) => setTicketMsg(e.target.value)}
+              disabled={submittingTicket}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button
+                type="submit"
+                style={{
+                  ...S.primaryBtnSm,
+                  opacity: submittingTicket || !ticketMsg.trim() ? 0.6 : 1,
+                  cursor: submittingTicket || !ticketMsg.trim() ? "not-allowed" : "pointer"
+                }}
+                disabled={submittingTicket || !ticketMsg.trim()}
+              >
+                <Send size={12} className={submittingTicket ? "spin-animation" : ""} />
+                {submittingTicket ? "Submitting…" : "Submit Ticket"}
+              </button>
+            </div>
+          </form>
+
+          {/* User's tickets list */}
+          {userTickets.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4, borderTop: `1px solid ${COLORS.line}`, paddingTop: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: COLORS.textDim, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                My Support Inquiries ({userTickets.length})
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 260, overflowY: "auto" }}>
+                {userTickets.map((t) => {
+                  const isResolved = (t.status || "").toLowerCase() === "resolved";
+                  return (
+                    <div
+                      key={t.id}
+                      style={{
+                        background: COLORS.panelAlt,
+                        border: `1px solid ${COLORS.line}`,
+                        borderRadius: 8,
+                        padding: "10px 12px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 6,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          fontSize: 10.5,
+                          fontWeight: 600,
+                          padding: "2px 6px",
+                          borderRadius: 4,
+                          background: isResolved ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)",
+                          color: isResolved ? "#10B981" : "#D97706",
+                          border: `1px solid ${isResolved ? "rgba(16, 185, 129, 0.3)" : "rgba(245, 158, 11, 0.3)"}`
+                        }}>
+                          {isResolved ? <CheckCircle2 size={10} /> : <Clock size={10} />}
+                          {isResolved ? "RESOLVED" : "OPEN"}
+                        </span>
+                        <span style={{ fontSize: 10, color: COLORS.textFaint }}>
+                          {new Date(t.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 12, color: COLORS.text, whiteSpace: "pre-wrap" }}>
+                        {t.message}
+                      </div>
+                      {isResolved && t.response && (
+                        <div style={{
+                          background: "rgba(16, 185, 129, 0.08)",
+                          borderLeft: "2px solid #10B981",
+                          borderRadius: "0 6px 6px 0",
+                          padding: "8px 10px",
+                          marginTop: 2,
+                        }}>
+                          <div style={{ fontSize: 10.5, fontWeight: 600, color: "#10B981", marginBottom: 2 }}>
+                            Response from Custodian Support:
+                          </div>
+                          <div style={{ fontSize: 11.5, color: COLORS.text, whiteSpace: "pre-wrap" }}>
+                            {t.response}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: `1px solid ${COLORS.line}` }}>

@@ -73,6 +73,41 @@ export default function ModalRouter({ modal, currentPlan, defaultCurrency, userI
     );
   }
   if (modal.type === "handover") {
+    if (currentPlan === "free") {
+      return (
+        <Overlay onClose={onClose} title="Pro Feature: Client Handover" icon={<PackageCheck size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 500 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, textAlign: "center", padding: "16px 8px" }}>
+            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(176,141,87,0.12)", border: "1px solid #B08D57", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", color: COLORS.brass }}>
+              <PackageCheck size={24} />
+            </div>
+            <div>
+              <h3 style={{ margin: "0 0 6px", fontSize: 16, fontWeight: 700, color: COLORS.text }}>1-Click Client Handover Package</h3>
+              <p style={{ margin: 0, fontSize: 13, color: COLORS.textDim, lineHeight: 1.5 }}>
+                Generate executive-ready client handover documents compiling all deliverables, staging specs, and production secrets in one polished markdown package.
+              </p>
+            </div>
+            <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "12px", textAlign: "left", fontSize: 12, display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, color: COLORS.text }}>
+                <CheckCircle2 size={13} color={COLORS.brass} /> Complete deliverables checklist summary
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, color: COLORS.text }}>
+                <CheckCircle2 size={13} color={COLORS.brass} /> Formatted multi-environment credentials block
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, color: COLORS.text }}>
+                <CheckCircle2 size={13} color={COLORS.brass} /> 1-Click Copy and .md file download
+              </div>
+            </div>
+            <button
+              type="button"
+              style={{ ...S.primaryBtn, marginTop: 4, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+              onClick={() => onOpenUpgrade ? onOpenUpgrade() : onClose()}
+            >
+              <Sparkles size={14} /> Upgrade to Pro ($8 / mo)
+            </button>
+          </div>
+        </Overlay>
+      );
+    }
     return (
       <Overlay onClose={onClose} title={`Client Handover — ${modal.project.name}`} icon={<PackageCheck size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 620 }}>
         <HandoverPackageContent project={modal.project} clientName={modal.clientName} onClose={onClose} showSuccess={showSuccess} />
@@ -101,6 +136,42 @@ export default function ModalRouter({ modal, currentPlan, defaultCurrency, userI
     );
   }
   if (modal.type === "team_members") {
+    const isTeamOrFounder = currentPlan === "team" || currentPlan === "founder";
+    if (!isTeamOrFounder) {
+      return (
+        <Overlay onClose={onClose} title="Team Feature: Shared Vaults" icon={<Users size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 500 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, textAlign: "center", padding: "16px 8px" }}>
+            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(176,141,87,0.12)", border: "1px solid #B08D57", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", color: COLORS.brass }}>
+              <Users size={24} />
+            </div>
+            <div>
+              <h3 style={{ margin: "0 0 6px", fontSize: 16, fontWeight: 700, color: COLORS.text }}>Shared Team Vaults</h3>
+              <p style={{ margin: 0, fontSize: 13, color: COLORS.textDim, lineHeight: 1.5 }}>
+                Invite team members, assign granular role permissions (Full vs Skeleton Only), and collaborate securely on client infrastructure.
+              </p>
+            </div>
+            <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "12px", textAlign: "left", fontSize: 12, display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, color: COLORS.text }}>
+                <CheckCircle2 size={13} color={COLORS.brass} /> Centralized team key revocation & audit
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, color: COLORS.text }}>
+                <CheckCircle2 size={13} color={COLORS.brass} /> Owner covers all invited team members
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, color: COLORS.text }}>
+                <CheckCircle2 size={13} color={COLORS.brass} /> Developer skeleton mode for zero-trust onboarding
+              </div>
+            </div>
+            <button
+              type="button"
+              style={{ ...S.primaryBtn, marginTop: 4, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+              onClick={() => onOpenUpgrade ? onOpenUpgrade() : onClose()}
+            >
+              <Sparkles size={14} /> Upgrade to Team ($19 / mo)
+            </button>
+          </div>
+        </Overlay>
+      );
+    }
     return (
       <Overlay onClose={onClose} title={`Team & Members — ${modal.client.name}`} icon={<Users size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 560 }}>
         <TeamMembersContent client={modal.client} userId={userId} onClose={onClose} showSuccess={showSuccess} />

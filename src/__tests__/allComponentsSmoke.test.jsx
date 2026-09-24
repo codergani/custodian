@@ -21,6 +21,7 @@ import OnboardingTour from "../components/OnboardingTour";
 import ModalRouter from "../components/ModalRouter";
 import WelcomeScreen from "../components/WelcomeScreen";
 import LandingPage from "../components/LandingPage";
+import AdminSupportPanel from "../components/AdminSupportPanel";
 
 
 // Mock localStorage and sessionStorage for Node.js test environment
@@ -277,6 +278,41 @@ describe("All Components Smoke & Render Integrity Suite", () => {
     expect(html).toContain("Team");
     expect(html).toContain("Get Started Free");
     expect(html).toContain("Privacy Policy");
+  });
+
+  it("renders AdminSupportPanel for founder with title, filters, and refresh button", () => {
+    const founderUser = { id: "founder-1", email: "ygpksr456@gmail.com" };
+    const founderProfile = { id: "founder-1", email: "ygpksr456@gmail.com", role: "founder", plan: "founder" };
+    const html = renderToString(
+      <AdminSupportPanel
+        currentUser={founderUser}
+        profile={founderProfile}
+        onExit={vi.fn()}
+      />
+    );
+    expect(html).toContain("Founder Support Desk");
+    expect(html).toContain("FOUNDER ONLY");
+    expect(html).toContain("FILTER:");
+    expect(html).toContain("All (0)");
+    expect(html).toContain("Open (0)");
+    expect(html).toContain("Resolved (0)");
+    expect(html).toContain("Refresh");
+    expect(html).toContain("Back to Vault");
+  });
+
+  it("renders AdminSupportPanel Access Denied 403 when user is not founder", () => {
+    const regularUser = { id: "user-99", email: "client@example.com" };
+    const regularProfile = { id: "user-99", email: "client@example.com", role: "member", plan: "free" };
+    const html = renderToString(
+      <AdminSupportPanel
+        currentUser={regularUser}
+        profile={regularProfile}
+        onExit={vi.fn()}
+      />
+    );
+    expect(html).toContain("Access Denied (403)");
+    expect(html).toContain("client@example.com");
+    expect(html).toContain("Return to Your Vault");
   });
 });
 

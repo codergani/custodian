@@ -290,3 +290,67 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.admin_get_all_users() TO authenticated;
+
+-- ---------- 11. SUPPORT REQUESTS & FOUNDER DESK ----------
+CREATE TABLE IF NOT EXISTS public.support_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  email text NOT NULL,
+  message text NOT NULL,
+  status text NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'resolved')),
+  response text,
+  resolved_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.support_requests ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'support_requests' AND policyname = 'Allow public insert support_requests'
+  ) THEN
+    CREATE POLICY "Allow public insert support_requests"
+      ON public.support_requests
+      FOR INSERT
+      WITH CHECK (true);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'support_requests' AND policyname = 'Allow founder select support_requests'
+  ) THEN
+    CREATE POLICY "Allow founder select support_requests"
+      ON public.support_requests
+      FOR SELECT
+      USING (
+        (auth.jwt() ->> 'email') = 'ygpksr456@gmail.com'
+        OR EXISTS (
+          SELECT 1 FROM public.profiles
+          WHERE profiles.id = auth.uid()
+          AND (profiles.role = 'founder' OR profiles.role = 'admin' OR profiles.plan = 'founder')
+        )
+        OR auth.uid() = user_id
+      );
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'support_requests' AND policyname = 'Allow founder update support_requests'
+  ) THEN
+    CREATE POLICY "Allow founder update support_requests"
+      ON public.support_requests
+      FOR UPDATE
+      USING (
+        (auth.jwt() ->> 'email') = 'ygpksr456@gmail.com'
+        OR EXISTS (
+          SELECT 1 FROM public.profiles
+          WHERE profiles.id = auth.uid()
+          AND (profiles.role = 'founder' OR profiles.role = 'admin' OR profiles.plan = 'founder')
+        )
+      );
+  END IF;
+END $$;
+

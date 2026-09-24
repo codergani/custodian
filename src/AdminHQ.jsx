@@ -4,7 +4,7 @@ import {
   Search, AlertTriangle, CheckCircle2, Lock, ArrowLeft, Globe,
   Activity, Check, Layers, UserCheck, RefreshCw, KeyRound, Eye, EyeOff,
   ShieldAlert, FileText, ChevronLeft, ChevronRight, Copy, HardDrive,
-  Terminal, Sparkles, Clock, ArrowUpDown, Filter, Info
+  Terminal, Sparkles, Clock, ArrowUpDown, Filter, Info, LifeBuoy
 } from "lucide-react";
 import { supabase } from "./supabaseClient";
 import { hashText } from "./crypto";
@@ -685,11 +685,30 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
               background: activeTab === "health" ? "rgba(176,141,87,0.15)" : "transparent",
               borderColor: activeTab === "health" ? COLORS.brass : COLORS.line,
               color: activeTab === "health" ? COLORS.brass : COLORS.textDim,
-              fontWeight: activeTab === "health" ? 600 : 400,
             }}
             onClick={() => setActiveTab("health")}
           >
             <Activity size={15} /> System Health
+          </button>
+
+          <button
+            style={{
+              ...S.secondaryBtn,
+              justifyContent: "flex-start",
+              padding: "8px 12px",
+              fontSize: 12,
+              gap: 9,
+              background: "rgba(128,170,255,0.08)",
+              borderColor: "rgba(128,170,255,0.3)",
+              color: "#80AAFF",
+              fontWeight: 500,
+            }}
+            onClick={() => {
+              window.location.hash = "#/support";
+            }}
+            title="Open Founder Support Desk"
+          >
+            <LifeBuoy size={15} /> Support Desk
           </button>
         </div>
 

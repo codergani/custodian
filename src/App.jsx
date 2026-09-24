@@ -7,6 +7,7 @@ import LandingPage from "./components/LandingPage";
 import VaultUnlock from "./VaultUnlock";
 import Vault from "./Vault";
 import AdminHQ from "./AdminHQ";
+import AdminSupportPanel from "./components/AdminSupportPanel";
 import ResetPasswordScreen from "./ResetPasswordScreen";
 import { ThemeProvider } from "./ThemeContext";
 import { isNative, initNativePlugins, setupBackButtonListener, setupDeepLinkAuthListener, setupAppStateAutoLock } from "./native/nativeBridge";
@@ -463,7 +464,10 @@ function AppContent() {
   }
 
   // 1. Dedicated Admin Route (/admin or #/admin) - STRICT ACCESS CONTROL
-  const isAdminRoute = route.includes("admin") || window.location.hash === "#/admin" || window.location.pathname === "/admin";
+  const isAdminRoute =
+    !route.includes("support") &&
+    (route.includes("admin") || window.location.hash === "#/admin" || window.location.pathname === "/admin");
+
   if (isAdminRoute) {
     const isAuthorized =
       profile?.role === "founder" ||
@@ -500,6 +504,61 @@ function AppContent() {
     return (
       <ErrorBoundary>
         <AdminHQ
+          currentUser={session.user}
+          profile={profile}
+          onExit={() => {
+            window.location.hash = "";
+            setRoute("");
+          }}
+        />
+      </ErrorBoundary>
+    );
+  }
+
+  // 2. Dedicated Founder Support Desk Route (/support, #/support, /admin-support, #/admin-support)
+  const isSupportRoute =
+    route.includes("support") ||
+    window.location.hash === "#/support" ||
+    window.location.hash === "#/admin-support" ||
+    window.location.pathname === "/support" ||
+    window.location.pathname === "/admin-support";
+
+  if (isSupportRoute) {
+    const isAuthorized =
+      profile?.role === "founder" ||
+      profile?.role === "admin" ||
+      profile?.plan === "founder" ||
+      (import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
+      session.user.email?.toLowerCase() === "ygpksr456@gmail.com";
+
+    if (!isAuthorized) {
+      return (
+        <div style={S.centerScreen}>
+          <div style={{ ...S.authCard, maxWidth: 460, textAlign: "center" }}>
+            <div style={{ ...S.dialRing, margin: "0 auto 12px", background: "rgba(224,122,109,0.12)", borderColor: "#E07A6D" }}>
+              <Lock size={22} color="#E07A6D" />
+            </div>
+            <h2 style={{ ...S.authTitle, color: "#E07A6D", fontSize: 18 }}>Access Denied (403)</h2>
+            <p style={{ ...S.authSub, fontSize: 12.5, lineHeight: 1.5, margin: "8px 0 16px" }}>
+              The Founder Support Desk is strictly restricted to platform creators. Your account (<strong>{session.user.email}</strong>) does not have founder privileges.
+            </p>
+            <button
+              style={{ ...S.primaryBtn, justifyContent: "center" }}
+              onClick={() => {
+                window.location.hash = "";
+                setRoute("");
+              }}
+            >
+              Return to Your Vault
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <ErrorBoundary>
+        <AdminSupportPanel
           currentUser={session.user}
           profile={profile}
           onExit={() => {
