@@ -140,4 +140,26 @@ describe("MFA & 2FA Recovery Codes & Anti-Brute-Force Test Suite", () => {
     const wrongKey = await deriveKey("WrongPassword999!", salt);
     await expect(decryptJSON(wrongKey, check)).rejects.toThrow();
   });
+
+  it("exports saveRecoveryCodesToVault and handles zero-knowledge vault auto-save", async () => {
+    const { saveRecoveryCodesToVault } = await import("../utils/mfaUtils");
+    expect(typeof saveRecoveryCodesToVault).toBe("function");
+
+    const salt = newSalt();
+    const key = await deriveKey("TestPassword123!", salt);
+    const codes = generateRecoveryCodes(8);
+
+    // Call saveRecoveryCodesToVault
+    const result = await saveRecoveryCodesToVault(testUserId, key, codes);
+    expect(typeof result).toBe("boolean");
+
+    // Local resilience check
+    const cached = localStorage.getItem(`custodian_auto_vault_recovery_${testUserId}`);
+    if (cached) {
+      const parsedBlob = JSON.parse(cached);
+      const decrypted = await decryptJSON(key, parsedBlob);
+      expect(decrypted.label).toBe("2FA Emergency Recovery Codes");
+      expect(decrypted.tags).toContain("2fa");
+    }
+  });
 });

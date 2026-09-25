@@ -10,6 +10,7 @@ import AdminHQ from "./AdminHQ";
 import AdminSupportPanel from "./components/AdminSupportPanel";
 import ResetPasswordScreen from "./ResetPasswordScreen";
 import Mandatory2FASetup from "./components/Mandatory2FASetup";
+import { saveRecoveryCodesToVault } from "./utils/mfaUtils";
 import { ThemeProvider } from "./ThemeContext";
 import { isNative, initNativePlugins, setupBackButtonListener, setupDeepLinkAuthListener, setupAppStateAutoLock } from "./native/nativeBridge";
 import { initLemonSqueezy } from "./utils/lemonsqueezy";
@@ -204,6 +205,19 @@ function AppContent() {
     } catch (e) {
       console.warn("[App] Failed to save session vault key:", e);
     }
+
+    // Auto-save any pending 2FA recovery codes now that vault key is unlocked
+    try {
+      const pendingCodes = sessionStorage.getItem("custodian_pending_2fa_vault_save");
+      if (pendingCodes && (session?.user?.id || currSession?.user?.id)) {
+        sessionStorage.removeItem("custodian_pending_2fa_vault_save");
+        const parsed = JSON.parse(pendingCodes);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const targetUid = session?.user?.id || currSession?.user?.id;
+          saveRecoveryCodesToVault(targetUid, key, parsed).catch(() => {});
+        }
+      }
+    } catch {}
   }
   async function tryAutoUnlockWithPassword(currSession, currProfile, enteredPassword) {
     if (!enteredPassword || vaultKey) return;
@@ -723,6 +737,7 @@ function AppContent() {
       <ErrorBoundary>
         <Mandatory2FASetup
           profile={profile}
+          vaultKey={vaultKey}
           isMandatory={true}
           onComplete={() => {
             setIsMfaEnrolled(true);

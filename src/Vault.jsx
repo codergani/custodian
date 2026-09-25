@@ -1649,6 +1649,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
           >
             <Mandatory2FASetup
               profile={profile}
+              vaultKey={vaultKey}
               isMandatory={false}
               onCancel={() => setShowQuick2faModal(false)}
               onComplete={() => {

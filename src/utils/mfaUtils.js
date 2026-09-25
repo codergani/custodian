@@ -1,5 +1,5 @@
 import { supabase } from "../supabaseClient";
-import { hashText } from "../crypto";
+import { hashText, encryptJSON } from "../crypto";
 
 /**
  * Generates an array of single-use recovery codes formatted as CUST-XXXX-XXXX
@@ -158,3 +158,111 @@ export async function purgeRecoveryCodes(userId) {
     console.warn("[MFA] Purge recovery codes warning:", err);
   }
 }
+
+/**
+ * Automatically creates/updates an encrypted credential note in the user's Personal Space vault.
+ */
+export async function saveRecoveryCodesToVault(userId, vaultKey, plaintextCodes) {
+  if (!userId || !vaultKey || !plaintextCodes?.length) return false;
+
+  try {
+    // 1. Locate or create Personal Space client
+    let clientId = null;
+    let projectId = null;
+
+    const { data: clients } = await supabase
+      .from("clients")
+      .select("id, name")
+      .eq("owner_id", userId)
+      .is("deleted_at", null);
+
+    let personalClient = clients?.find(
+      (c) => c.name === "Personal Space" || c.name === "Personal" || c.name?.toLowerCase().includes("personal")
+    );
+
+    if (!personalClient) {
+      const { data: newC } = await supabase
+        .from("clients")
+        .insert({ owner_id: userId, name: "Personal Space" })
+        .select()
+        .single();
+      personalClient = newC;
+    }
+
+    if (personalClient?.id) {
+      clientId = personalClient.id;
+      const { data: projects } = await supabase
+        .from("projects")
+        .select("id, name")
+        .eq("client_id", clientId)
+        .is("deleted_at", null);
+
+      let personalProj = projects?.find(
+        (p) => p.name === "Personal" || p.name === "My Secrets" || p.name?.toLowerCase().includes("personal")
+      );
+      if (!personalProj) {
+        const { data: newP } = await supabase
+          .from("projects")
+          .insert({ client_id: clientId, name: "Personal" })
+          .select()
+          .single();
+        personalProj = newP;
+      }
+      projectId = personalProj?.id;
+    }
+
+    if (!projectId) return false;
+
+    // 2. Prepare formatted note & payload
+    const nowISO = new Date().toISOString();
+    const formattedNote = `CUSTODIAN 2FA EMERGENCY RECOVERY CODES
+Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
+
+Each code below can be used EXACTLY ONCE to log into your Custodian account if you lose access to your authenticator app:
+
+${plaintextCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
+
+IMPORTANT RECOVERY TIP:
+Since recovery codes are needed during login when locked out, keep a downloaded or printed copy in a secure offline location outside of this browser.`;
+
+    const payload = {
+      label: "2FA Emergency Recovery Codes",
+      secretType: "note",
+      note: formattedNote,
+      value: plaintextCodes.join("  |  "),
+      category: "security",
+      tags: ["2fa", "security", "backup", "recovery"],
+      environment: "production",
+      createdAt: nowISO,
+      updatedAt: nowISO,
+      history: [
+        {
+          action: "Auto-saved during 2FA enrollment",
+          timestamp: nowISO,
+          label: "2FA Emergency Recovery Codes",
+        },
+      ],
+    };
+
+    const blob = await encryptJSON(vaultKey, payload);
+    const { error } = await supabase.from("credentials").insert({
+      project_id: projectId,
+      encrypted_blob: blob,
+    });
+
+    if (error) {
+      console.warn("[MFA] Could not insert credential row to Supabase:", error.message);
+    }
+
+    // Also cache encrypted blob locally for offline resilience
+    try {
+      localStorage.setItem(`custodian_auto_vault_recovery_${userId}`, JSON.stringify(blob));
+    } catch {}
+
+    return true;
+  } catch (e) {
+    console.warn("[MFA] Failed to auto-save recovery codes into vault:", e);
+    return false;
+  }
+}
+

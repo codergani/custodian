@@ -265,36 +265,17 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
         <div style={S.authHeader}>
           <div style={S.dialRing}><Lock size={22} color={COLORS.brass} /></div>
           <div>
-            <div style={S.eyebrow}>{isFirstTime ? "MASTER ENCRYPTION PASSCODE" : "UNLOCK SECURE VAULT"}</div>
-            <h1 style={S.authTitle}>{isFirstTime ? "Create Master Passcode" : "Enter Vault Passcode"}</h1>
+            <div style={S.eyebrow}>ZERO-KNOWLEDGE ENCRYPTION</div>
+            <h1 style={S.authTitle}>Unlock Secure Vault</h1>
           </div>
         </div>
 
         {isFirstTime ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10, margin: "8px 0 14px" }}>
             <p style={{ ...S.authSub, fontSize: 12.5, lineHeight: 1.55, color: COLORS.textDim, margin: 0 }}>
-              Your Master Passcode derives a 256-bit AES-GCM encryption key directly inside your device's browser memory. 
-              <strong> Custodian NEVER sends or stores this password.</strong>
+              Your account password derives a 256-bit AES-GCM encryption key directly inside your device's memory. 
+              <strong> Custodian NEVER sends or stores this key in plaintext.</strong>
             </p>
-
-            {/* Critical Zero-Knowledge Loss Warning Callout */}
-            <div style={{
-              background: "rgba(224, 122, 109, 0.08)",
-              border: "1px solid rgba(224, 122, 109, 0.35)",
-              borderRadius: 8,
-              padding: "10px 12px",
-              display: "flex",
-              gap: 10,
-              alignItems: "flex-start",
-            }}>
-              <AlertOctagon size={18} color="#E07A6D" style={{ flexShrink: 0, marginTop: 1 }} />
-              <div style={{ fontSize: 11.5, lineHeight: 1.5, color: COLORS.text }}>
-                <strong style={{ color: "#E07A6D", display: "block", marginBottom: 2 }}>
-                  ⚠️ Unrecoverable Zero-Knowledge Notice
-                </strong>
-                Because your data is encrypted client-side, <strong>if you forget this passcode, your credentials cannot be recovered or reset by anyone</strong> (not even Custodian administrators).
-              </div>
-            </div>
 
             <button
               type="button"
@@ -315,11 +296,11 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
           </div>
         ) : (
           <p style={{ ...S.authSub, fontSize: 12.5, lineHeight: 1.55, color: COLORS.textDim }}>
-            Enter your master passcode to decrypt your client credentials and workspace keys locally on this device.
+            Enter your account password to decrypt your client credentials and workspace keys locally on this device.
           </p>
         )}
 
-        <label style={S.label}>Master vault passcode</label>
+        <label style={S.label}>Account Password</label>
         <div style={{ position: "relative", width: "100%" }}>
           <input
             style={{ ...S.input, paddingRight: 38, opacity: lockoutRemaining > 0 ? 0.6 : 1 }}
@@ -329,7 +310,7 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
             onChange={(e) => setPw(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (isFirstTime ? handleFirstTimeSetup() : handleUnlock())}
             autoFocus
-            placeholder={isFirstTime ? "At least 8 characters" : lockoutRemaining > 0 ? `Locked (${lockoutRemaining}s remaining)` : "Your master passcode"}
+            placeholder={isFirstTime ? "At least 8 characters" : lockoutRemaining > 0 ? `Locked (${lockoutRemaining}s remaining)` : "Your account password"}
           />
           <button
             type="button"
@@ -345,7 +326,7 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
 
         {isFirstTime && (
           <>
-            <label style={S.label}>Confirm master passcode</label>
+            <label style={S.label}>Confirm account password</label>
             <div style={{ position: "relative", width: "100%" }}>
               <input
                 style={{ ...S.input, paddingRight: 38 }}
@@ -354,7 +335,7 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
                 disabled={busy}
                 onChange={(e) => setPw2(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleFirstTimeSetup()}
-                placeholder="Re-enter master passcode"
+                placeholder="Re-enter account password"
               />
               <button
                 type="button"
@@ -440,7 +421,7 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
             ? (isFirstTime ? "Deriving AES Key…" : "Decrypting Vault…")
             : lockoutRemaining > 0
             ? `Temporarily Locked (${lockoutRemaining}s)`
-            : (isFirstTime ? "Initialize Secure Vault" : (!isFirstTime && isBioEnrolled ? "Unlock with Master Passcode" : "Unlock Vault"))}
+            : (isFirstTime ? "Initialize Secure Vault" : (!isFirstTime && isBioEnrolled ? "Unlock with Password" : "Unlock Vault"))}
         </button>
 
         {!isFirstTime && (
@@ -462,7 +443,7 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
               }}
               onClick={() => setShowForgotHelp(true)}
             >
-              <HelpCircle size={13} /> Forgot Master Passcode?
+              <HelpCircle size={13} /> Forgot Account Password?
             </button>
           </div>
         )}
@@ -490,11 +471,11 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
         </div>
       </div>
 
-      {/* Zero-Knowledge Master Passcode Assistance Modal */}
+      {/* Zero-Knowledge Password Assistance Modal */}
       {showForgotHelp && (
         <Overlay
           onClose={() => setShowForgotHelp(false)}
-          title="Master Passcode Recovery"
+          title="Account Password & Vault Access"
           icon={<KeyRound size={18} color={COLORS.brass} />}
           cardStyle={{ ...S.modalCard, maxWidth: 480 }}
         >
@@ -511,45 +492,37 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
               <Info size={18} color={COLORS.brass} style={{ flexShrink: 0, marginTop: 1 }} />
               <div>
                 <strong style={{ color: COLORS.brass, display: "block", marginBottom: 3 }}>
-                  Cloud Account Password vs. Master Vault Passcode
+                  Single Password + 2FA Security
                 </strong>
-                Your <strong>Account Password</strong> signs you into the cloud. Your <strong>Master Passcode</strong> is your local zero-knowledge decryption key.
+                Custodian uses your single <strong>Account Password</strong> to authenticate and derive your local zero-knowledge AES-256-GCM encryption key.
               </div>
             </div>
 
             <div>
               <h4 style={{ color: COLORS.text, fontSize: 13, fontWeight: 600, margin: "0 0 6px" }}>
-                Can Custodian reset my Master Passcode?
+                Forgot your password?
               </h4>
               <p style={{ margin: 0, color: COLORS.textDim }}>
-                No. Because Custodian is strictly <strong>Zero-Knowledge</strong>, your master passcode is never sent to our servers. We cannot reset it or decrypt your data if it is lost.
+                You can reset your account password via your registered email address and verify with your Two-Factor Authenticator or Emergency Recovery Code.
               </p>
             </div>
 
-            <div>
-              <h4 style={{ color: COLORS.text, fontSize: 13, fontWeight: 600, margin: "0 0 6px" }}>
-                Recommended Recovery Options:
-              </h4>
-              <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 6 }}>
-                <li>
-                  <strong>Emergency Recovery Kit:</strong> Search your downloads or files for <code>custodian-recovery-kit-*.txt</code> created during vault setup.
-                </li>
-                <li>
-                  <strong>Another Active Device:</strong> If you are already unlocked on another computer or browser, you can export your secrets from there.
-                </li>
-                <li>
-                  <strong>Forgot Account Password instead?</strong> If you forgot your login password, sign out and click "Forgot password?" on the sign-in screen.
-                </li>
-              </ul>
+            <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+              <button
+                type="button"
+                style={{ ...S.secondaryBtn, flex: 1, justifyContent: "center" }}
+                onClick={() => setShowForgotHelp(false)}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                style={{ ...S.primaryBtn, flex: 1, justifyContent: "center" }}
+                onClick={handleSignOut}
+              >
+                Sign Out to Reset Password
+              </button>
             </div>
-
-            <button
-              type="button"
-              style={{ ...S.primaryBtn, justifyContent: "center", marginTop: 4 }}
-              onClick={() => setShowForgotHelp(false)}
-            >
-              Got it
-            </button>
           </div>
         </Overlay>
       )}

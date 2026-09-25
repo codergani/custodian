@@ -71,7 +71,7 @@ describe("All Components Smoke & Render Integrity Suite", () => {
         onSignOut={vi.fn()}
       />
     );
-    expect(html).toContain("Master Passcode");
+    expect(html).toContain("Unlock Secure Vault");
   });
 
   it("renders ResetPasswordScreen without crashing", () => {

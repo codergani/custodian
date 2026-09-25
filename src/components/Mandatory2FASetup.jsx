@@ -12,10 +12,10 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
-import { generateRecoveryCodes, storeRecoveryCodes } from "../utils/mfaUtils";
+import { generateRecoveryCodes, storeRecoveryCodes, saveRecoveryCodesToVault } from "../utils/mfaUtils";
 import { S, COLORS } from "../styles";
 
-export default function Mandatory2FASetup({ profile, onComplete, onSignOut, onCancel, isMandatory = true }) {
+export default function Mandatory2FASetup({ profile, vaultKey, onComplete, onSignOut, onCancel, isMandatory = true }) {
   const [step, setStep] = useState("scan"); // "scan" | "recovery"
   const [enrollData, setEnrollData] = useState(null);
   const [verifyCode, setVerifyCode] = useState("");
@@ -91,6 +91,15 @@ export default function Mandatory2FASetup({ profile, onComplete, onSignOut, onCa
       await storeRecoveryCodes(profile.id, codes);
       setRecoveryCodes(codes);
       setStep("recovery");
+
+      // Automatically save encrypted copy into the user's vault
+      if (vaultKey) {
+        saveRecoveryCodesToVault(profile.id, vaultKey, codes).catch(() => {});
+      } else {
+        try {
+          sessionStorage.setItem("custodian_pending_2fa_vault_save", JSON.stringify(codes));
+        } catch {}
+      }
     } catch (e) {
       console.error("[Mandatory2FA] Verification error:", e);
       setErr("Invalid 6-digit code. Please verify your authenticator time clock and try again.");
@@ -335,18 +344,27 @@ ${recoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
           /* Step 2: Single-Use Emergency Recovery Codes */
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{
-              background: "rgba(176,141,87,0.06)",
+              background: "rgba(176,141,87,0.08)",
               border: `1px solid ${COLORS.brassDim}`,
               borderRadius: 8,
-              padding: "10px 12px",
+              padding: "11px 14px",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
               fontSize: 12,
-              color: COLORS.textDim,
-              lineHeight: 1.5
+              lineHeight: 1.5,
+              color: COLORS.text
             }}>
-              <strong style={{ color: COLORS.brass, display: "block", marginBottom: 2 }}>
-                ⚠️ One-Time Display
-              </strong>
-              These 8 codes will not be shown again. Each code can be used once to bypass 2FA if your authenticator device is broken or lost.
+              <ShieldCheck size={18} color={COLORS.brass} style={{ flexShrink: 0, marginTop: 1 }} />
+              <div>
+                <strong style={{ color: COLORS.brass, display: "block", marginBottom: 2 }}>
+                  ✅ Automatically Saved to Your Encrypted Vault
+                </strong>
+                These 8 emergency recovery codes have been encrypted and saved into your <strong>Personal Space</strong> secrets.
+                <span style={{ display: "block", marginTop: 4, color: COLORS.textDim }}>
+                  💡 <em>Recommendation:</em> Also download or copy them below to keep an offline backup in case you ever lose your phone and need to log in from a new computer.
+                </span>
+              </div>
             </div>
 
             <div style={{

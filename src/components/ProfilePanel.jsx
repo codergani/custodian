@@ -11,7 +11,7 @@ import { getAutoLockMinutes, setAutoLockMinutes, AUTOLOCK_OPTIONS } from "../sec
 import { isBiometricsAvailable, isBiometricEnabled, enableBiometricUnlock, disableBiometricUnlock, isNative, openInAppBrowser } from "../native/nativeBridge";
 import { exportKeyRaw } from "../crypto";
 import { checkPasswordStrength } from "../utils/passwordGenerator";
-import { generateRecoveryCodes, storeRecoveryCodes, purgeRecoveryCodes } from "../utils/mfaUtils";
+import { generateRecoveryCodes, storeRecoveryCodes, purgeRecoveryCodes, saveRecoveryCodesToVault } from "../utils/mfaUtils";
 
 export default function ProfilePanel({
   profile,
@@ -257,6 +257,11 @@ export default function ProfilePanel({
       setIs2FAActive(true);
       setMfaFactor({ id: enrollData.id, status: "verified" });
       setMfaSuccessMsg("Two-Factor Authentication successfully verified & activated!");
+
+      // Auto-save encrypted copy to user's Personal Space vault
+      if (vaultKey) {
+        saveRecoveryCodesToVault(profile.id, vaultKey, codes).catch(() => {});
+      }
     } catch (err) {
       console.error("[ProfilePanel] MFA verification error:", err);
       setMfaErr(err.message || "Invalid 6-digit code. Please check your authenticator clock and try again.");
@@ -1448,13 +1453,26 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
           ) : (
             /* Recovery Codes Step */
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ ...S.infoBox, margin: 0 }}>
-                <CheckCircle2 size={16} /> 2FA is now active! Save your single-use recovery codes.
+              <div style={{
+                background: "rgba(176,141,87,0.08)",
+                border: `1px solid ${COLORS.brassDim}`,
+                borderRadius: 8,
+                padding: "10px 12px",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 8,
+                fontSize: 12,
+                color: COLORS.text,
+                lineHeight: 1.45
+              }}>
+                <ShieldCheck size={16} color={COLORS.brass} style={{ flexShrink: 0, marginTop: 1 }} />
+                <div>
+                  <strong style={{ color: COLORS.brass, display: "block" }}>
+                    ✅ Automatically Saved to Your Encrypted Vault
+                  </strong>
+                  These codes were safely encrypted and added to your <strong>Personal Space</strong> secrets. We also recommend saving a copy offline (.txt) in case you need to log in from a new device.
+                </div>
               </div>
-
-              <p style={{ margin: 0, fontSize: 12.5, color: COLORS.textDim, lineHeight: 1.5 }}>
-                If you ever lose access to your authenticator device, each of these emergency recovery codes can be used <strong>once</strong> to sign into your account.
-              </p>
 
               {/* Recovery Codes Grid */}
               <div style={{

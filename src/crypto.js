@@ -57,7 +57,8 @@ export async function encryptJSON(key, obj) {
 }
 
 export async function decryptJSON(key, blobString) {
-  const payload = JSON.parse(blobString);
+  if (!blobString) return null;
+  const payload = typeof blobString === "string" ? JSON.parse(blobString) : blobString;
   const iv = new Uint8Array(unb64(payload.iv));
   const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, unb64(payload.ct));
   return JSON.parse(dec.decode(pt));
