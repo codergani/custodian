@@ -137,7 +137,7 @@ export default function AuthScreen({ onAuthed, initialMode = "login", onBackToHo
         }
 
         if (data?.session) {
-          onAuthed(data.session);
+          onAuthed(data.session, password);
         }
       } else if (mode === "reset") {
         const redirectUrl = isNative()
@@ -191,7 +191,7 @@ export default function AuthScreen({ onAuthed, initialMode = "login", onBackToHo
           return;
         }
         clearFailedAttempts(mfaUserId);
-        onAuthed(mfaSession);
+        onAuthed(mfaSession, password);
       } else {
         if (!mfaCode.trim() || mfaCode.trim().length < 6) {
           setBusy(false);
@@ -219,7 +219,7 @@ export default function AuthScreen({ onAuthed, initialMode = "login", onBackToHo
         }
         clearFailedAttempts(mfaUserId);
         const { data: refreshedSession } = await supabase.auth.getSession();
-        onAuthed(refreshedSession?.session || mfaSession);
+        onAuthed(refreshedSession?.session || mfaSession, password);
       }
     } catch (err) {
       console.error("[AuthScreen] 2FA verification error:", err);
@@ -581,12 +581,15 @@ export default function AuthScreen({ onAuthed, initialMode = "login", onBackToHo
                 type="button"
                 style={{ ...S.secondaryBtn, marginTop: 8, width: "100%", justifyContent: "center" }}
                 onClick={() => {
-                  onAuthed({
-                    user: {
-                      id: "a0000000-0000-0000-0000-000000000001",
-                      email: "owner@custodian.app",
+                  onAuthed(
+                    {
+                      user: {
+                        id: "a0000000-0000-0000-0000-000000000001",
+                        email: "owner@custodian.app",
+                      },
                     },
-                  });
+                    "custodian2026"
+                  );
                 }}
               >
                 Quick Demo Access

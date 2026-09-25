@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Lock } from "lucide-react";
 import { supabase } from "./supabaseClient";
 import AuthScreen from "./AuthScreen";
@@ -15,7 +15,18 @@ import { initLemonSqueezy } from "./utils/lemonsqueezy";
 
 import { initRevenueCat, identifyUser, resetPurchasesUser } from "./native/revenueCat";
 import { getAutoLockMinutes } from "./security";
-import { exportKeyRaw, importKeyRaw } from "./crypto";
+import {
+  exportKeyRaw,
+  importKeyRaw,
+  deriveKey,
+  newSalt,
+  encryptJSON,
+  decryptJSON,
+  generateECDHKeyPair,
+  exportPublicKeyJWK,
+  exportEncryptedPrivateKey,
+  importDecryptedPrivateKey,
+} from "./crypto";
 import { S } from "./styles";
 
 
@@ -100,6 +111,15 @@ function AppContent() {
     }
   });
   const [authInitialMode, setAuthInitialMode] = useState("login");
+  const lastAuthPasswordRef = useRef(null);
+
+  function handleAuthed(authedSession, enteredPassword) {
+    if (enteredPassword) {
+      lastAuthPasswordRef.current = enteredPassword;
+    }
+    setSession(authedSession);
+  }
+
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => {
 
     return (
@@ -157,6 +177,70 @@ function AppContent() {
       console.warn("[App] Failed to save session vault key:", e);
     }
   }
+  async function tryAutoUnlockWithPassword(currSession, currProfile, enteredPassword) {
+    if (!enteredPassword || vaultKey) return;
+    try {
+      const uId = currSession.user.id;
+      const salt = currProfile?.vault_salt || localStorage.getItem(`demo_vault_salt_${uId}`);
+      const check = currProfile?.vault_check || JSON.parse(localStorage.getItem(`demo_vault_check_${uId}`) || "null");
+
+      if (!salt) {
+        // First-time setup: automatically initialize vault with their account password
+        const newVaultSalt = newSalt();
+        const key = await deriveKey(enteredPassword, newVaultSalt);
+        const newCheck = await encryptJSON(key, { marker: "ok" });
+        const ecdhPair = await generateECDHKeyPair();
+        const pubKeyJWK = await exportPublicKeyJWK(ecdhPair.publicKey);
+        const encryptedPrivKey = await exportEncryptedPrivateKey(ecdhPair.privateKey, key);
+
+        localStorage.setItem(`demo_vault_salt_${uId}`, newVaultSalt);
+        localStorage.setItem(`demo_vault_check_${uId}`, JSON.stringify(newCheck));
+        localStorage.setItem(`demo_vault_ecdh_pub_${uId}`, pubKeyJWK);
+        localStorage.setItem(`demo_vault_ecdh_priv_${uId}`, encryptedPrivKey);
+
+        try {
+          await supabase.from("profiles").update({
+            vault_salt: newVaultSalt,
+            vault_check: newCheck,
+            public_key: pubKeyJWK,
+            encrypted_private_key: encryptedPrivKey,
+          }).eq("id", uId);
+        } catch (dbErr) {
+          console.warn("[App] Could not save vault salt to DB:", dbErr);
+        }
+
+        currProfile.vault_salt = newVaultSalt;
+        currProfile.vault_check = newCheck;
+        currProfile.public_key = pubKeyJWK;
+        currProfile.encrypted_private_key = encryptedPrivKey;
+
+        await handleUnlocked(key, ecdhPair.privateKey);
+      } else {
+        // Existing vault: derive key with account password and verify
+        const key = await deriveKey(enteredPassword, salt);
+        if (check) {
+          const result = await decryptJSON(key, check);
+          if (result?.marker === "ok") {
+            let ecdhPrivKey = null;
+            const encryptedPrivKey = currProfile?.encrypted_private_key || localStorage.getItem(`demo_vault_ecdh_priv_${uId}`);
+            if (encryptedPrivKey) {
+              try {
+                ecdhPrivKey = await importDecryptedPrivateKey(encryptedPrivKey, key);
+              } catch (err) {}
+            }
+            if (!ecdhPrivKey) {
+              const ecdhPair = await generateECDHKeyPair();
+              ecdhPrivKey = ecdhPair.privateKey;
+            }
+            await handleUnlocked(key, ecdhPrivKey);
+          }
+        }
+      }
+    } catch (autoUnlockErr) {
+      console.warn("[App] Auto-unlock with login password notice:", autoUnlockErr);
+    }
+  }
+
 
   // Restore active vault session across page refreshes if within inactivity timeout
   useEffect(() => {
@@ -314,6 +398,11 @@ function AppContent() {
           loaded = { ...loaded, plan: promoOverride };
         }
         setProfile(loaded);
+        const pendingPassword = lastAuthPasswordRef.current;
+        lastAuthPasswordRef.current = null;
+        if (pendingPassword) {
+          tryAutoUnlockWithPassword(session, loaded, pendingPassword);
+        }
       })
       .catch((err) => {
         console.error("Profile query exception, using fallback:", err);
@@ -322,12 +411,18 @@ function AppContent() {
           session.user.email?.toLowerCase() === "ygpksr456@gmail.com";
         const promoOverride = localStorage.getItem(`custodian_promo_override_${session.user.id}`);
         const activePlan = isFounderEmail ? "founder" : (promoOverride || "free");
-        setProfile({
+        const fallbackProfile = {
           id: session.user.id,
           email: session.user.email,
           role: isFounderEmail ? "founder" : "member",
           plan: activePlan,
-        });
+        };
+        setProfile(fallbackProfile);
+        const pendingPassword = lastAuthPasswordRef.current;
+        lastAuthPasswordRef.current = null;
+        if (pendingPassword) {
+          tryAutoUnlockWithPassword(session, fallbackProfile, pendingPassword);
+        }
       });
   }, [session]);
 
@@ -384,7 +479,7 @@ function AppContent() {
     if (isNative()) {
       return (
         <ErrorBoundary>
-          <AuthScreen onAuthed={setSession} initialMode={authInitialMode} />
+          <AuthScreen onAuthed={handleAuthed} initialMode={authInitialMode} />
         </ErrorBoundary>
       );
     }
@@ -398,7 +493,7 @@ function AppContent() {
       return (
         <ErrorBoundary>
           <AuthScreen
-            onAuthed={setSession}
+            onAuthed={handleAuthed}
             initialMode="login"
             onBackToHome={() => {
               window.location.hash = "#/welcome";
@@ -413,7 +508,7 @@ function AppContent() {
       return (
         <ErrorBoundary>
           <AuthScreen
-            onAuthed={setSession}
+            onAuthed={handleAuthed}
             initialMode="signup"
             onBackToHome={() => {
               window.location.hash = "#/welcome";

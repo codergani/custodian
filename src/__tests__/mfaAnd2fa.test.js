@@ -13,6 +13,7 @@ import {
   getLockoutState,
   clearFailedAttempts,
 } from "../security";
+import { deriveKey, newSalt, encryptJSON, decryptJSON } from "../crypto";
 
 // Mock localStorage for node test environment
 const mockStorage = new Map();
@@ -122,5 +123,21 @@ describe("MFA & 2FA Recovery Codes & Anti-Brute-Force Test Suite", () => {
     const resetState = getLockoutState(testUserId);
     expect(resetState.count).toBe(0);
     expect(resetState.remainingSeconds).toBe(0);
+  });
+
+  it("allows single-password vault auto-unlock: derives key and verifies check correctly", async () => {
+    const password = "MySecureAccountPassword123!";
+    const salt = newSalt();
+    const key = await deriveKey(password, salt);
+    const check = await encryptJSON(key, { marker: "ok" });
+
+    // Deriving with the same password decrypts successfully
+    const sameKey = await deriveKey(password, salt);
+    const decrypted = await decryptJSON(sameKey, check);
+    expect(decrypted.marker).toBe("ok");
+
+    // Deriving with a wrong password fails decryption
+    const wrongKey = await deriveKey("WrongPassword999!", salt);
+    await expect(decryptJSON(wrongKey, check)).rejects.toThrow();
   });
 });
