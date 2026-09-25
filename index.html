@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <title>Custodian</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
@@ -14,6 +15,7 @@
         box-sizing: border-box;
       }
       :root, [data-theme="light"] {
+        color-scheme: light;
         --bg-main: #F8F6F1;
         --panel-main: #FFFFFF;
         --panel-alt: #F2EEE7;
@@ -35,6 +37,7 @@
         --scrollbar-track: transparent;
       }
       [data-theme="dark"] {
+        color-scheme: dark;
         --bg-main: #171615;
         --panel-main: #1F1E1C;
         --panel-alt: #242320;
@@ -55,14 +58,19 @@
         --scrollbar-thumb-hover: rgba(255, 255, 255, 0.32);
         --scrollbar-track: transparent;
       }
-      body {
+      html, body {
         margin: 0;
         padding: 0;
-        background: var(--bg-main);
+        background: var(--bg-main) !important;
+        background-color: var(--bg-main) !important;
         color: var(--text-main);
         font-family: 'Inter', sans-serif;
         -webkit-font-smoothing: antialiased;
         transition: background 0.2s ease, color 0.2s ease;
+      }
+      .custodian-main {
+        background: var(--bg-main) !important;
+        background-color: var(--bg-main) !important;
       }
       input, button, textarea, select {
         font: inherit;

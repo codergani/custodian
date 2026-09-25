@@ -133,7 +133,7 @@ export const S = {
   authLinks: { display: "flex", justifyContent: "space-between", marginTop: 8 },
   linkText: { fontSize: 11.5, color: COLORS.brass, cursor: "pointer" },
 
-  app: { display: "flex", minHeight: "100vh", background: COLORS.bg, fontFamily: "Inter, sans-serif", color: COLORS.text },
+  app: { display: "flex", minHeight: "100vh", background: COLORS.bg, fontFamily: "Inter, sans-serif", color: COLORS.text, width: "100%" },
   sidebar: { width: 250, borderRight: `1px solid ${COLORS.line}`, background: "var(--sidebar-bg, #F5EFE6)", display: "flex", flexDirection: "column", padding: "16px 12px", gap: 10 },
   sidebarHead: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "2px 4px 6px" },
   brandRow: { display: "flex", alignItems: "center", gap: 7 },
@@ -151,7 +151,7 @@ export const S = {
   treeCount: { fontFamily: "IBM Plex Mono, monospace", fontSize: 10, color: COLORS.textFaint },
   addProjectRow: { display: "flex", alignItems: "center", gap: 6, padding: "6px 6px 6px 26px", fontSize: 11, color: COLORS.textFaint, cursor: "pointer" },
 
-  main: { flex: 1, padding: "22px 26px", overflowY: "auto" },
+  main: { flex: 1, padding: "22px 26px", overflowY: "auto", background: COLORS.bg },
   mainHeadRow: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18, gap: 12, flexWrap: "wrap" },
   mainTitle: { fontFamily: "Space Grotesk, sans-serif", fontSize: 22, fontWeight: 600, margin: 0, color: COLORS.text },
   headActions: { display: "flex", gap: 8 },
