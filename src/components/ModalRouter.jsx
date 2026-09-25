@@ -2308,17 +2308,32 @@ function ShareSecretModalContent({ userId, ecdhPrivateKey, initialCred, onClose,
         throw new Error("Sender public key not found. Please re-lock your vault to refresh keys.");
       }
 
-      // 4. Save to shared_secrets table (supporting both secret_ciphertext and encrypted_payload columns)
-      const { error: insertErr } = await supabase.from("shared_secrets").insert({
+      // 4. Save to shared_secrets table (gracefully supporting varying DB column schemas)
+      const basePayload = {
         sender_id: userId,
         recipient_id: selectedRecipient.id,
         title: title.trim(),
         category,
         encrypted_payload: cipherString,
-        secret_ciphertext: cipherString,
         sender_public_key: myProfile.public_key,
-        sender_public_key_snapshot: myProfile.public_key,
-      });
+      };
+
+      let insertErr = null;
+      try {
+        const res = await supabase.from("shared_secrets").insert({
+          ...basePayload,
+          secret_ciphertext: cipherString,
+          sender_public_key_snapshot: myProfile.public_key,
+        });
+        insertErr = res.error;
+      } catch (colErr) {
+        insertErr = colErr;
+      }
+
+      if (insertErr && (insertErr.message?.includes("column") || insertErr.code === "42703")) {
+        const retryRes = await supabase.from("shared_secrets").insert(basePayload);
+        insertErr = retryRes.error;
+      }
 
       if (insertErr) throw insertErr;
 

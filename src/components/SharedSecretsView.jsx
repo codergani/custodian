@@ -26,45 +26,57 @@ export default function SharedSecretsView({ userId, profile, ecdhPrivateKey, onO
       // 1. Fetch Received Items
       const { data: recData, error: recErr } = await supabase
         .from("shared_secrets")
-        .select(`
-          id,
-          sender_id,
-          recipient_id,
-          title,
-          category,
-          encrypted_payload,
-          secret_ciphertext,
-          sender_public_key,
-          sender_public_key_snapshot,
-          created_at,
-          revoked_at,
-          sender:sender_id (id, email, username, display_name)
-        `)
+        .select("*")
         .eq("recipient_id", userId)
         .is("revoked_at", null)
         .order("created_at", { ascending: false });
 
       if (recErr) throw recErr;
-      setReceivedItems(recData || []);
 
       // 2. Fetch Sent Items
       const { data: sentData, error: sentErr } = await supabase
         .from("shared_secrets")
-        .select(`
-          id,
-          sender_id,
-          recipient_id,
-          title,
-          category,
-          created_at,
-          revoked_at,
-          recipient:recipient_id (id, email, username, display_name)
-        `)
+        .select("*")
         .eq("sender_id", userId)
         .order("created_at", { ascending: false });
 
       if (sentErr) throw sentErr;
-      setSentItems(sentData || []);
+
+      // 3. Enrich with user profiles without relying on PostgREST schema cache foreign keys
+      const allUserIds = Array.from(
+        new Set([
+          ...(recData || []).map((r) => r.sender_id),
+          ...(sentData || []).map((s) => s.recipient_id),
+        ].filter(Boolean))
+      );
+
+      const profilesMap = {};
+      if (allUserIds.length > 0) {
+        const { data: profileRows } = await supabase
+          .from("profiles")
+          .select("id, email, username, display_name")
+          .in("id", allUserIds);
+
+        if (profileRows) {
+          profileRows.forEach((p) => {
+            profilesMap[p.id] = p;
+          });
+        }
+      }
+
+      setReceivedItems(
+        (recData || []).map((r) => ({
+          ...r,
+          sender: profilesMap[r.sender_id] || { id: r.sender_id, username: "unknown", display_name: "Developer" },
+        }))
+      );
+
+      setSentItems(
+        (sentData || []).map((s) => ({
+          ...s,
+          recipient: profilesMap[s.recipient_id] || { id: s.recipient_id, username: "unknown", display_name: "Developer" },
+        }))
+      );
     } catch (e) {
       console.error("[SharedSecretsView] Fetch error:", e);
       setErr(e.message || "Failed to load shared secrets.");
