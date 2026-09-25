@@ -851,6 +851,21 @@ export default function ProfilePanel({
           )}
         </div>
 
+        {/* Legal & Consumer Protection Links */}
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12, fontSize: 11.5, color: COLORS.textDim, paddingTop: 10, paddingBottom: 4 }}>
+          <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: COLORS.brass, textDecoration: "none" }}>
+            Privacy Policy
+          </a>
+          <span>•</span>
+          <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: COLORS.brass, textDecoration: "none" }}>
+            Terms of Service
+          </a>
+          <span>•</span>
+          <a href="/privacy.html#deletion" target="_blank" rel="noopener noreferrer" style={{ color: COLORS.textDim, textDecoration: "none" }}>
+            Data Deletion
+          </a>
+        </div>
+
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: `1px solid ${COLORS.line}` }}>
           <button style={S.secondaryBtn} onClick={signOut}><LogOut size={13} /> Sign out</button>
 

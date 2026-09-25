@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service & Customer Agreement - Custodian</title>
+  <link rel="icon" type="image/svg+xml" href="/icons/shield.svg">
+  <style>
+    :root {
+      --bg: #121110;
+      --card-bg: #1A1918;
+      --text: #F5F2EB;
+      --text-dim: #A8A399;
+      --brass: #C29B38;
+      --line: rgba(255, 255, 255, 0.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      max-width: 820px;
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 36px 32px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .header {
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 26px;
+      color: var(--brass);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .meta {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+    .nav-tabs {
+      display: flex;
+      gap: 12px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .nav-tabs a {
+      font-size: 12.5px;
+      color: var(--brass);
+      background: rgba(194, 155, 56, 0.1);
+      border: 1px solid rgba(194, 155, 56, 0.25);
+      padding: 4px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .nav-tabs a:hover {
+      background: rgba(194, 155, 56, 0.2);
+    }
+    h2 {
+      font-size: 19px;
+      color: var(--text);
+      margin-top: 32px;
+      margin-bottom: 12px;
+      border-left: 3px solid var(--brass);
+      padding-left: 10px;
+    }
+    h3 {
+      font-size: 15px;
+      color: var(--text);
+      margin-top: 16px;
+      margin-bottom: 6px;
+    }
+    p, ul {
+      color: var(--text-dim);
+      font-size: 14.5px;
+      margin-bottom: 14px;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    strong {
+      color: var(--text);
+    }
+    .badge {
+      background: rgba(194, 155, 56, 0.15);
+      color: var(--brass);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-block;
+      margin-bottom: 14px;
+    }
+    .callout {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 16px 0;
+      font-size: 13.5px;
+      color: var(--text-dim);
+    }
+    a {
+      color: var(--brass);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+      color: var(--text-dim);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📜 Custodian — Terms of Service</h1>
+      <div class="meta">Effective Date: September 25, 2026 | Version 1.2</div>
+      <div class="nav-tabs">
+        <a href="/terms.html">Terms of Service</a>
+        <a href="/privacy.html">Privacy & Cookie Policy</a>
+        <a href="/privacy.html#deletion">Data Deletion</a>
+      </div>
+    </div>
+
+    <div class="badge">Merchant of Record & Consumer Protection Compliant</div>
+
+    <p>
+      Welcome to Custodian ("Custodian", "we", "our", or "us"). These Terms of Service ("Terms") govern your access to and use of our zero-knowledge credentials vault, developer handover platform, and related web/mobile services (the "Service").
+    </p>
+
+    <h2>1. Acceptance of Terms</h2>
+    <p>
+      By creating an account, unlocking a vault, or subscribing to paid tiers on Custodian, you agree to be bound by these Terms and our <a href="/privacy.html">Privacy Policy</a>. If you do not agree, do not use the Service.
+    </p>
+
+    <h2>2. Non-Custodial Zero-Knowledge Security</h2>
+    <div class="callout">
+      <strong>⚠️ Critical Cryptographic Disclosure:</strong> Custodian is architected strictly under zero-knowledge principles. Your secrets are encrypted locally on your client device using AES-256-GCM. <strong>We do not possess, store, or have access to your master password or unencrypted secrets.</strong> If you lose both your master password and your Emergency Recovery Kit, Custodian cannot recover your data under any circumstances.
+    </div>
+
+    <h2>3. Subscriptions, Payments & Billing</h2>
+    <p>
+      We offer both free and paid subscription plans:
+    </p>
+    <ul>
+      <li><strong>Free Plan:</strong> Provides essential personal vaulting and up to 2 client workspaces at zero cost.</li>
+      <li><strong>Pro Tier ($8.00 USD / month):</strong> Unlocks unlimited client workspaces, zero-knowledge secret sharing, automated renewal watchdog, and multi-format environment exports.</li>
+      <li><strong>Team Tier ($19.00 USD / month):</strong> Adds multi-seat collaboration, client delivery handovers, and audit logs.</li>
+    </ul>
+
+    <h3>Merchant of Record (Lemon Squeezy)</h3>
+    <p>
+      For web-based subscriptions, our order process is conducted by our online reseller and Merchant of Record, <strong>Lemon Squeezy</strong> (Lemon Squeezy LLC). Lemon Squeezy handles order inquiries, sales tax calculation, VAT, currency conversions, and customer payments in full compliance with international financial regulations.
+    </p>
+    <p>
+      On Android mobile devices, subscription transactions are processed directly through Google Play In-App Billing via RevenueCat.
+    </p>
+
+    <h2>4. Cancellation & Refund Policy</h2>
+    <ul>
+      <li><strong>1-Click Cancellation:</strong> You may cancel recurring subscriptions at any time with no questions asked directly from your account settings, the Lemon Squeezy Customer Billing Portal, or your Google Play subscriptions menu.</li>
+      <li><strong>Access Retention:</strong> Upon cancellation, your Pro or Team features will remain fully active until the conclusion of your current paid billing period. You will never be billed again unless you choose to reactivate.</li>
+      <li><strong>14-Day Refund Guarantee:</strong> If you are unsatisfied with Custodian Pro or Team for any reason within 14 days of your initial purchase, contact our support team at <strong>ygpksr456@gmail.com</strong> or through the Lemon Squeezy billing receipt to receive a full refund.</li>
+    </ul>
+
+    <h2>5. Acceptable Use Policy</h2>
+    <p>You agree to use Custodian solely for lawful purposes. You shall NOT:</p>
+    <ul>
+      <li>Store, distribute, or facilitate unauthorized access to stolen credentials, credit cards, or exploit payloads.</li>
+      <li>Interfere with, overburden, or attack the security, availability, or integrity of the Custodian network or Supabase backend.</li>
+      <li>Share login credentials with unauthorized third parties to bypass tier limits.</li>
+    </ul>
+
+    <h2>6. Termination & Account Deletion</h2>
+    <p>
+      You may terminate your account at any time. Under GDPR and CCPA compliance, clicking <strong>"Delete Account & Data"</strong> in your Profile instantly and permanently deletes your user profile, client projects, and all encrypted ciphertext records from our database without delay.
+    </p>
+
+    <h2>7. Disclaimer of Warranties & Limitation of Liability</h2>
+    <p>
+      The Service is provided on an "AS IS" and "AS AVAILABLE" basis. To the maximum extent permitted by law, Custodian and its operators disclaim all warranties, express or implied. In no event shall Custodian be liable for indirect, incidental, or consequential damages resulting from forgotten credentials, loss of encryption keys, or unauthorized access to unpatched user devices.
+    </p>
+
+    <h2>8. Contact & Customer Support</h2>
+    <p>
+      If you have questions regarding these Terms, payments, or billing:
+    </p>
+    <ul>
+      <li><strong>Email:</strong> <a href="mailto:ygpksr456@gmail.com">ygpksr456@gmail.com</a></li>
+      <li><strong>Platform Website:</strong> <a href="https://custodian-swart.vercel.app">https://custodian-swart.vercel.app</a></li>
+    </ul>
+
+    <div class="footer">
+      &copy; 2026 Custodian. All rights reserved. Zero-Knowledge Freelance Vault.
+    </div>
+  </div>
+</body>
+</html>

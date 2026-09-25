@@ -1217,6 +1217,19 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
           {restoring ? "Checking store…" : "Restore Purchases"}
         </button>
       </div>
+
+      {/* Legal & Compliance Disclosures */}
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, fontSize: 11, color: COLORS.textDim, marginTop: 2, flexWrap: "wrap" }}>
+        <span>By subscribing, you agree to our</span>
+        <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: COLORS.brass, textDecoration: "underline" }}>
+          Terms of Service
+        </a>
+        <span>&</span>
+        <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: COLORS.brass, textDecoration: "underline" }}>
+          Privacy Policy
+        </a>
+        <span>• 14-day refund guarantee</span>
+      </div>
     </div>
   );
 }
