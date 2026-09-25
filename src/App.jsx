@@ -9,6 +9,7 @@ import Vault from "./Vault";
 import AdminHQ from "./AdminHQ";
 import AdminSupportPanel from "./components/AdminSupportPanel";
 import ResetPasswordScreen from "./ResetPasswordScreen";
+import Mandatory2FASetup from "./components/Mandatory2FASetup";
 import { ThemeProvider } from "./ThemeContext";
 import { isNative, initNativePlugins, setupBackButtonListener, setupDeepLinkAuthListener, setupAppStateAutoLock } from "./native/nativeBridge";
 import { initLemonSqueezy } from "./utils/lemonsqueezy";
@@ -111,7 +112,34 @@ function AppContent() {
     }
   });
   const [authInitialMode, setAuthInitialMode] = useState("login");
+  const [isMfaEnrolled, setIsMfaEnrolled] = useState(null); // null = checking, true = enrolled, false = not enrolled
   const lastAuthPasswordRef = useRef(null);
+
+  useEffect(() => {
+    if (!session?.user?.id) {
+      setIsMfaEnrolled(null);
+      return;
+    }
+    let isMounted = true;
+    async function checkMfa() {
+      try {
+        const { data: factors, error } = await supabase.auth.mfa.listFactors();
+        if (!error && factors) {
+          const verified = (factors?.all || factors?.totp || []).some((f) => f.status === "verified");
+          if (isMounted) setIsMfaEnrolled(Boolean(verified));
+        } else {
+          if (isMounted) setIsMfaEnrolled(false);
+        }
+      } catch (e) {
+        console.warn("[App] Error checking MFA status:", e);
+        if (isMounted) setIsMfaEnrolled(false);
+      }
+    }
+    checkMfa();
+    return () => {
+      isMounted = false;
+    };
+  }, [session?.user?.id]);
 
   function handleAuthed(authedSession, enteredPassword) {
     if (enteredPassword) {
@@ -673,6 +701,42 @@ function AppContent() {
     );
   }
 
+  const isFounderUser =
+    profile?.role === "founder" ||
+    profile?.role === "admin" ||
+    profile?.plan === "founder" ||
+    (import.meta.env.VITE_FOUNDER_EMAIL && session?.user?.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
+    session?.user?.email?.toLowerCase() === "ygpksr456@gmail.com";
+
+  const isProOrTeam =
+    isFounderUser ||
+    profile?.plan === "pro" ||
+    profile?.plan === "team";
+
+  const isDemoUser =
+    session?.user?.id === "a0000000-0000-0000-0000-000000000001" ||
+    session?.user?.email === "owner@custodian.app";
+
+  // Mandatory 2FA for Pro, Team, and Founder tiers (excluding demo judge bypass)
+  if (isProOrTeam && !isDemoUser && isMfaEnrolled === false) {
+    return (
+      <ErrorBoundary>
+        <Mandatory2FASetup
+          profile={profile}
+          isMandatory={true}
+          onComplete={() => {
+            setIsMfaEnrolled(true);
+          }}
+          onSignOut={async () => {
+            await supabase.auth.signOut();
+            handleLock();
+            setSession(null);
+          }}
+        />
+      </ErrorBoundary>
+    );
+  }
+
   if (!vaultKey) {
     return (
       <ErrorBoundary>
@@ -689,6 +753,8 @@ function AppContent() {
         ecdhPrivateKey={ecdhPrivateKey}
         onLock={handleLock}
         onProfileUpdate={setProfile}
+        isMfaEnrolled={isMfaEnrolled}
+        onMfaEnrolled={() => setIsMfaEnrolled(true)}
       />
     </ErrorBoundary>
   );

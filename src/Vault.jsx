@@ -9,7 +9,7 @@ import {
   CheckSquare, Square, Target, Hourglass, ArrowRight, ArrowLeft, TrendingUp, BarChart3, Database, Lock,
   PackageCheck, Package, Command, Activity, Compass, Terminal,
   Paperclip, Pin, File, Link2, FileCheck, Maximize2, Minimize2,
-  Menu, Sun, Moon, Layers, Rocket, Share2, Dices, Ghost
+  Menu, Sun, Moon, Layers, Rocket, Share2, Dices, Ghost, Smartphone
 } from "lucide-react";
 import { supabase } from "./supabaseClient";
 import { encryptJSON, decryptJSON } from "./crypto";
@@ -29,6 +29,7 @@ import WorkspaceView from "./Workspace";
 import WatchdogView from "./components/WatchdogView";
 import TrashView from "./components/TrashView";
 import ProfilePanel from "./components/ProfilePanel";
+import Mandatory2FASetup from "./components/Mandatory2FASetup";
 import OwnerCommandCenter from "./components/OwnerCommandCenter";
 import AboutProjectView from "./components/AboutProjectView";
 import EnvironmentStudio from "./components/EnvironmentStudio";
@@ -49,9 +50,17 @@ import {
   PERSONAL_PROJECT_NAME
 } from "./utils/personalSpace";
 
-export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLock, onProfileUpdate }) {
+export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLock, onProfileUpdate, isMfaEnrolled, onMfaEnrolled }) {
   const { theme, toggleTheme } = useTheme();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [dismiss2faBanner, setDismiss2faBanner] = useState(() => {
+    try {
+      return sessionStorage.getItem("custodian_dismiss_2fa_banner") === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [showQuick2faModal, setShowQuick2faModal] = useState(false);
   const [showStickyNotes, setShowStickyNotes] = useState(() => {
     try {
       return localStorage.getItem("custodian_show_stickies") === "true";
@@ -1510,6 +1519,145 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
             >
               <X size={14} />
             </button>
+          </div>
+        )}
+
+        {/* Free Tier Optional 2FA Exploration Banner */}
+        {(!profile?.plan || profile?.plan === "free") && !isMfaEnrolled && !dismiss2faBanner && (
+          <div
+            style={{
+              margin: "12px 24px 0",
+              padding: "12px 16px",
+              borderRadius: 10,
+              background: "linear-gradient(135deg, rgba(176,141,87,0.12) 0%, rgba(20,20,20,0.4) 100%)",
+              border: `1px solid rgba(176,141,87,0.35)`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 16,
+              flexWrap: "wrap",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 260 }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 8,
+                  background: "rgba(176,141,87,0.2)",
+                  border: `1px solid ${COLORS.brass}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <ShieldCheck size={20} color={COLORS.brass} />
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.text }}>
+                    Two-Factor Authentication Available (Optional for Free Vaults)
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      padding: "2px 7px",
+                      borderRadius: 10,
+                      background: "rgba(78,186,111,0.15)",
+                      color: "#4EBA6F",
+                      border: "1px solid rgba(78,186,111,0.3)",
+                    }}
+                  >
+                    Zero-Knowledge TOTP
+                  </span>
+                </div>
+                <div style={{ fontSize: 11.5, color: COLORS.textDim, marginTop: 2, lineHeight: 1.4 }}>
+                  Scan a QR code with Google Authenticator or 1Password to activate 2FA and get 8 single-use recovery codes.
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              <button
+                type="button"
+                style={{
+                  ...S.primaryBtnSm,
+                  padding: "7px 13px",
+                  fontSize: 12,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+                onClick={() => setShowQuick2faModal(true)}
+              >
+                <Smartphone size={13} />
+                <span>View QR Code & Setup 2FA</span>
+              </button>
+              <button
+                type="button"
+                style={{
+                  ...S.secondaryBtn,
+                  padding: "7px 11px",
+                  fontSize: 12,
+                }}
+                onClick={() => setView("profile")}
+              >
+                Settings
+              </button>
+              <button
+                type="button"
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: COLORS.textFaint,
+                  cursor: "pointer",
+                  padding: 4,
+                  display: "flex",
+                  alignItems: "center",
+                }}
+                onClick={() => {
+                  setDismiss2faBanner(true);
+                  try {
+                    sessionStorage.setItem("custodian_dismiss_2fa_banner", "true");
+                  } catch {}
+                }}
+                title="Dismiss banner for this session"
+              >
+                <X size={15} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Quick 2FA Setup Modal for Free Tier Exploration */}
+        {showQuick2faModal && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 9999,
+              background: "rgba(0,0,0,0.78)",
+              backdropFilter: "blur(6px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 16,
+            }}
+          >
+            <Mandatory2FASetup
+              profile={profile}
+              isMandatory={false}
+              onCancel={() => setShowQuick2faModal(false)}
+              onComplete={() => {
+                setShowQuick2faModal(false);
+                onMfaEnrolled?.();
+                showSuccess("Two-Factor Authentication successfully activated!");
+              }}
+              onSignOut={onLock}
+            />
           </div>
         )}
 

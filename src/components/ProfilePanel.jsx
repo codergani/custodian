@@ -197,10 +197,24 @@ export default function ProfilePanel({
     setEnrollStep("scan");
     setBusy(true);
     try {
+      // Clean up any stale unverified TOTP factors first
+      try {
+        const { data: factors } = await supabase.auth.mfa.listFactors();
+        const allFactors = factors?.all || [];
+        for (const f of allFactors) {
+          if (f.status === "unverified") {
+            await supabase.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
+          }
+        }
+      } catch (cleanupErr) {
+        console.warn("[ProfilePanel] Cleanup unverified factors notice:", cleanupErr);
+      }
+
+      const friendly = `${profile?.email || "Custodian User"} (${Date.now().toString().slice(-4)})`;
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: "totp",
         issuer: "Custodian Vault",
-        friendlyName: profile?.email || "Custodian User",
+        friendlyName: friendly,
       });
       if (error) throw error;
       setEnrollData(data);
@@ -225,6 +239,15 @@ export default function ProfilePanel({
         code: verifyCode.trim(),
       });
       if (error) throw error;
+
+      // If reconfiguring, unenroll old factor
+      if (mfaFactor?.id && mfaFactor.id !== enrollData.id) {
+        try {
+          await supabase.auth.mfa.unenroll({ factorId: mfaFactor.id }).catch(() => {});
+        } catch (unErr) {
+          console.warn("[ProfilePanel] Unenroll old factor notice:", unErr);
+        }
+      }
 
       // Verification successful! Generate 8 single-use recovery codes
       const codes = generateRecoveryCodes(8);
@@ -965,70 +988,116 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
         </div>
 
         {/* Two-Factor Authentication (2FA / TOTP) Card */}
-        <div style={{
-          background: "rgba(255, 255, 255, 0.02)",
-          border: `1px solid ${COLORS.line}`,
-          borderRadius: 10,
-          padding: 16,
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-        }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <Smartphone size={15} color={COLORS.brass} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.text }}>Two-Factor Authentication (2FA)</span>
-              </div>
-              <p style={{ fontSize: 11.5, color: COLORS.textFaint, margin: "4px 0 0", lineHeight: 1.45 }}>
-                Secures your cloud account with Google Authenticator, Authy, or 1Password. Includes emergency single-use recovery codes.
-              </p>
-            </div>
-            <span style={{
-              fontSize: 10.5,
-              fontWeight: 600,
-              padding: "2px 8px",
-              borderRadius: 6,
-              background: is2FAActive ? "rgba(78,186,111,0.12)" : "rgba(255,255,255,0.06)",
-              color: is2FAActive ? "#4EBA6F" : COLORS.textFaint,
-              border: `1px solid ${is2FAActive ? "rgba(78,186,111,0.3)" : COLORS.line}`,
-              whiteSpace: "nowrap"
+        {(() => {
+          const isMandatory =
+            profile?.role === "founder" ||
+            profile?.role === "admin" ||
+            profile?.plan === "founder" ||
+            profile?.plan === "pro" ||
+            profile?.plan === "team" ||
+            profile?.email?.toLowerCase() === "ygpksr456@gmail.com";
+
+          return (
+            <div style={{
+              background: "rgba(255, 255, 255, 0.02)",
+              border: `1px solid ${COLORS.line}`,
+              borderRadius: 10,
+              padding: 16,
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
             }}>
-              {is2FAActive ? "✓ Active (Protected)" : "Disabled"}
-            </span>
-          </div>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <Smartphone size={15} color={COLORS.brass} />
+                    <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.text }}>Two-Factor Authentication (2FA)</span>
+                  </div>
+                  <p style={{ fontSize: 11.5, color: COLORS.textFaint, margin: "4px 0 0", lineHeight: 1.45 }}>
+                    {isMandatory
+                      ? "Secures your cloud account with Google Authenticator or 1Password. Mandatory security policy for Pro & Team tiers to protect vault credentials."
+                      : "Secures your cloud account with Google Authenticator, Authy, or 1Password. Includes emergency single-use recovery codes."}
+                  </p>
+                </div>
+                <span style={{
+                  fontSize: 10.5,
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: 6,
+                  background: is2FAActive ? "rgba(78,186,111,0.12)" : isMandatory ? "rgba(176,141,87,0.14)" : "rgba(255,255,255,0.06)",
+                  color: is2FAActive ? "#4EBA6F" : isMandatory ? COLORS.brass : COLORS.textFaint,
+                  border: `1px solid ${is2FAActive ? "rgba(78,186,111,0.3)" : isMandatory ? "rgba(176,141,87,0.3)" : COLORS.line}`,
+                  whiteSpace: "nowrap"
+                }}>
+                  {is2FAActive
+                    ? isMandatory
+                      ? "✓ Active (Mandatory Policy)"
+                      : "✓ Active (Protected)"
+                    : isMandatory
+                    ? "⚠️ Mandatory: Setup Required"
+                    : "Optional (Disabled)"}
+                </span>
+              </div>
 
-          {mfaSuccessMsg && (
-            <div style={{ ...S.infoBox, margin: 0 }}>
-              <CheckCircle2 size={14} /> {mfaSuccessMsg}
+              {mfaSuccessMsg && (
+                <div style={{ ...S.infoBox, margin: 0 }}>
+                  <CheckCircle2 size={14} /> {mfaSuccessMsg}
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 2 }}>
+                {!is2FAActive ? (
+                  <button
+                    type="button"
+                    style={{ ...S.primaryBtnSm, padding: "8px 14px" }}
+                    disabled={busy || mfaLoading}
+                    onClick={handleStartMfaEnroll}
+                  >
+                    <ShieldCheck size={13} /> Enable 2FA Authenticator
+                  </button>
+                ) : isMandatory ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <button
+                        type="button"
+                        style={{ ...S.secondaryBtn, padding: "7px 12px", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
+                        disabled={busy || mfaLoading}
+                        onClick={handleStartMfaEnroll}
+                      >
+                        <RefreshCw size={12} /> Reconfigure / Reset Authenticator
+                      </button>
+                    </div>
+                    <span style={{ fontSize: 11, color: COLORS.textFaint }}>
+                      🔒 2FA is mandatory on your plan. To pair a new device or generate new recovery codes, click Reconfigure.
+                    </span>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      style={{ ...S.secondaryBtn, padding: "7px 12px", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
+                      disabled={busy || mfaLoading}
+                      onClick={handleStartMfaEnroll}
+                    >
+                      <RefreshCw size={12} /> Reconfigure
+                    </button>
+                    <button
+                      type="button"
+                      style={{ ...S.dangerBtn, padding: "7px 12px", fontSize: 12 }}
+                      disabled={busy || mfaLoading}
+                      onClick={() => {
+                        setMfaErr("");
+                        setShowMfaDisableModal(true);
+                      }}
+                    >
+                      Disable 2FA
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 2 }}>
-            {!is2FAActive ? (
-              <button
-                type="button"
-                style={{ ...S.primaryBtnSm, padding: "8px 14px" }}
-                disabled={busy || mfaLoading}
-                onClick={handleStartMfaEnroll}
-              >
-                <ShieldCheck size={13} /> Enable 2FA Authenticator
-              </button>
-            ) : (
-              <button
-                type="button"
-                style={{ ...S.dangerBtn, padding: "7px 12px", fontSize: 12 }}
-                disabled={busy || mfaLoading}
-                onClick={() => {
-                  setMfaErr("");
-                  setShowMfaDisableModal(true);
-                }}
-              >
-                Disable 2FA
-              </button>
-            )}
-          </div>
-        </div>
+          );
+        })()}
 
         {/* Privacy Policy & Compliance Card */}
         <div style={{
@@ -1291,10 +1360,18 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
                   margin: "0 auto",
                   boxShadow: "0 4px 16px rgba(0,0,0,0.12)"
                 }}>
-                  <div
-                    style={{ width: 175, height: 175 }}
-                    dangerouslySetInnerHTML={{ __html: enrollData.totp.qr_code }}
-                  />
+                  {enrollData.totp.qr_code.startsWith("data:") ? (
+                    <img
+                      src={enrollData.totp.qr_code}
+                      alt="2FA QR Code"
+                      style={{ width: 175, height: 175, display: "block" }}
+                    />
+                  ) : (
+                    <div
+                      style={{ width: 175, height: 175, display: "flex", alignItems: "center", justifyContent: "center" }}
+                      dangerouslySetInnerHTML={{ __html: enrollData.totp.qr_code }}
+                    />
+                  )}
                 </div>
               )}
 
