@@ -3,8 +3,12 @@
 
 export const LEMON_CONFIG = {
   // URLs can be configured via .env (VITE_LEMON_SQUEEZY_PRO_URL, VITE_LEMON_SQUEEZY_TEAM_URL)
-  proCheckoutUrl: import.meta.env.VITE_LEMON_SQUEEZY_PRO_URL || "",
-  teamCheckoutUrl: import.meta.env.VITE_LEMON_SQUEEZY_TEAM_URL || "",
+  proCheckoutUrl:
+    import.meta.env.VITE_LEMON_SQUEEZY_PRO_URL ||
+    "https://custodian.lemonsqueezy.com/checkout/buy/b4d9982a-84ec-4bca-8072-b2c90fb1ee3f",
+  teamCheckoutUrl:
+    import.meta.env.VITE_LEMON_SQUEEZY_TEAM_URL ||
+    "https://custodian.lemonsqueezy.com/checkout/buy/f505560d-fd6c-4ce2-a7a7-1fd3df4e6680",
 };
 
 /**
