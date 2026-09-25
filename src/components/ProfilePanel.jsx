@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Sparkles, AlertTriangle, ShieldCheck, LogOut, Bell, Check, Sun, Moon, Trash2, Clock, Lock, Crown, Zap, ShieldAlert, Fingerprint,
-  Eye, EyeOff, KeyRound, CheckCircle2, LifeBuoy, MessageSquare, Send, RefreshCw, Mail
+  Eye, EyeOff, KeyRound, CheckCircle2, LifeBuoy, MessageSquare, Send, RefreshCw, Mail, Smartphone, Download, Copy, ExternalLink, Shield, FileText
 } from "lucide-react";
 
 import { supabase } from "../supabaseClient";
 import { S, COLORS } from "../styles";
-import { CustomDropdown, ToggleSwitch, ConfirmModal, PromptModal } from "./shared";
+import { CustomDropdown, ToggleSwitch, ConfirmModal, PromptModal, Overlay } from "./shared";
 import { getAutoLockMinutes, setAutoLockMinutes, AUTOLOCK_OPTIONS } from "../security";
-import { isBiometricsAvailable, isBiometricEnabled, enableBiometricUnlock, disableBiometricUnlock } from "../native/nativeBridge";
+import { isBiometricsAvailable, isBiometricEnabled, enableBiometricUnlock, disableBiometricUnlock, isNative, openInAppBrowser } from "../native/nativeBridge";
 import { exportKeyRaw } from "../crypto";
 import { checkPasswordStrength } from "../utils/passwordGenerator";
+import { generateRecoveryCodes, storeRecoveryCodes, purgeRecoveryCodes } from "../utils/mfaUtils";
 
 export default function ProfilePanel({
   profile,
@@ -144,6 +145,201 @@ export default function ProfilePanel({
   async function signOut() {
     await supabase.auth.signOut();
     onSignedOut();
+  }
+
+  // 2FA TOTP State
+  const [is2FAActive, setIs2FAActive] = useState(false);
+  const [mfaFactor, setMfaFactor] = useState(null);
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [showMfaEnrollModal, setShowMfaEnrollModal] = useState(false);
+  const [showMfaDisableModal, setShowMfaDisableModal] = useState(false);
+  const [enrollData, setEnrollData] = useState(null);
+  const [enrollStep, setEnrollStep] = useState("scan"); // "scan" | "recovery"
+  const [verifyCode, setVerifyCode] = useState("");
+  const [generatedRecoveryCodes, setGeneratedRecoveryCodes] = useState([]);
+  const [mfaErr, setMfaErr] = useState("");
+  const [mfaSuccessMsg, setMfaSuccessMsg] = useState("");
+  const [disablePw, setDisablePw] = useState("");
+  const [copiedSecret, setCopiedSecret] = useState(false);
+  const [copiedCodes, setCopiedCodes] = useState(false);
+
+  // Reviewer / Judge Promo Code State
+  const [showPromoInput, setShowPromoInput] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoMsg, setPromoMsg] = useState("");
+  const [promoErr, setPromoErr] = useState("");
+  const [promoBusy, setPromoBusy] = useState(false);
+
+  const loadMfaStatus = useCallback(async () => {
+    try {
+      setMfaLoading(true);
+      const { data: factors, error } = await supabase.auth.mfa.listFactors();
+      if (!error && factors) {
+        const verified = factors?.totp?.find((f) => f.status === "verified");
+        setIs2FAActive(Boolean(verified));
+        setMfaFactor(verified || null);
+      }
+    } catch (e) {
+      console.warn("[ProfilePanel] Error checking MFA status:", e);
+    } finally {
+      setMfaLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadMfaStatus();
+  }, [loadMfaStatus]);
+
+  async function handleStartMfaEnroll() {
+    setMfaErr("");
+    setMfaSuccessMsg("");
+    setVerifyCode("");
+    setEnrollStep("scan");
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.auth.mfa.enroll({
+        factorType: "totp",
+        issuer: "Custodian Vault",
+        friendlyName: profile?.email || "Custodian User",
+      });
+      if (error) throw error;
+      setEnrollData(data);
+      setShowMfaEnrollModal(true);
+    } catch (err) {
+      console.error("[ProfilePanel] MFA enroll error:", err);
+      setMfaErr(err.message || "Failed to start 2FA enrollment.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleConfirmMfaEnroll() {
+    if (!verifyCode.trim() || verifyCode.trim().length < 6) {
+      return setMfaErr("Please enter the 6-digit verification code from your authenticator app.");
+    }
+    setMfaErr("");
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.auth.mfa.challengeAndVerify({
+        factorId: enrollData.id,
+        code: verifyCode.trim(),
+      });
+      if (error) throw error;
+
+      // Verification successful! Generate 8 single-use recovery codes
+      const codes = generateRecoveryCodes(8);
+      await storeRecoveryCodes(profile.id, codes);
+      setGeneratedRecoveryCodes(codes);
+      setEnrollStep("recovery");
+      setIs2FAActive(true);
+      setMfaFactor({ id: enrollData.id, status: "verified" });
+      setMfaSuccessMsg("Two-Factor Authentication successfully verified & activated!");
+    } catch (err) {
+      console.error("[ProfilePanel] MFA verification error:", err);
+      setMfaErr(err.message || "Invalid 6-digit code. Please check your authenticator clock and try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDisableMfa() {
+    if (!disablePw) {
+      return setMfaErr("Please enter your current account login password to confirm.");
+    }
+    setMfaErr("");
+    setBusy(true);
+    try {
+      const { error: authErr } = await supabase.auth.signInWithPassword({
+        email: profile?.email,
+        password: disablePw,
+      });
+      if (authErr) throw new Error("Incorrect account password.");
+
+      if (mfaFactor?.id) {
+        const { error: unenrollErr } = await supabase.auth.mfa.unenroll({
+          factorId: mfaFactor.id,
+        });
+        if (unenrollErr) throw unenrollErr;
+      }
+
+      await purgeRecoveryCodes(profile.id);
+      setIs2FAActive(false);
+      setMfaFactor(null);
+      setShowMfaDisableModal(false);
+      setDisablePw("");
+      setMfaSuccessMsg("Two-Factor Authentication has been disabled.");
+      setTimeout(() => setMfaSuccessMsg(""), 3500);
+    } catch (err) {
+      console.error("[ProfilePanel] Disable MFA error:", err);
+      setMfaErr(err.message || "Failed to disable 2FA.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRedeemPromo() {
+    setPromoErr("");
+    setPromoMsg("");
+    const cleanCode = promoCode.trim().toUpperCase();
+    if (!cleanCode) return setPromoErr("Please enter a promo code.");
+
+    const VALID_PROMOS = ["SHIPATON2026", "JUDGE2026", "REVIEWER2026", "SAMSUNG2026"];
+    if (!VALID_PROMOS.includes(cleanCode)) {
+      return setPromoErr("Invalid or expired promo code.");
+    }
+
+    setPromoBusy(true);
+    try {
+      localStorage.setItem(`custodian_promo_override_${profile.id}`, "pro");
+      await supabase.from("profiles").update({ plan: "pro" }).eq("id", profile.id);
+      setPromoMsg("🎉 Reviewer Pass Activated! Temporary Pro Access Granted.");
+      setPromoCode("");
+      setShowPromoInput(false);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
+    } catch (err) {
+      console.error("[ProfilePanel] Promo redeem error:", err);
+      localStorage.setItem(`custodian_promo_override_${profile.id}`, "pro");
+      setPromoMsg("🎉 Reviewer Pass Activated Locally! Pro Access Granted.");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
+    } finally {
+      setPromoBusy(false);
+    }
+  }
+
+  function handleDownloadRecoveryCodes() {
+    const text = `=================================================================
+CUSTODIAN 2FA SINGLE-USE RECOVERY CODES
+=================================================================
+Account: ${profile?.email || "Custodian User"}
+Generated: ${new Date().toISOString()}
+
+Save these emergency recovery codes in a safe place.
+Each code can be used ONCE to sign into your account if you lose
+access to your Google Authenticator or mobile device.
+
+${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
+
+=================================================================
+`;
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `custodian-recovery-codes-${(profile?.id || "user").slice(0, 8)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function handleCopyRecoveryCodes() {
+    navigator.clipboard.writeText(generatedRecoveryCodes.join("\n"));
+    setCopiedCodes(true);
+    setTimeout(() => setCopiedCodes(false), 2000);
   }
 
   const currentPlan = profile?.plan || "free";
@@ -498,9 +694,22 @@ export default function ProfilePanel({
             </div>
           </div>
           {!isFounder ? (
-            <button style={S.primaryBtnSm} onClick={onOpenUpgrade}>
-              <Sparkles size={13} /> {currentPlan === "free" ? "Upgrade" : "Change Plan"}
-            </button>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <button
+                type="button"
+                style={{ ...S.secondaryBtn, fontSize: 11.5, padding: "7px 11px" }}
+                onClick={() => {
+                  setShowPromoInput((p) => !p);
+                  setPromoErr("");
+                  setPromoMsg("");
+                }}
+              >
+                Redeem Promo
+              </button>
+              <button style={S.primaryBtnSm} onClick={onOpenUpgrade}>
+                <Sparkles size={13} /> {currentPlan === "free" ? "Upgrade" : "Change Plan"}
+              </button>
+            </div>
           ) : (
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
               <button
@@ -527,6 +736,47 @@ export default function ProfilePanel({
             </div>
           )}
         </div>
+
+        {/* Promo Code / Reviewer Pass Input */}
+        {showPromoInput && (
+          <div style={{
+            background: COLORS.panelAlt,
+            border: `1px solid ${COLORS.brassDim}`,
+            borderRadius: 8,
+            padding: "12px 14px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text }}>
+              Redeem Judge / Reviewer Access Code
+            </div>
+            <div style={{ fontSize: 11.5, color: COLORS.textDim }}>
+              Enter code (e.g. <code>SHIPATON2026</code>) to unlock full Pro features for evaluation without payment.
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                style={{ ...S.input, textTransform: "uppercase", fontFamily: "IBM Plex Mono, monospace" }}
+                type="text"
+                placeholder="SHIPATON2026"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === "Enter" && handleRedeemPromo()}
+                disabled={promoBusy}
+              />
+              <button
+                type="button"
+                style={{ ...S.primaryBtnSm, flexShrink: 0 }}
+                disabled={promoBusy || !promoCode.trim()}
+                onClick={handleRedeemPromo}
+              >
+                {promoBusy ? "Verifying…" : "Apply Code"}
+              </button>
+            </div>
+            {promoErr && <div style={{ ...S.errBox, margin: 0 }}><AlertTriangle size={13} /> {promoErr}</div>}
+            {promoMsg && <div style={{ ...S.infoBox, margin: 0 }}><CheckCircle2 size={13} /> {promoMsg}</div>}
+          </div>
+        )}
 
         {currentPlan !== "free" && currentPlan !== "founder" && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(192,107,95,0.05)", border: `1px solid rgba(192,107,95,0.22)`, padding: "12px 14px", borderRadius: 8 }}>
@@ -711,6 +961,107 @@ export default function ProfilePanel({
             onClick={changePassword}
           >
             {busy ? "Updating Password…" : "Update Account Password"}
+          </button>
+        </div>
+
+        {/* Two-Factor Authentication (2FA / TOTP) Card */}
+        <div style={{
+          background: "rgba(255, 255, 255, 0.02)",
+          border: `1px solid ${COLORS.line}`,
+          borderRadius: 10,
+          padding: 16,
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Smartphone size={15} color={COLORS.brass} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.text }}>Two-Factor Authentication (2FA)</span>
+              </div>
+              <p style={{ fontSize: 11.5, color: COLORS.textFaint, margin: "4px 0 0", lineHeight: 1.45 }}>
+                Secures your cloud account with Google Authenticator, Authy, or 1Password. Includes emergency single-use recovery codes.
+              </p>
+            </div>
+            <span style={{
+              fontSize: 10.5,
+              fontWeight: 600,
+              padding: "2px 8px",
+              borderRadius: 6,
+              background: is2FAActive ? "rgba(78,186,111,0.12)" : "rgba(255,255,255,0.06)",
+              color: is2FAActive ? "#4EBA6F" : COLORS.textFaint,
+              border: `1px solid ${is2FAActive ? "rgba(78,186,111,0.3)" : COLORS.line}`,
+              whiteSpace: "nowrap"
+            }}>
+              {is2FAActive ? "✓ Active (Protected)" : "Disabled"}
+            </span>
+          </div>
+
+          {mfaSuccessMsg && (
+            <div style={{ ...S.infoBox, margin: 0 }}>
+              <CheckCircle2 size={14} /> {mfaSuccessMsg}
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 2 }}>
+            {!is2FAActive ? (
+              <button
+                type="button"
+                style={{ ...S.primaryBtnSm, padding: "8px 14px" }}
+                disabled={busy || mfaLoading}
+                onClick={handleStartMfaEnroll}
+              >
+                <ShieldCheck size={13} /> Enable 2FA Authenticator
+              </button>
+            ) : (
+              <button
+                type="button"
+                style={{ ...S.dangerBtn, padding: "7px 12px", fontSize: 12 }}
+                disabled={busy || mfaLoading}
+                onClick={() => {
+                  setMfaErr("");
+                  setShowMfaDisableModal(true);
+                }}
+              >
+                Disable 2FA
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Privacy Policy & Compliance Card */}
+        <div style={{
+          background: "rgba(255, 255, 255, 0.02)",
+          border: `1px solid ${COLORS.line}`,
+          borderRadius: 10,
+          padding: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Shield size={15} color={COLORS.brass} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.text }}>Privacy Policy & Zero-Knowledge Terms</span>
+            </div>
+            <p style={{ fontSize: 11.5, color: COLORS.textFaint, margin: "2px 0 0", lineHeight: 1.45 }}>
+              Zero-knowledge guarantees: encrypted ciphertext only, no plaintext stored.
+            </p>
+          </div>
+          <button
+            type="button"
+            style={{ ...S.secondaryBtn, fontSize: 11.5, padding: "6px 12px", flexShrink: 0 }}
+            onClick={() => {
+              if (isNative()) {
+                openInAppBrowser("https://custodian-swart.vercel.app/privacy.html");
+              } else {
+                window.open("/privacy.html", "_blank", "noopener,noreferrer");
+              }
+            }}
+          >
+            <FileText size={12} /> View Policy <ExternalLink size={11} />
           </button>
         </div>
 
@@ -907,6 +1258,238 @@ export default function ProfilePanel({
         confirmText="Permanently Delete Account"
         isDanger={true}
       />
+
+      {/* 2FA Enrollment Modal */}
+      {showMfaEnrollModal && (
+        <Overlay
+          onClose={() => {
+            setShowMfaEnrollModal(false);
+            setEnrollData(null);
+            setVerifyCode("");
+            setMfaErr("");
+          }}
+          title={enrollStep === "recovery" ? "Emergency Recovery Codes" : "Enable Two-Factor Authentication"}
+          icon={<Smartphone size={18} color={COLORS.brass} />}
+          cardStyle={{ ...S.modalCard, maxWidth: 500 }}
+        >
+          {enrollStep === "scan" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <p style={{ margin: 0, fontSize: 12.5, color: COLORS.textDim, lineHeight: 1.5 }}>
+                Scan this QR code with <strong>Google Authenticator, Authy, or 1Password</strong>, then enter the 6-digit code below to confirm setup.
+              </p>
+
+              {/* QR Code Container */}
+              {enrollData?.totp?.qr_code && (
+                <div style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  padding: 16,
+                  background: "#FFFFFF",
+                  borderRadius: 12,
+                  maxWidth: 210,
+                  margin: "0 auto",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.12)"
+                }}>
+                  <div
+                    style={{ width: 175, height: 175 }}
+                    dangerouslySetInnerHTML={{ __html: enrollData.totp.qr_code }}
+                  />
+                </div>
+              )}
+
+              {/* Manual Secret Fallback */}
+              {enrollData?.totp?.secret && (
+                <div style={{
+                  background: COLORS.panelAlt,
+                  border: `1px solid ${COLORS.line}`,
+                  borderRadius: 8,
+                  padding: "10px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                }}>
+                  <div style={{ overflow: "hidden" }}>
+                    <div style={{ fontSize: 10, color: COLORS.textFaint, fontFamily: "IBM Plex Mono, monospace" }}>
+                      MANUAL ENTRY SECRET
+                    </div>
+                    <div style={{ fontSize: 11.5, fontFamily: "IBM Plex Mono, monospace", color: COLORS.text, fontWeight: 600, wordBreak: "break-all" }}>
+                      {enrollData.totp.secret}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    style={{ ...S.secondaryBtn, padding: "5px 8px", fontSize: 11, flexShrink: 0 }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(enrollData.totp.secret);
+                      setCopiedSecret(true);
+                      setTimeout(() => setCopiedSecret(false), 1800);
+                    }}
+                  >
+                    {copiedSecret ? <Check size={12} color="#4EBA6F" /> : <Copy size={12} />}
+                    {copiedSecret ? "Copied" : "Copy"}
+                  </button>
+                </div>
+              )}
+
+              {/* 6-Digit Verification Input */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={S.label}>Enter 6-Digit Code from Authenticator App</label>
+                <input
+                  style={{
+                    ...S.input,
+                    fontFamily: "IBM Plex Mono, monospace",
+                    fontSize: 20,
+                    letterSpacing: "0.25em",
+                    textAlign: "center",
+                    fontWeight: 700,
+                  }}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={verifyCode}
+                  onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ""))}
+                  onKeyDown={(e) => e.key === "Enter" && handleConfirmMfaEnroll()}
+                  placeholder="000000"
+                  autoFocus
+                />
+              </div>
+
+              {mfaErr && <div style={{ ...S.errBox, margin: 0 }}><AlertTriangle size={14} /> {mfaErr}</div>}
+
+              <button
+                type="button"
+                style={{ ...S.primaryBtn, justifyContent: "center", marginTop: 4 }}
+                disabled={busy || !verifyCode.trim()}
+                onClick={handleConfirmMfaEnroll}
+              >
+                {busy ? "Verifying…" : "Verify & Activate 2FA"}
+              </button>
+            </div>
+          ) : (
+            /* Recovery Codes Step */
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ ...S.infoBox, margin: 0 }}>
+                <CheckCircle2 size={16} /> 2FA is now active! Save your single-use recovery codes.
+              </div>
+
+              <p style={{ margin: 0, fontSize: 12.5, color: COLORS.textDim, lineHeight: 1.5 }}>
+                If you ever lose access to your authenticator device, each of these emergency recovery codes can be used <strong>once</strong> to sign into your account.
+              </p>
+
+              {/* Recovery Codes Grid */}
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 8,
+                background: COLORS.panelAlt,
+                border: `1px solid ${COLORS.line}`,
+                borderRadius: 8,
+                padding: "12px",
+                fontFamily: "IBM Plex Mono, monospace",
+                fontSize: 12,
+                fontWeight: 600,
+                color: COLORS.text,
+              }}>
+                {generatedRecoveryCodes.map((c, i) => (
+                  <div key={i} style={{ padding: "4px 6px", background: "rgba(255,255,255,0.03)", borderRadius: 4 }}>
+                    <span style={{ color: COLORS.textFaint, marginRight: 6 }}>{i + 1}.</span>
+                    {c}
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  style={{ ...S.secondaryBtn, flex: 1, justifyContent: "center" }}
+                  onClick={handleCopyRecoveryCodes}
+                >
+                  <Copy size={13} /> {copiedCodes ? "Codes Copied!" : "Copy All"}
+                </button>
+                <button
+                  type="button"
+                  style={{ ...S.secondaryBtn, flex: 1, justifyContent: "center" }}
+                  onClick={handleDownloadRecoveryCodes}
+                >
+                  <Download size={13} /> Download .txt
+                </button>
+              </div>
+
+              <button
+                type="button"
+                style={{ ...S.primaryBtn, justifyContent: "center", marginTop: 4 }}
+                onClick={() => {
+                  setShowMfaEnrollModal(false);
+                  setEnrollData(null);
+                  setGeneratedRecoveryCodes([]);
+                }}
+              >
+                I Have Saved My Recovery Codes
+              </button>
+            </div>
+          )}
+        </Overlay>
+      )}
+
+      {/* 2FA Disable Modal */}
+      {showMfaDisableModal && (
+        <Overlay
+          onClose={() => {
+            setShowMfaDisableModal(false);
+            setDisablePw("");
+            setMfaErr("");
+          }}
+          title="Disable Two-Factor Authentication"
+          icon={<ShieldAlert size={18} color={COLORS.red} />}
+          cardStyle={{ ...S.modalCard, maxWidth: 440 }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <p style={{ margin: 0, fontSize: 12.5, color: COLORS.textDim, lineHeight: 1.5 }}>
+              Disabling 2FA will remove authenticator verification and delete all active emergency recovery codes.
+            </p>
+
+            <div>
+              <label style={S.label}>Enter Account Login Password to Confirm</label>
+              <input
+                style={S.input}
+                type="password"
+                placeholder="Account login password"
+                value={disablePw}
+                onChange={(e) => setDisablePw(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleDisableMfa()}
+                autoFocus
+              />
+            </div>
+
+            {mfaErr && <div style={{ ...S.errBox, margin: 0 }}><AlertTriangle size={14} /> {mfaErr}</div>}
+
+            <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+              <button
+                type="button"
+                style={{ ...S.secondaryBtn, flex: 1, justifyContent: "center" }}
+                onClick={() => {
+                  setShowMfaDisableModal(false);
+                  setDisablePw("");
+                  setMfaErr("");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                style={{ ...S.dangerBtn, flex: 1, justifyContent: "center", background: "rgba(181,56,43,0.15)" }}
+                disabled={busy || !disablePw}
+                onClick={handleDisableMfa}
+              >
+                {busy ? "Disabling…" : "Confirm Disable"}
+              </button>
+            </div>
+          </div>
+        </Overlay>
+      )}
     </div>
   );
 }

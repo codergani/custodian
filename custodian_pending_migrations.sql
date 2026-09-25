@@ -276,8 +276,8 @@ AS $$
 BEGIN
   IF (COALESCE(auth.jwt() ->> 'email', '') != 'ygpksr456@gmail.com') AND
      NOT EXISTS (
-       SELECT 1 FROM public.profiles 
-       WHERE id = auth.uid() AND (plan = 'founder' OR role = 'founder' OR role = 'admin')
+       SELECT 1 FROM public.profiles prof
+       WHERE prof.id = auth.uid() AND (prof.plan = 'founder' OR prof.role = 'founder' OR prof.role = 'admin')
      ) THEN
     RAISE EXCEPTION 'Access Denied: Founder privileges required.';
   END IF;
@@ -353,4 +353,31 @@ DO $$ BEGIN
       );
   END IF;
 END $$;
+
+-- ---------- 12. MFA RECOVERY CODES TABLE ----------
+CREATE TABLE IF NOT EXISTS public.mfa_recovery_codes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  code_hash text NOT NULL,
+  used_at timestamptz DEFAULT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.mfa_recovery_codes ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'mfa_recovery_codes' AND policyname = 'Users can manage their own MFA recovery codes'
+  ) THEN
+    CREATE POLICY "Users can manage their own MFA recovery codes"
+      ON public.mfa_recovery_codes
+      FOR ALL
+      USING (auth.uid() = user_id)
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_mfa_recovery_codes_lookup 
+  ON public.mfa_recovery_codes (user_id, code_hash);
+
 

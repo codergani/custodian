@@ -188,7 +188,8 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
         setLockoutRemaining(failState.remainingSeconds);
         setErr(`Too many attempts, try again in ${failState.remainingSeconds}s`);
       } else {
-        setErr("Wrong vault password. Please check your spelling and try again.");
+        const left = Math.max(1, 5 - failState.count);
+        setErr(`Wrong vault password. ${left} attempt${left === 1 ? "" : "s"} remaining before security lockout.`);
       }
     }
     setBusy(false);

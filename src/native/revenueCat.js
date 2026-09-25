@@ -85,23 +85,32 @@ export async function purchaseSubscriptionPackage(planId) {
       throw new Error("No active Google Play offerings configured in RevenueCat.");
     }
 
-    // Match package identifier (e.g. $rc_monthly or custom identifier)
-    const targetPkg = current.availablePackages.find((pkg) =>
-      pkg.identifier.toLowerCase().includes(planId) ||
-      pkg.product.identifier.toLowerCase().includes(planId)
-    ) || current.availablePackages[0];
+    // Match package identifier (e.g. $rc_monthly, pro, or custom product identifier)
+    const targetPkg = current.availablePackages.find((pkg) => {
+      const pkgId = (pkg.identifier || "").toLowerCase();
+      const prodId = (pkg.product?.identifier || "").toLowerCase();
+      if (planId === "pro") {
+        return pkgId.includes("pro") || prodId.includes("pro") || pkgId === "$rc_monthly" || pkgId.includes("monthly");
+      }
+      if (planId === "team") {
+        return pkgId.includes("team") || prodId.includes("team") || pkgId === "$rc_annual" || pkgId.includes("annual");
+      }
+      return pkgId.includes(planId) || prodId.includes(planId);
+    }) || current.availablePackages[0];
 
     if (!targetPkg) {
       throw new Error(`Package for ${planId} not found in Google Play offering.`);
     }
 
     const { customerInfo } = await Purchases.purchasePackage({ aPackage: targetPkg });
-    const isPro = customerInfo.entitlements.active["pro"] !== undefined;
-    const isTeam = customerInfo.entitlements.active["team"] !== undefined;
+    const entitlements = customerInfo?.entitlements?.active || {};
+    const isPro = Boolean(entitlements["pro"] || entitlements["Pro"] || entitlements["pro_monthly"] || entitlements["premium"]);
+    const isTeam = Boolean(entitlements["team"] || entitlements["Team"]);
+    const hasAny = Object.keys(entitlements).length > 0;
 
     return {
-      success: isPro || isTeam,
-      plan: isTeam ? "team" : isPro ? "pro" : "free",
+      success: isPro || isTeam || hasAny,
+      plan: isTeam ? "team" : (isPro || hasAny) ? "pro" : "free",
     };
   } catch (err) {
     if (err.userCancelled) {
@@ -122,13 +131,15 @@ export async function restoreNativePurchases() {
 
   try {
     const { customerInfo } = await Purchases.restorePurchases();
-    const isPro = customerInfo.entitlements.active["pro"] !== undefined;
-    const isTeam = customerInfo.entitlements.active["team"] !== undefined;
+    const entitlements = customerInfo?.entitlements?.active || {};
+    const isPro = Boolean(entitlements["pro"] || entitlements["Pro"] || entitlements["pro_monthly"] || entitlements["premium"]);
+    const isTeam = Boolean(entitlements["team"] || entitlements["Team"]);
+    const hasAny = Object.keys(entitlements).length > 0;
 
     return {
       success: true,
-      hasActiveSubscription: isPro || isTeam,
-      plan: isTeam ? "team" : isPro ? "pro" : "free",
+      hasActiveSubscription: isPro || isTeam || hasAny,
+      plan: isTeam ? "team" : (isPro || hasAny) ? "pro" : "free",
     };
   } catch (err) {
     console.error("[RevenueCat] Restore error:", err);

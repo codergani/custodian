@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { KeyRound, AlertTriangle, ShieldCheck, Eye, EyeOff, AtSign, User, Mail, MailCheck, ArrowLeft, RefreshCw, Send, CheckCircle2, Lock } from "lucide-react";
+import { KeyRound, AlertTriangle, ShieldCheck, Eye, EyeOff, AtSign, User, Mail, MailCheck, ArrowLeft, RefreshCw, Send, CheckCircle2, Lock, Smartphone, LifeBuoy } from "lucide-react";
 import { supabase, detectPlatform } from "./supabaseClient";
 import { isNative, openInAppBrowser } from "./native/nativeBridge";
 import { withTimeout } from "./crypto";
 import { normalizeUsername, validateUsername } from "./utils/usernameValidation";
+import { getLockoutState, recordFailedAttempt, clearFailedAttempts } from "./security";
+import { verifyAndConsumeRecoveryCode } from "./utils/mfaUtils";
 import { S, COLORS } from "./styles";
 
 export default function AuthScreen({ onAuthed, initialMode = "login", onBackToHome }) {
-  const [mode, setMode] = useState(initialMode || "login"); // login | signup | reset
+  const [mode, setMode] = useState(initialMode || "login"); // login | signup | reset | 2fa
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -19,12 +21,34 @@ export default function AuthScreen({ onAuthed, initialMode = "login", onBackToHo
   const [resetSent, setResetSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
+  // 2FA Challenge State
+  const [mfaUserId, setMfaUserId] = useState(null);
+  const [mfaFactorId, setMfaFactorId] = useState(null);
+  const [mfaSession, setMfaSession] = useState(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaRecoveryCode, setMfaRecoveryCode] = useState("");
+  const [useRecovery, setUseRecovery] = useState(false);
+  const [mfaLockoutRemaining, setMfaLockoutRemaining] = useState(0);
+
   useEffect(() => {
     if (initialMode) {
       setMode(initialMode);
     }
   }, [initialMode]);
 
+  useEffect(() => {
+    if (mfaLockoutRemaining <= 0) return;
+    const interval = setInterval(() => {
+      if (mfaUserId) {
+        const state = getLockoutState(mfaUserId);
+        setMfaLockoutRemaining(state.remainingSeconds);
+        if (state.remainingSeconds <= 0) {
+          setErr("");
+        }
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [mfaLockoutRemaining, mfaUserId]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -90,6 +114,28 @@ export default function AuthScreen({ onAuthed, initialMode = "login", onBackToHo
           "Log in"
         );
         if (error) throw error;
+
+        // Check if 2FA (MFA) is enrolled for this account
+        try {
+          const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (aalData?.nextLevel === "aal2" && aalData?.currentLevel !== "aal2") {
+            const { data: factorsData } = await supabase.auth.mfa.listFactors();
+            const totpFactor = factorsData?.totp?.find((f) => f.status === "verified") || factorsData?.totp?.[0];
+            if (totpFactor) {
+              const uId = data.user?.id || data.session?.user?.id;
+              setMfaUserId(uId);
+              setMfaFactorId(totpFactor.id);
+              setMfaSession(data.session);
+              const lockout = getLockoutState(uId);
+              setMfaLockoutRemaining(lockout.remainingSeconds);
+              setMode("2fa");
+              return;
+            }
+          }
+        } catch (mfaCheckErr) {
+          console.warn("[AuthScreen] MFA assurance check notice:", mfaCheckErr);
+        }
+
         if (data?.session) {
           onAuthed(data.session);
         }
@@ -112,6 +158,72 @@ export default function AuthScreen({ onAuthed, initialMode = "login", onBackToHo
     } catch (e) {
       console.error("[AuthScreen] Submission error:", e);
       setErr(e.message || "An unexpected error occurred during authentication.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleVerifyMfa(e) {
+    if (e) e.preventDefault();
+    setErr("");
+    if (mfaLockoutRemaining > 0) {
+      return setErr(`Too many attempts. Try again in ${mfaLockoutRemaining}s`);
+    }
+
+    setBusy(true);
+    try {
+      if (useRecovery) {
+        if (!mfaRecoveryCode.trim()) {
+          setBusy(false);
+          return setErr("Please enter your single-use recovery code.");
+        }
+        const ok = await verifyAndConsumeRecoveryCode(mfaUserId, mfaRecoveryCode.trim());
+        if (!ok) {
+          const failState = recordFailedAttempt(mfaUserId);
+          if (failState.remainingSeconds > 0) {
+            setMfaLockoutRemaining(failState.remainingSeconds);
+            setErr(`Too many attempts, try again in ${failState.remainingSeconds}s`);
+          } else {
+            const left = Math.max(1, 5 - failState.count);
+            setErr(`Invalid recovery code. ${left} attempt${left === 1 ? "" : "s"} remaining before security lockout.`);
+          }
+          setBusy(false);
+          return;
+        }
+        clearFailedAttempts(mfaUserId);
+        onAuthed(mfaSession);
+      } else {
+        if (!mfaCode.trim() || mfaCode.trim().length < 6) {
+          setBusy(false);
+          return setErr("Please enter the 6-digit code from your authenticator app.");
+        }
+        const { data: challengeData, error: challengeError } = await withTimeout(
+          supabase.auth.mfa.challengeAndVerify({
+            factorId: mfaFactorId,
+            code: mfaCode.trim(),
+          }),
+          10000,
+          "2FA verification"
+        );
+        if (challengeError) {
+          const failState = recordFailedAttempt(mfaUserId);
+          if (failState.remainingSeconds > 0) {
+            setMfaLockoutRemaining(failState.remainingSeconds);
+            setErr(`Too many attempts, try again in ${failState.remainingSeconds}s`);
+          } else {
+            const left = Math.max(1, 5 - failState.count);
+            setErr(`Invalid 6-digit code. ${left} attempt${left === 1 ? "" : "s"} remaining before security lockout.`);
+          }
+          setBusy(false);
+          return;
+        }
+        clearFailedAttempts(mfaUserId);
+        const { data: refreshedSession } = await supabase.auth.getSession();
+        onAuthed(refreshedSession?.session || mfaSession);
+      }
+    } catch (err) {
+      console.error("[AuthScreen] 2FA verification error:", err);
+      setErr(err.message || "Failed to verify 2FA code.");
     } finally {
       setBusy(false);
     }
@@ -156,20 +268,42 @@ export default function AuthScreen({ onAuthed, initialMode = "login", onBackToHo
       <div style={S.authCard}>
         <div style={S.authHeader}>
           <div style={S.dialRing}>
-            {mode === "reset" ? <Mail size={22} color={COLORS.brass} /> : <KeyRound size={22} color={COLORS.brass} />}
+            {mode === "reset" ? (
+              <Mail size={22} color={COLORS.brass} />
+            ) : mode === "2fa" ? (
+              <Smartphone size={22} color={COLORS.brass} />
+            ) : (
+              <KeyRound size={22} color={COLORS.brass} />
+            )}
           </div>
           <div>
-            <div style={S.eyebrow}>{mode === "reset" ? "ACCOUNT RECOVERY" : "CUSTODIAN"}</div>
+            <div style={S.eyebrow}>
+              {mode === "reset"
+                ? "ACCOUNT RECOVERY"
+                : mode === "2fa"
+                ? "TWO-FACTOR AUTHENTICATION"
+                : "CUSTODIAN"}
+            </div>
             <h1 style={S.authTitle}>
-              {mode === "signup" ? "Create your account" : mode === "reset" ? "Reset your password" : "Welcome back"}
+              {mode === "signup"
+                ? "Create your account"
+                : mode === "reset"
+                ? "Reset your password"
+                : mode === "2fa"
+                ? "Security Verification"
+                : "Welcome back"}
             </h1>
             <div style={{ fontSize: 11.5, color: COLORS.textDim, marginTop: 2 }}>
-              {mode === "reset" ? "Zero-knowledge protected account recovery" : "Encrypted Client Secret Vault & Delivery Manager"}
+              {mode === "reset"
+                ? "Zero-knowledge protected account recovery"
+                : mode === "2fa"
+                ? "Confirm identity via Authenticator app or recovery code"
+                : "Encrypted Client Secret Vault & Delivery Manager"}
             </div>
           </div>
         </div>
 
-        {mode !== "reset" && (
+        {mode !== "reset" && mode !== "2fa" && (
           <>
             <button
               type="button"
@@ -299,6 +433,104 @@ export default function AuthScreen({ onAuthed, initialMode = "login", onBackToHo
 
             <div style={{ fontSize: 11, color: COLORS.textFaint }}>
               Didn't receive it? Check your Spam or Junk folder.
+            </div>
+          </div>
+        ) : mode === "2fa" ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ fontSize: 12.5, color: COLORS.textDim, lineHeight: 1.5 }}>
+              {useRecovery
+                ? "Enter one of your single-use emergency recovery codes to complete sign-in."
+                : "Enter the 6-digit code from Google Authenticator, Authy, or 1Password."}
+            </div>
+
+            {mfaLockoutRemaining > 0 && (
+              <div style={S.errBox}>
+                <AlertTriangle size={14} /> Security Lockout: Try again in {mfaLockoutRemaining}s
+              </div>
+            )}
+
+            {!useRecovery ? (
+              <>
+                <label style={S.label}>6-Digit Authenticator Code</label>
+                <input
+                  style={{
+                    ...S.input,
+                    fontFamily: "IBM Plex Mono, monospace",
+                    fontSize: 22,
+                    letterSpacing: "0.28em",
+                    textAlign: "center",
+                    fontWeight: 700,
+                  }}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={mfaCode}
+                  disabled={busy || mfaLockoutRemaining > 0}
+                  onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
+                  onKeyDown={(e) => e.key === "Enter" && handleVerifyMfa()}
+                  placeholder="000000"
+                  autoFocus
+                />
+              </>
+            ) : (
+              <>
+                <label style={S.label}>Single-Use Recovery Code</label>
+                <input
+                  style={{
+                    ...S.input,
+                    fontFamily: "IBM Plex Mono, monospace",
+                    fontSize: 14,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                  type="text"
+                  value={mfaRecoveryCode}
+                  disabled={busy || mfaLockoutRemaining > 0}
+                  onChange={(e) => setMfaRecoveryCode(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === "Enter" && handleVerifyMfa()}
+                  placeholder="CUST-XXXX-XXXX"
+                  autoFocus
+                />
+              </>
+            )}
+
+            {err && (
+              <div style={S.errBox}>
+                <AlertTriangle size={14} /> {err}
+              </div>
+            )}
+
+            <button
+              type="button"
+              style={{ ...S.primaryBtn, marginTop: 4, justifyContent: "center" }}
+              disabled={busy || mfaLockoutRemaining > 0}
+              onClick={handleVerifyMfa}
+            >
+              {busy ? "Verifying…" : "Verify & Sign In"}
+            </button>
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, fontSize: 11.5 }}>
+              <span
+                style={{ ...S.linkText, color: COLORS.brass }}
+                onClick={() => {
+                  setErr("");
+                  setUseRecovery(!useRecovery);
+                }}
+              >
+                {useRecovery ? "Use Authenticator app code" : "Lost phone? Use recovery code"}
+              </span>
+              <span
+                style={{ ...S.linkText, display: "flex", alignItems: "center", gap: 3 }}
+                onClick={() => {
+                  setMode("login");
+                  setErr("");
+                  setMfaCode("");
+                  setMfaRecoveryCode("");
+                }}
+              >
+                <ArrowLeft size={11} /> Cancel
+              </span>
             </div>
           </div>
         ) : (

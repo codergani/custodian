@@ -644,8 +644,8 @@ AS $$
 BEGIN
   IF (COALESCE(auth.jwt() ->> 'email', '') != 'ygpksr456@gmail.com') AND
      NOT EXISTS (
-       SELECT 1 FROM public.profiles 
-       WHERE id = auth.uid() AND (plan = 'founder' OR role = 'founder' OR role = 'admin')
+       SELECT 1 FROM public.profiles prof
+       WHERE prof.id = auth.uid() AND (prof.plan = 'founder' OR prof.role = 'founder' OR prof.role = 'admin')
      ) THEN
     RAISE EXCEPTION 'Access Denied: Founder privileges required.';
   END IF;
@@ -658,6 +658,115 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.admin_get_all_users() TO authenticated;
+
+
+-- ============================================================
+-- PART 5: ZERO-KNOWLEDGE SHARING, DESK & MFA (Migration 5)
+-- ============================================================
+
+-- ---------- 1. CLIENTS ENHANCEMENTS ----------
+ALTER TABLE public.clients
+  ADD COLUMN IF NOT EXISTS status text DEFAULT 'active',
+  ADD COLUMN IF NOT EXISTS ghosted_at timestamptz DEFAULT null,
+  ADD COLUMN IF NOT EXISTS ghost_notes text DEFAULT null;
+
+-- ---------- 2. SHARED SECRETS (ECDH P-256) ----------
+CREATE TABLE IF NOT EXISTS public.shared_secrets (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  sender_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  recipient_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  category text NOT NULL DEFAULT 'SHARED',
+  encrypted_payload text NOT NULL,
+  secret_ciphertext text,
+  sender_public_key text NOT NULL,
+  sender_public_key_snapshot text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  revoked_at timestamptz DEFAULT null
+);
+
+ALTER TABLE public.shared_secrets ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can view shared secrets sent to or from them' AND tablename = 'shared_secrets') THEN
+    CREATE POLICY "Users can view shared secrets sent to or from them" ON public.shared_secrets
+      FOR SELECT USING (sender_id = auth.uid() OR (recipient_id = auth.uid() AND revoked_at IS NULL));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can share secrets with others' AND tablename = 'shared_secrets') THEN
+    CREATE POLICY "Users can share secrets with others" ON public.shared_secrets
+      FOR INSERT WITH CHECK (sender_id = auth.uid());
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Senders can revoke their shared secrets' AND tablename = 'shared_secrets') THEN
+    CREATE POLICY "Senders can revoke their shared secrets" ON public.shared_secrets
+      FOR UPDATE USING (sender_id = auth.uid()) WITH CHECK (sender_id = auth.uid());
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Senders or recipients can delete shared secrets' AND tablename = 'shared_secrets') THEN
+    CREATE POLICY "Senders or recipients can delete shared secrets" ON public.shared_secrets
+      FOR DELETE USING (sender_id = auth.uid() OR recipient_id = auth.uid());
+  END IF;
+END $$;
+
+-- ---------- 3. SUPPORT REQUESTS & FOUNDER DESK ----------
+CREATE TABLE IF NOT EXISTS public.support_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  email text NOT NULL,
+  message text NOT NULL,
+  status text NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'resolved')),
+  response text,
+  resolved_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.support_requests ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'support_requests' AND policyname = 'Allow public insert support_requests') THEN
+    CREATE POLICY "Allow public insert support_requests" ON public.support_requests FOR INSERT WITH CHECK (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'support_requests' AND policyname = 'Allow founder select support_requests') THEN
+    CREATE POLICY "Allow founder select support_requests" ON public.support_requests
+      FOR SELECT USING (
+        (auth.jwt() ->> 'email') = 'ygpksr456@gmail.com'
+        OR EXISTS (
+          SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND (profiles.role = 'founder' OR profiles.role = 'admin' OR profiles.plan = 'founder')
+        )
+        OR auth.uid() = user_id
+      );
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'support_requests' AND policyname = 'Allow founder update support_requests') THEN
+    CREATE POLICY "Allow founder update support_requests" ON public.support_requests
+      FOR UPDATE USING (
+        (auth.jwt() ->> 'email') = 'ygpksr456@gmail.com'
+        OR EXISTS (
+          SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND (profiles.role = 'founder' OR profiles.role = 'admin' OR profiles.plan = 'founder')
+        )
+      );
+  END IF;
+END $$;
+
+-- ---------- 4. MFA RECOVERY CODES TABLE ----------
+CREATE TABLE IF NOT EXISTS public.mfa_recovery_codes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  code_hash text NOT NULL,
+  used_at timestamptz DEFAULT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.mfa_recovery_codes ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'mfa_recovery_codes' AND policyname = 'Users can manage their own MFA recovery codes') THEN
+    CREATE POLICY "Users can manage their own MFA recovery codes" ON public.mfa_recovery_codes
+      FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_mfa_recovery_codes_lookup 
+  ON public.mfa_recovery_codes (user_id, code_hash);
+
 
 
 

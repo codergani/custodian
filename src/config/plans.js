@@ -26,10 +26,10 @@ export const VAULT_PLANS = [
     cta: "Get Started with Pro",
     features: [
       "Unlimited Clients & Projects",
-      "📌 Movable Floating Sticky Notes & Pet Mode",
+      "🛡️ Brute-Force Rate Limiting & Security Health Meter",
       "📦 1-Click Client Handover Package Generator",
       "🔀 Multi-Environment Keys (Dev / Staging / Prod)",
-      "🛡️ Vault Security Health & Audit Score Meter",
+      "📌 Project Runbook Scratchpad & Milestone Notes",
       "⚡ API Renewal Watchdog & Advance Alerts",
       "🛡️ Delivery Safety Buffer Tracker",
       "💰 Monthly Client Spend & Savings Tracker",
@@ -46,7 +46,7 @@ export const VAULT_PLANS = [
     popular: false,
     cta: "Start with Team",
     features: [
-      "Everything in Pro (Floating Stickies & Watchdog)",
+      "Everything in Pro (Watchdog & Security Health)",
       "Shared Team Vaults (Owner covers all members)",
       "Role Permissions (Full Access vs Skeleton Only)",
       "Environment Role Scoping (Dev / Staging / Prod)",

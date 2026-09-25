@@ -269,10 +269,13 @@ function AppContent() {
   }, [vaultKey, session?.user?.id]);
 
   useEffect(() => {
+    // Unconditionally configure RevenueCat SDK on native launch (meets store & automated check requirements)
+    initRevenueCat();
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       if (data?.session?.user?.id) {
-        initRevenueCat(data.session.user.id);
+        identifyUser(data.session.user.id);
       }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
@@ -303,9 +306,12 @@ function AppContent() {
         const isFounderEmail =
           (import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
           session.user.email?.toLowerCase() === "ygpksr456@gmail.com";
+        const promoOverride = localStorage.getItem(`custodian_promo_override_${session.user.id}`);
         let loaded = data || { id: session.user.id, email: session.user.email, role: "member" };
         if (isFounderEmail) {
           loaded = { ...loaded, plan: "founder", role: "founder" };
+        } else if (promoOverride && (promoOverride === "pro" || promoOverride === "team")) {
+          loaded = { ...loaded, plan: promoOverride };
         }
         setProfile(loaded);
       })
@@ -314,11 +320,13 @@ function AppContent() {
         const isFounderEmail =
           (import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
           session.user.email?.toLowerCase() === "ygpksr456@gmail.com";
+        const promoOverride = localStorage.getItem(`custodian_promo_override_${session.user.id}`);
+        const activePlan = isFounderEmail ? "founder" : (promoOverride || "free");
         setProfile({
           id: session.user.id,
           email: session.user.email,
           role: isFounderEmail ? "founder" : "member",
-          plan: isFounderEmail ? "founder" : "free",
+          plan: activePlan,
         });
       });
   }, [session]);
