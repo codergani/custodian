@@ -490,6 +490,93 @@ export default function PersonalSpaceView({
                           </div>
                         ))}
                       </div>
+                    ) : isNoteOrWords && isRevealed ? (
+                      <div
+                        style={{
+                          background: COLORS.panelAlt,
+                          border: `1px solid ${COLORS.line}`,
+                          borderRadius: 8,
+                          padding: "8px 10px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 6,
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <span style={{ fontSize: 10.5, color: COLORS.brass, fontWeight: 600 }}>
+                            {cred.password ? `${cred.password.split("\n").filter((l) => l.trim().length > 0).length} CODES / LINES` : "NOTE CONTENT"}
+                          </span>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <button
+                              type="button"
+                              style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.textFaint, padding: 2 }}
+                              onClick={() => toggleReveal(cred.id)}
+                              title="Hide codes"
+                            >
+                              <EyeOff size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              style={{
+                                background: copiedId === `${cred.id}-pass` ? "rgba(22,163,74,0.18)" : "rgba(176,141,87,0.14)",
+                                border: `1px solid ${copiedId === `${cred.id}-pass` ? "#16A34A" : COLORS.brassDim}`,
+                                borderRadius: 4,
+                                padding: "2px 6px",
+                                cursor: "pointer",
+                                color: copiedId === `${cred.id}-pass` ? "#16A34A" : COLORS.brass,
+                                fontSize: 10.5,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 3,
+                              }}
+                              onClick={() => onCopy(cred.password, `${cred.id}-pass`)}
+                              title="Copy All Codes"
+                            >
+                              {copiedId === `${cred.id}-pass` ? <Check size={11} color="#16A34A" /> : <Copy size={11} />}
+                              <span>{copiedId === `${cred.id}-pass` ? "Copied" : "Copy All"}</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div
+                          style={{
+                            maxHeight: 180,
+                            overflowY: "auto",
+                            fontFamily: "IBM Plex Mono, monospace",
+                            fontSize: 11.5,
+                            lineHeight: 1.5,
+                            color: COLORS.text,
+                            whiteSpace: "pre-wrap",
+                            wordBreak: "break-all",
+                            padding: "6px 8px",
+                            background: "rgba(0,0,0,0.12)",
+                            borderRadius: 6,
+                          }}
+                        >
+                          {cred.password.split("\n").map((line, idx) => (
+                            <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1px 0" }}>
+                              <span style={{ color: COLORS.textFaint, width: 22, fontSize: 10, userSelect: "none" }}>{idx + 1}.</span>
+                              <span style={{ flex: 1, letterSpacing: "0.02em" }}>{line}</span>
+                              {line.trim() && (
+                                <button
+                                  type="button"
+                                  style={{
+                                    background: "transparent",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    color: copiedId === `${cred.id}-line-${idx}` ? "#16A34A" : COLORS.textFaint,
+                                    padding: "1px 3px",
+                                  }}
+                                  onClick={() => onCopy(line.trim(), `${cred.id}-line-${idx}`)}
+                                  title="Copy single code"
+                                >
+                                  {copiedId === `${cred.id}-line-${idx}` ? <Check size={10} color="#16A34A" /> : <Copy size={10} />}
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     ) : (
                       <div style={{
                         display: "flex",

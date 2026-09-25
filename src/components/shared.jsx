@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Check, ChevronDown, X, Eye, EyeOff, Copy, Edit3, Trash2,
   Clock, RefreshCw, ExternalLink, CheckCircle, AlertTriangle, HelpCircle, ShieldCheck,
-  History, Calendar
+  History, Calendar, FileText
 } from "lucide-react";
 import { S, COLORS } from "../styles";
 import { formatDateUSA, formatDateTimeUSA } from "../utils/dateFormatter";
@@ -373,6 +373,10 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
     : "GLOBAL";
 
   const typeConfig = {
+    note: { label: "📝 SECURE NOTE / CODES", color: "#3ECF8E" },
+    login: { label: "📧 ACCOUNT LOGIN", color: "#7AA2E3" },
+    pin: { label: "📱 PIN / PASSCODE", color: "#E07A6D" },
+    card: { label: "💳 CARD & BANK", color: "#F0A24A" },
     database: { label: "🗄️ DATABASE", color: "#B08D57" },
     api_key: { label: "🔑 API KEY", color: "#7AA2E3" },
     ssh: { label: "🔒 SSH KEY", color: "#E07A6D" },
@@ -446,62 +450,216 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
         </div>
       </div>
 
-      <FieldRow label="Key / Name" value={cred.username || cred.label} onCopy={onCopy} copyKey={cred.id + "-u"} copiedId={copiedId} />
-      <FieldRow
-        label="Secret Value" value={revealed ? cred.password : "••••••••••••"} secret revealed={revealed}
-        onToggle={onReveal} onCopy={() => onCopy(cred.password, cred.id + "-p")} copyKey={cred.id + "-p"} copiedId={copiedId}
-      />
-      {cred.url && <FieldRow label="Docs / URL" value={cred.url} onCopy={onCopy} copyKey={cred.id + "-l"} copiedId={copiedId} />}
+      {secretType === "note" ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+          {/* Optional Account / Identifier Tag (if present) */}
+          {cred.username && cred.username !== "Recovery Words" && (
+            <FieldRow
+              label="Account / Tag"
+              value={cred.username}
+              onCopy={onCopy}
+              copyKey={cred.id + "-u"}
+              copiedId={copiedId}
+            />
+          )}
 
-      {/* Developer Quick-Action Format Bar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, paddingTop: 6, borderTop: `1px dashed ${COLORS.line}`, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 10, color: COLORS.textFaint, marginRight: 2 }}>COPY AS:</span>
-        <button
-          type="button"
-          style={{ ...S.actionChipBtn, fontSize: 10, padding: "1px 6px" }}
-          onClick={() => onCopy(rawSecret, cred.id + "-raw")}
-          title="Copy raw secret value"
-        >
-          {copiedId === cred.id + "-raw" ? <Check size={10} color="#8FA98C" /> : null}
-          <span>{copiedId === cred.id + "-raw" ? "Copied" : "RAW"}</span>
-        </button>
-        <button
-          type="button"
-          style={{ ...S.actionChipBtn, fontSize: 10, padding: "1px 6px" }}
-          onClick={() => onCopy(`${keyName}=${rawSecret}`, cred.id + "-env")}
-          title="Copy as KEY=VALUE"
-        >
-          {copiedId === cred.id + "-env" ? <Check size={10} color="#8FA98C" /> : null}
-          <span>{copiedId === cred.id + "-env" ? "Copied" : ".ENV"}</span>
-        </button>
-        <button
-          type="button"
-          style={{ ...S.actionChipBtn, fontSize: 10, padding: "1px 6px" }}
-          onClick={() => onCopy(`export ${keyName}="${rawSecret.replace(/"/g, '\\"')}"`, cred.id + "-bash")}
-          title="Copy as export KEY=VAL"
-        >
-          {copiedId === cred.id + "-bash" ? <Check size={10} color="#8FA98C" /> : null}
-          <span>{copiedId === cred.id + "-bash" ? "Copied" : "BASH"}</span>
-        </button>
-        <button
-          type="button"
-          style={{ ...S.actionChipBtn, fontSize: 10, padding: "1px 6px" }}
-          onClick={() => onCopy(`-e ${keyName}="${rawSecret.replace(/"/g, '\\"')}"`, cred.id + "-docker")}
-          title="Copy as Docker flag -e KEY=VAL"
-        >
-          {copiedId === cred.id + "-docker" ? <Check size={10} color="#8FA98C" /> : null}
-          <span>{copiedId === cred.id + "-docker" ? "Copied" : "DOCKER"}</span>
-        </button>
-        <button
-          type="button"
-          style={{ ...S.actionChipBtn, fontSize: 10, padding: "1px 6px" }}
-          onClick={() => onCopy(JSON.stringify({ [keyName]: rawSecret }, null, 2), cred.id + "-json")}
-          title="Copy as JSON object"
-        >
-          {copiedId === cred.id + "-json" ? <Check size={10} color="#8FA98C" /> : null}
-          <span>{copiedId === cred.id + "-json" ? "Copied" : "JSON"}</span>
-        </button>
-      </div>
+          {/* Dedicated Note / Backup Codes Container */}
+          <div
+            style={{
+              background: COLORS.panelAlt,
+              border: `1px solid ${COLORS.line}`,
+              borderRadius: 8,
+              padding: "10px 12px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            {/* Header with reveal & copy */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 600, color: COLORS.brass }}>
+                <FileText size={12} />
+                <span>ENCRYPTED BACKUP CODES / TEXT</span>
+                {cred.password && (
+                  <span style={{ fontSize: 10, color: COLORS.textFaint, fontWeight: 400, fontFamily: "IBM Plex Mono, monospace" }}>
+                    {`(${cred.password.split("\n").filter((l) => l.trim().length > 0).length} codes / lines)`}
+                  </span>
+                )}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <button
+                  type="button"
+                  style={{ ...S.iconBtnGhost, fontSize: 11, padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: 4 }}
+                  onClick={onReveal}
+                  title={revealed ? "Hide codes" : "Reveal codes"}
+                >
+                  {revealed ? <EyeOff size={12} /> : <Eye size={12} />}
+                  <span>{revealed ? "Hide" : "Reveal"}</span>
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    ...S.actionChipBtn,
+                    fontSize: 11,
+                    padding: "3px 9px",
+                    background: copiedId === cred.id + "-p" ? "rgba(22,163,74,0.18)" : "rgba(176,141,87,0.14)",
+                    borderColor: copiedId === cred.id + "-p" ? "#16A34A" : COLORS.brassDim,
+                    color: copiedId === cred.id + "-p" ? "#16A34A" : COLORS.brass,
+                    fontWeight: 600,
+                  }}
+                  onClick={() => onCopy(cred.password, cred.id + "-p")}
+                  title="Copy all backup codes to clipboard"
+                >
+                  {copiedId === cred.id + "-p" ? <Check size={11} color="#16A34A" /> : <Copy size={11} />}
+                  <span>{copiedId === cred.id + "-p" ? "Copied All!" : "Copy All"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Codes Content Box */}
+            <div
+              style={{
+                background: COLORS.bg || "rgba(0,0,0,0.15)",
+                border: `1px solid ${COLORS.line}`,
+                borderRadius: 6,
+                padding: "8px 10px",
+                maxHeight: 220,
+                overflowY: "auto",
+                fontFamily: "IBM Plex Mono, monospace",
+                fontSize: 12,
+                lineHeight: 1.6,
+                color: COLORS.text,
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-all",
+                userSelect: revealed ? "text" : "none",
+              }}
+            >
+              {revealed ? (
+                cred.password ? (
+                  cred.password.split("\n").map((line, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "2px 0",
+                        borderBottom: idx < cred.password.split("\n").length - 1 ? `1px dashed rgba(255,255,255,0.05)` : "none",
+                      }}
+                    >
+                      <span style={{ display: "inline-block", width: 24, color: COLORS.textFaint, fontSize: 10.5, userSelect: "none" }}>
+                        {idx + 1}.
+                      </span>
+                      <span style={{ flex: 1, letterSpacing: "0.03em" }}>{line}</span>
+                      {line.trim() && (
+                        <button
+                          type="button"
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            color: copiedId === `${cred.id}-line-${idx}` ? "#16A34A" : COLORS.textFaint,
+                            cursor: "pointer",
+                            padding: "1px 4px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                          }}
+                          onClick={() => onCopy(line.trim(), `${cred.id}-line-${idx}`)}
+                          title="Copy this single code"
+                        >
+                          {copiedId === `${cred.id}-line-${idx}` ? <Check size={11} color="#16A34A" /> : <Copy size={11} />}
+                        </button>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <span style={{ color: COLORS.textFaint, fontStyle: "italic" }}>No content saved.</span>
+                )
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "4px 0", opacity: 0.65 }}>
+                  {Array.from({ length: Math.min(Math.max((cred.password || "").split("\n").length, 3), 8) }).map((_, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ width: 24, color: COLORS.textFaint, fontSize: 10.5 }}>{i + 1}.</span>
+                      <span style={{ letterSpacing: "0.2em", color: COLORS.textDim }}>•••••••• ••••••••</span>
+                    </div>
+                  ))}
+                  <div style={{ fontSize: 10.5, color: COLORS.textFaint, marginTop: 4, fontStyle: "italic", textAlign: "center" }}>
+                    Click &ldquo;Reveal&rdquo; to unmask all encrypted backup codes
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {cred.url && (
+            <FieldRow
+              label="Docs / URL"
+              value={cred.url}
+              onCopy={onCopy}
+              copyKey={cred.id + "-l"}
+              copiedId={copiedId}
+            />
+          )}
+        </div>
+      ) : (
+        <>
+          <FieldRow label="Key / Name" value={cred.username || cred.label} onCopy={onCopy} copyKey={cred.id + "-u"} copiedId={copiedId} />
+          <FieldRow
+            label="Secret Value" value={revealed ? cred.password : "••••••••••••"} secret revealed={revealed}
+            onToggle={onReveal} onCopy={() => onCopy(cred.password, cred.id + "-p")} copyKey={cred.id + "-p"} copiedId={copiedId}
+          />
+          {cred.url && <FieldRow label="Docs / URL" value={cred.url} onCopy={onCopy} copyKey={cred.id + "-l"} copiedId={copiedId} />}
+
+          {/* Developer Quick-Action Format Bar */}
+          <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, paddingTop: 6, borderTop: `1px dashed ${COLORS.line}`, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 10, color: COLORS.textFaint, marginRight: 2 }}>COPY AS:</span>
+            <button
+              type="button"
+              style={{ ...S.actionChipBtn, fontSize: 10, padding: "1px 6px" }}
+              onClick={() => onCopy(rawSecret, cred.id + "-raw")}
+              title="Copy raw secret value"
+            >
+              {copiedId === cred.id + "-raw" ? <Check size={10} color="#8FA98C" /> : null}
+              <span>{copiedId === cred.id + "-raw" ? "Copied" : "RAW"}</span>
+            </button>
+            <button
+              type="button"
+              style={{ ...S.actionChipBtn, fontSize: 10, padding: "1px 6px" }}
+              onClick={() => onCopy(`${keyName}=${rawSecret}`, cred.id + "-env")}
+              title="Copy as KEY=VALUE"
+            >
+              {copiedId === cred.id + "-env" ? <Check size={10} color="#8FA98C" /> : null}
+              <span>{copiedId === cred.id + "-env" ? "Copied" : ".ENV"}</span>
+            </button>
+            <button
+              type="button"
+              style={{ ...S.actionChipBtn, fontSize: 10, padding: "1px 6px" }}
+              onClick={() => onCopy(`export ${keyName}="${rawSecret.replace(/"/g, '\\"')}"`, cred.id + "-bash")}
+              title="Copy as export KEY=VAL"
+            >
+              {copiedId === cred.id + "-bash" ? <Check size={10} color="#8FA98C" /> : null}
+              <span>{copiedId === cred.id + "-bash" ? "Copied" : "BASH"}</span>
+            </button>
+            <button
+              type="button"
+              style={{ ...S.actionChipBtn, fontSize: 10, padding: "1px 6px" }}
+              onClick={() => onCopy(`-e ${keyName}="${rawSecret.replace(/"/g, '\\"')}"`, cred.id + "-docker")}
+              title="Copy as Docker flag -e KEY=VAL"
+            >
+              {copiedId === cred.id + "-docker" ? <Check size={10} color="#8FA98C" /> : null}
+              <span>{copiedId === cred.id + "-docker" ? "Copied" : "DOCKER"}</span>
+            </button>
+            <button
+              type="button"
+              style={{ ...S.actionChipBtn, fontSize: 10, padding: "1px 6px" }}
+              onClick={() => onCopy(JSON.stringify({ [keyName]: rawSecret }, null, 2), cred.id + "-json")}
+              title="Copy as JSON object"
+            >
+              {copiedId === cred.id + "-json" ? <Check size={10} color="#8FA98C" /> : null}
+              <span>{copiedId === cred.id + "-json" ? "Copied" : "JSON"}</span>
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Secret Timeline & Modification Metadata (USA Format: MM/DD/YYYY • HH:MM) */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, paddingTop: 6, borderTop: `1px solid ${COLORS.line}`, flexWrap: "wrap", gap: 6 }}>

@@ -424,9 +424,15 @@ function EditProjectDetailsContent({ project, onSave }) {
 function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "$", onOpenUpgrade, onSave }) {
   const [secretType, setSecretType] = useState(initialData?.secretType || "env_var");
   const [label, setLabel] = useState(initialData?.label || "");
-  const [username, setUsername] = useState(initialData?.username || "");
+  const [username, setUsername] = useState(
+    initialData?.username === "Recovery Words" && (initialData?.secretType === "note" || !initialData?.secretType)
+      ? ""
+      : initialData?.username || ""
+  );
   const [password, setPassword] = useState(initialData?.password || "");
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(
+    initialData?.secretType === "note" || (!initialData && secretType === "note")
+  );
   const [showInlineGenerator, setShowInlineGenerator] = useState(false);
   const [url, setUrl] = useState(initialData?.url || "");
   const [showMoreOptions, setShowMoreOptions] = useState(!!initialData?.url);
@@ -446,6 +452,12 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
   // Auto-fill template keys when switching preset type on empty forms
   const applyPreset = (type) => {
     setSecretType(type);
+    if (type === "note") {
+      setShowPassword(true);
+      if (username === "Recovery Words") {
+        setUsername("");
+      }
+    }
     if (!label && !username) {
       if (type === "login") {
         setLabel("Personal Account");
@@ -454,8 +466,8 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
         setLabel("Mobile PIN");
         setUsername("PIN");
       } else if (type === "note") {
-        setLabel("Secure Note");
-        setUsername("Recovery Words");
+        setLabel("Google Backup Codes");
+        setUsername("");
       } else if (type === "card") {
         setLabel("Bank Card");
         setUsername("");
@@ -489,7 +501,7 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
       : secretType === "pin"
       ? "PIN LABEL / IDENTIFIER"
       : secretType === "note"
-      ? "NOTE TOPIC / SUB-TITLE"
+      ? "ACCOUNT / TAG (OPTIONAL)"
       : "CARD DETAILS (HOLDER / LAST 4)"
     : "ENVIRONMENT VARIABLE (KEY = VALUE)";
 
@@ -499,7 +511,7 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
       : secretType === "pin"
       ? "e.g. App PIN, Wi-Fi SSID"
       : secretType === "note"
-      ? "e.g. Seed Phrase, Backup Key"
+      ? "e.g. youremail@gmail.com"
       : "e.g. Cardholder Name / Last 4"
     : "VARIABLE_KEY";
 
@@ -509,7 +521,7 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
       : secretType === "pin"
       ? "Secret PIN or Passcode"
       : secretType === "note"
-      ? "Enter secret notes or 12/24 seed words..."
+      ? "Paste your backup codes or secret text here..."
       : "CVV, PIN or Card Security Code"
     : "secret_token_value";
 
@@ -519,7 +531,7 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
       : secretType === "pin"
       ? "e.g. Banking App PIN, Home Wi-Fi"
       : secretType === "note"
-      ? "e.g. Crypto Recovery Phrase, Safe Code"
+      ? "e.g. Google Backup Codes, Recovery Words, Private Keys"
       : "e.g. ICICI Bank Credit Card"
     : "e.g. Stripe Prod, OpenAI, Postgres URL";
 
@@ -582,7 +594,7 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
             ? [
                 { id: "login", label: "📧 Login / Account" },
                 { id: "pin", label: "📱 PIN / Wi-Fi" },
-                { id: "note", label: "📝 Note / Seed Words" },
+                { id: "note", label: "📝 Note / Backup Codes" },
                 { id: "card", label: "💳 Card & Bank" },
               ]
             : [
@@ -650,96 +662,188 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
         )}
       </div>
 
-      {/* 2. Developer Key = Value Pair / Personal Credentials */}
-      <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
-        <div style={{ fontSize: 10.5, color: COLORS.textFaint, fontFamily: isPersonalType ? "inherit" : "IBM Plex Mono, monospace", letterSpacing: "0.04em" }}>
-          {keyTitle}
-        </div>
-
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {/* Key / Variable Name */}
-          <div style={{ flex: 1 }}>
+      {/* 2. Developer Key = Value Pair / Dedicated Note & Backup Codes Layout */}
+      {secretType === "note" ? (
+        <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "12px", display: "flex", flexDirection: "column", gap: 10 }}>
+          {/* Optional Account / Identifier Tag */}
+          <div>
+            <label style={{ ...S.label, marginBottom: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>Account / Identifier (Optional)</span>
+              <span style={{ fontSize: 10.5, color: COLORS.textFaint, fontWeight: "normal" }}>e.g. youremail@gmail.com</span>
+            </label>
             <input
-              style={{ ...S.input, padding: "8px 10px", fontSize: 12.5, fontFamily: isPersonalType ? "inherit" : "IBM Plex Mono, monospace" }}
+              style={{ ...S.input, padding: "8px 10px", fontSize: 12.5 }}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder={keyPlaceholder}
+              placeholder="e.g. user@gmail.com or 2FA Recovery"
             />
           </div>
 
-          <span style={{ color: COLORS.brass, fontWeight: 700, fontSize: 16, fontFamily: "IBM Plex Mono, monospace" }}>
-            {isPersonalType ? "•" : "="}
-          </span>
+          {/* Backup Codes / Secret Content Header */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6, marginTop: 2 }}>
+            <label style={{ ...S.label, marginBottom: 0, color: COLORS.brass, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+              <FileText size={13} />
+              <span>Secret Backup Codes / Note Content *</span>
+            </label>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 10.5, color: COLORS.textFaint, fontFamily: "IBM Plex Mono, monospace" }}>
+                {password ? `${password.split('\n').filter(l => l.trim().length > 0).length} code(s) / line(s) • ${password.length} chars` : "0 lines"}
+              </span>
+              <button
+                type="button"
+                style={{
+                  background: "transparent",
+                  border: `1px solid ${COLORS.line}`,
+                  borderRadius: 4,
+                  padding: "2px 7px",
+                  color: COLORS.textDim,
+                  cursor: "pointer",
+                  fontSize: 11,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+                onClick={() => setShowPassword(!showPassword)}
+                title={showPassword ? "Mask secret content" : "Reveal plain text"}
+              >
+                {showPassword ? <EyeOff size={11} /> : <Eye size={11} />}
+                <span>{showPassword ? "Mask" : "Reveal"}</span>
+              </button>
+            </div>
+          </div>
 
-          {/* Secret Value with Show/Hide Eye */}
-          <div style={{ flex: 1.3, position: "relative", display: "flex", alignItems: "center" }}>
-            <input
-              style={{ ...S.input, padding: "8px 32px 8px 10px", fontSize: 12.5, fontFamily: isPersonalType && secretType === "note" ? "inherit" : "IBM Plex Mono, monospace", width: "100%" }}
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={valPlaceholder}
-            />
-            <button
-              type="button"
-              style={{ position: "absolute", right: 6, background: "transparent", border: "none", color: COLORS.textFaint, cursor: "pointer", padding: 3, display: "flex", alignItems: "center" }}
-              onClick={() => setShowPassword(!showPassword)}
-              title={showPassword ? "Hide value" : "Show value"}
-            >
-              {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
-            </button>
+          {/* Dedicated Textarea for Backup Codes & Private Notes */}
+          <textarea
+            style={{
+              ...S.input,
+              padding: "10px 12px",
+              fontSize: 12.5,
+              fontFamily: "IBM Plex Mono, monospace",
+              lineHeight: 1.6,
+              minHeight: 140,
+              maxHeight: 320,
+              width: "100%",
+              resize: "vertical",
+              boxSizing: "border-box",
+              WebkitTextSecurity: showPassword ? "none" : "disc",
+            }}
+            rows={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={`Paste your Google backup codes, recovery phrase, or secret text here...\n\nExample:\n1234 5678\n8765 4321\n9900 1122`}
+            required
+          />
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11, color: COLORS.textFaint }}>
+            <span>Tip: Paste all 10 backup codes here — line breaks and spacing are fully encrypted.</span>
+            {password && (
+              <button
+                type="button"
+                style={{ background: "transparent", border: "none", color: COLORS.textDim, cursor: "pointer", fontSize: 11, padding: 0 }}
+                onClick={() => setPassword("")}
+              >
+                Clear text
+              </button>
+            )}
+          </div>
+
+          {/* Live Client-Side Encryption Trust Indicator */}
+          <div style={S.formSecurityNotice}>
+            <ShieldCheck size={13} color={COLORS.green} style={{ flexShrink: 0 }} />
+            <span>Client-Side AES-256-GCM Active • Encrypted locally before saving</span>
           </div>
         </div>
-
-        {/* Generate Button */}
-        <button
-          type="button"
-          style={{
-            ...S.secondaryBtn,
-            padding: "4px 10px",
-            fontSize: 11,
-            borderRadius: 6,
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            color: COLORS.brass,
-            borderColor: COLORS.brassDim,
-            background: showInlineGenerator ? "rgba(176,141,87,0.12)" : "transparent",
-            alignSelf: "flex-start",
-          }}
-          onClick={() => setShowInlineGenerator(!showInlineGenerator)}
-          title="Generate a secure random value"
-        >
-          <Dices size={12} /> {showInlineGenerator ? "Hide Generator" : "⚡ Generate"}
-        </button>
-
-        {/* Inline Compact Generator */}
-        {showInlineGenerator && (
-          <div style={{
-            background: COLORS.panel,
-            border: `1.5px solid ${COLORS.brassDim}`,
-            borderRadius: 10,
-            padding: "12px 14px",
-            marginTop: 2,
-          }}>
-            <PasswordGenerator
-              compact={true}
-              onUseValue={(val) => {
-                setPassword(val);
-                setShowPassword(true);
-                setShowInlineGenerator(false);
-              }}
-              onClose={() => setShowInlineGenerator(false)}
-            />
+      ) : (
+        <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ fontSize: 10.5, color: COLORS.textFaint, fontFamily: isPersonalType ? "inherit" : "IBM Plex Mono, monospace", letterSpacing: "0.04em" }}>
+            {keyTitle}
           </div>
-        )}
 
-        {/* Live Client-Side Encryption Trust Indicator */}
-        <div style={S.formSecurityNotice}>
-          <ShieldCheck size={13} color={COLORS.green} style={{ flexShrink: 0 }} />
-          <span>Client-Side AES-256-GCM Active • Encrypted locally before saving</span>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {/* Key / Variable Name */}
+            <div style={{ flex: 1 }}>
+              <input
+                style={{ ...S.input, padding: "8px 10px", fontSize: 12.5, fontFamily: isPersonalType ? "inherit" : "IBM Plex Mono, monospace" }}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder={keyPlaceholder}
+              />
+            </div>
+
+            <span style={{ color: COLORS.brass, fontWeight: 700, fontSize: 16, fontFamily: "IBM Plex Mono, monospace" }}>
+              {isPersonalType ? "•" : "="}
+            </span>
+
+            {/* Secret Value with Show/Hide Eye */}
+            <div style={{ flex: 1.3, position: "relative", display: "flex", alignItems: "center" }}>
+              <input
+                style={{ ...S.input, padding: "8px 32px 8px 10px", fontSize: 12.5, fontFamily: "IBM Plex Mono, monospace", width: "100%" }}
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={valPlaceholder}
+              />
+              <button
+                type="button"
+                style={{ position: "absolute", right: 6, background: "transparent", border: "none", color: COLORS.textFaint, cursor: "pointer", padding: 3, display: "flex", alignItems: "center" }}
+                onClick={() => setShowPassword(!showPassword)}
+                title={showPassword ? "Hide value" : "Show value"}
+              >
+                {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Generate Button */}
+          <button
+            type="button"
+            style={{
+              ...S.secondaryBtn,
+              padding: "4px 10px",
+              fontSize: 11,
+              borderRadius: 6,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              color: COLORS.brass,
+              borderColor: COLORS.brassDim,
+              background: showInlineGenerator ? "rgba(176,141,87,0.12)" : "transparent",
+              alignSelf: "flex-start",
+            }}
+            onClick={() => setShowInlineGenerator(!showInlineGenerator)}
+            title="Generate a secure random value"
+          >
+            <Dices size={12} /> {showInlineGenerator ? "Hide Generator" : "⚡ Generate"}
+          </button>
+
+          {/* Inline Compact Generator */}
+          {showInlineGenerator && (
+            <div style={{
+              background: COLORS.panel,
+              border: `1.5px solid ${COLORS.brassDim}`,
+              borderRadius: 10,
+              padding: "12px 14px",
+              marginTop: 2,
+            }}>
+              <PasswordGenerator
+                compact={true}
+                onUseValue={(val) => {
+                  setPassword(val);
+                  setShowPassword(true);
+                  setShowInlineGenerator(false);
+                }}
+                onClose={() => setShowInlineGenerator(false)}
+              />
+            </div>
+          )}
+
+          {/* Live Client-Side Encryption Trust Indicator */}
+          <div style={S.formSecurityNotice}>
+            <ShieldCheck size={13} color={COLORS.green} style={{ flexShrink: 0 }} />
+            <span>Client-Side AES-256-GCM Active • Encrypted locally before saving</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 3. Optional Docs / Login URL */}
       <div>
@@ -765,9 +869,10 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
         )}
       </div>
 
-      {/* Renewal Watchdog Collapsible Toggle */}
-      <div
-        style={{
+      {/* Renewal Watchdog Collapsible Toggle (Hidden for notes / backup codes) */}
+      {secretType !== "note" && (
+        <div
+          style={{
           marginTop: 2,
           background: "rgba(176,141,87,0.05)",
           border: `1px solid ${trackRenewal ? COLORS.brassDim : COLORS.line}`,
@@ -950,6 +1055,7 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
           </div>
         )}
       </div>
+      )}
 
       <button
         style={{ ...S.primaryBtn, padding: "9px 16px", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: !label.trim() || (trackRenewal && !!costError) ? 0.6 : 1 }}
