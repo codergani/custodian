@@ -22,6 +22,8 @@ android {
             storePassword 'custodian_release_pass'
             keyAlias 'custodian_key'
             keyPassword 'custodian_release_pass'
+            v1SigningEnabled true
+            v2SigningEnabled true
         }
     }
     buildTypes {

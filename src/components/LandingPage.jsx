@@ -177,27 +177,50 @@ export default function LandingPage({ onLogin, onSignup }) {
         >
           Client-side encrypted credential management, automated renewal alerts, and audited handover packages designed for developers, freelancers, and engineering teams.
         </p>
-        <button
-          type="button"
-          onClick={onSignup}
-          style={{
-            background: COLORS.brass,
-            color: "var(--primary-btn-text, #FFFFFF)",
-            border: "none",
-            borderRadius: 8,
-            padding: "14px 28px",
-            fontSize: 15,
-            fontWeight: 600,
-            cursor: "pointer",
-            fontFamily: "Inter, sans-serif",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            boxShadow: "0 4px 14px rgba(148, 110, 55, 0.25)",
-          }}
-        >
-          Get Started Free <ArrowRight size={16} />
-        </button>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
+          <button
+            type="button"
+            onClick={onSignup}
+            style={{
+              background: COLORS.brass,
+              color: "var(--primary-btn-text, #FFFFFF)",
+              border: "none",
+              borderRadius: 8,
+              padding: "14px 28px",
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "Inter, sans-serif",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              boxShadow: "0 4px 14px rgba(148, 110, 55, 0.25)",
+            }}
+          >
+            Get Started Free <ArrowRight size={16} />
+          </button>
+          <a
+            href="/custodian.apk"
+            download="custodian.apk"
+            style={{
+              background: "rgba(176,141,87,0.12)",
+              color: COLORS.brass,
+              border: `1px solid ${COLORS.brassDim}`,
+              borderRadius: 8,
+              padding: "14px 24px",
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "Inter, sans-serif",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              textDecoration: "none",
+            }}
+          >
+            <span>📱 Download Android APK</span>
+          </a>
+        </div>
       </section>
 
       {/* Feature Section: Exactly 3 Cards */}
