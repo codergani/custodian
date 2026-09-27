@@ -121,9 +121,7 @@ export async function sendSupportReplyEmail({ to, originalMessage, replyText }) 
   }
 
   // Step 2: Direct Resend API fallback
-  const resendApiKey =
-    import.meta.env.VITE_RESEND_API_KEY ||
-    "re_Exh1iWiR_91sqBraQdPbyHV2dSgRw3729";
+  const resendApiKey = import.meta.env.VITE_RESEND_API_KEY || "";
   const fromEmail =
     import.meta.env.VITE_RESEND_FROM_EMAIL || "onboarding@resend.dev";
 
