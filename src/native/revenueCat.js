@@ -123,7 +123,11 @@ export async function purchaseSubscriptionPackage(planId) {
       entitlements["pro_monthly"] ||
       entitlements["premium"]
     );
-    const isTeam = Boolean(entitlements["team"] || entitlements["Team"]);
+    const isTeam = Boolean(
+      entitlements["custodian_team"] ||
+      entitlements["team"] ||
+      entitlements["Team"]
+    );
     const hasAny = Object.keys(entitlements).length > 0;
 
     return {
@@ -157,7 +161,11 @@ export async function restoreNativePurchases() {
       entitlements["pro_monthly"] ||
       entitlements["premium"]
     );
-    const isTeam = Boolean(entitlements["team"] || entitlements["Team"]);
+    const isTeam = Boolean(
+      entitlements["custodian_team"] ||
+      entitlements["team"] ||
+      entitlements["Team"]
+    );
     const hasAny = Object.keys(entitlements).length > 0;
 
     return {
