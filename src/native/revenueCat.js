@@ -90,10 +90,22 @@ export async function purchaseSubscriptionPackage(planId) {
       const pkgId = (pkg.identifier || "").toLowerCase();
       const prodId = (pkg.product?.identifier || "").toLowerCase();
       if (planId === "pro") {
-        return pkgId.includes("pro") || prodId.includes("pro") || pkgId === "$rc_monthly" || pkgId.includes("monthly");
+        return (
+          pkgId.includes("pro") ||
+          prodId.includes("pro") ||
+          pkgId.includes("monthly") ||
+          prodId.includes("monthly") ||
+          pkgId === "$rc_monthly"
+        );
       }
       if (planId === "team") {
-        return pkgId.includes("team") || prodId.includes("team") || pkgId === "$rc_annual" || pkgId.includes("annual");
+        return (
+          pkgId.includes("team") ||
+          prodId.includes("team") ||
+          pkgId.includes("annual") ||
+          prodId.includes("yearly") ||
+          pkgId === "$rc_annual"
+        );
       }
       return pkgId.includes(planId) || prodId.includes(planId);
     }) || current.availablePackages[0];
@@ -104,7 +116,13 @@ export async function purchaseSubscriptionPackage(planId) {
 
     const { customerInfo } = await Purchases.purchasePackage({ aPackage: targetPkg });
     const entitlements = customerInfo?.entitlements?.active || {};
-    const isPro = Boolean(entitlements["pro"] || entitlements["Pro"] || entitlements["pro_monthly"] || entitlements["premium"]);
+    const isPro = Boolean(
+      entitlements["custodian_pro"] ||
+      entitlements["pro"] ||
+      entitlements["Pro"] ||
+      entitlements["pro_monthly"] ||
+      entitlements["premium"]
+    );
     const isTeam = Boolean(entitlements["team"] || entitlements["Team"]);
     const hasAny = Object.keys(entitlements).length > 0;
 
@@ -132,7 +150,13 @@ export async function restoreNativePurchases() {
   try {
     const { customerInfo } = await Purchases.restorePurchases();
     const entitlements = customerInfo?.entitlements?.active || {};
-    const isPro = Boolean(entitlements["pro"] || entitlements["Pro"] || entitlements["pro_monthly"] || entitlements["premium"]);
+    const isPro = Boolean(
+      entitlements["custodian_pro"] ||
+      entitlements["pro"] ||
+      entitlements["Pro"] ||
+      entitlements["pro_monthly"] ||
+      entitlements["premium"]
+    );
     const isTeam = Boolean(entitlements["team"] || entitlements["Team"]);
     const hasAny = Object.keys(entitlements).length > 0;
 
