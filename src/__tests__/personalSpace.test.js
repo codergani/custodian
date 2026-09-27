@@ -18,7 +18,7 @@ describe("Personal Space Utilities", () => {
     });
 
     it("rejects non-personal freelance clients", () => {
-      expect(isPersonalClient({ name: "Payism" })).toBe(false);
+      expect(isPersonalClient({ name: "FinTech Corp" })).toBe(false);
       expect(isPersonalClient({ name: "Acme Corp" })).toBe(false);
       expect(isPersonalClient(null)).toBe(false);
       expect(isPersonalClient({})).toBe(false);
@@ -29,12 +29,12 @@ describe("Personal Space Utilities", () => {
     it("excludes the personal space from the client list", () => {
       const allClients = [
         { id: "1", name: "Personal Space" },
-        { id: "2", name: "Payism" },
+        { id: "2", name: "FinTech Corp" },
         { id: "3", name: "Acme Corp" },
       ];
       const freelance = getFreelanceClients(allClients);
       expect(freelance.length).toBe(2);
-      expect(freelance.map((c) => c.name)).toEqual(["Payism", "Acme Corp"]);
+      expect(freelance.map((c) => c.name)).toEqual(["FinTech Corp", "Acme Corp"]);
     });
 
     it("handles empty or personal-only lists", () => {

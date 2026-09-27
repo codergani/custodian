@@ -10,7 +10,7 @@ import {
 describe("Client Archive & ZIP Compression Engine", () => {
   const mockClient = {
     id: "client-123",
-    name: "Payism / FinTech",
+    name: "AlphaFin / FinTech",
     projects: [
       {
         id: "proj-1",
@@ -48,7 +48,7 @@ describe("Client Archive & ZIP Compression Engine", () => {
 
   describe("sanitizeFileName", () => {
     it("strips illegal path characters", () => {
-      expect(sanitizeFileName("Payism / Client : Project * ? < > |")).toBe("Payism_Client_Project");
+      expect(sanitizeFileName("AlphaFin / Client : Project * ? < > |")).toBe("AlphaFin_Client_Project");
       expect(sanitizeFileName("")).toBe("Untitled");
       expect(sanitizeFileName(null)).toBe("Untitled");
     });
@@ -80,7 +80,7 @@ describe("Client Archive & ZIP Compression Engine", () => {
   describe("generateClientSummary", () => {
     it("includes client name, reason notes, and return instructions", () => {
       const summary = generateClientSummary(mockClient, "Client stopped responding after Phase 1.");
-      expect(summary).toContain("Payism / FinTech");
+      expect(summary).toContain("AlphaFin / FinTech");
       expect(summary).toContain("Client stopped responding after Phase 1.");
       expect(summary).toContain("Instructions When Client Returns");
       expect(summary).toContain("1 Projects, 2 Total Secrets");
