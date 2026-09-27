@@ -4,5 +4,10 @@
     "supabase/functions"
   ],
   "deno.lint": true,
-  "deno.unstable": true
+  "deno.unstable": true,
+  "git.autoRepositoryDetection": "subFolders",
+  "git.ignoredRepositories": [
+    "d:/Office projects/payism_v11",
+    "d:\\Office projects\\payism_v11"
+  ]
 }
