@@ -23,7 +23,7 @@
     "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
     "@revenuecat/purchases-capacitor": "^13.5.0",
-    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/supabase-js": "^2.117.1",
     "jszip": "^3.10.2",
     "lucide-react": "^0.383.0",
     "pdfjs-dist": "^3.11.174",
