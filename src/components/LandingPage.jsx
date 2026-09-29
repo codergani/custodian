@@ -200,8 +200,9 @@ export default function LandingPage({ onLogin, onSignup }) {
             Get Started Free <ArrowRight size={16} />
           </button>
           <a
-            href="/custodian.apk"
-            download="custodian.apk"
+            href="https://github.com/codergani/custodian/releases/download/v1.0.0/custodian-latest.apk"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               background: "rgba(176,141,87,0.12)",
               color: COLORS.brass,
