@@ -81,5 +81,7 @@
 	<string>Custodian needs camera access to capture documents or photos for project workspace storage.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Custodian needs photo library access to attach images and documents to projects.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Custodian uses Face ID to securely authenticate and unlock your encrypted credential vault.</string>
 </dict>
 </plist>
