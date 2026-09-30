@@ -29,7 +29,6 @@ import WorkspaceView from "./Workspace";
 import WatchdogView from "./components/WatchdogView";
 import TrashView from "./components/TrashView";
 import ProfilePanel from "./components/ProfilePanel";
-import Mandatory2FASetup from "./components/Mandatory2FASetup";
 import OwnerCommandCenter from "./components/OwnerCommandCenter";
 import AboutProjectView from "./components/AboutProjectView";
 import EnvironmentStudio from "./components/EnvironmentStudio";
@@ -53,14 +52,6 @@ import {
 export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLock, onProfileUpdate, isMfaEnrolled, onMfaEnrolled }) {
   const { theme, toggleTheme } = useTheme();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [dismiss2faBanner, setDismiss2faBanner] = useState(() => {
-    try {
-      return sessionStorage.getItem("custodian_dismiss_2fa_banner") === "true";
-    } catch {
-      return false;
-    }
-  });
-  const [showQuick2faModal, setShowQuick2faModal] = useState(false);
   const [showStickyNotes, setShowStickyNotes] = useState(() => {
     try {
       return localStorage.getItem("custodian_show_stickies") === "true";
@@ -1040,8 +1031,8 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
       <div style={S.sidebar} className={`custodian-sidebar ${mobileSidebarOpen ? "open" : ""}`}>
         <div style={S.sidebarHead}>
           <div style={S.brandRow}>
-            <ShieldCheck size={18} color={COLORS.brass} />
-            <span style={S.brandText}>CUSTODIAN</span>
+            <ShieldCheck size={20} color={COLORS.brass} />
+            <span style={{ ...S.brandText, fontSize: 15, letterSpacing: "0.06em" }}>CUSTODIAN</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             {(profile?.plan === "founder" ||
@@ -1055,7 +1046,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
                 title="Founder SuperAdmin HQ & Telemetry Control Room"
                 aria-label="Founder HQ"
               >
-                <Crown size={15} color="#FFD700" />
+                <Crown size={16} color="#FFD700" />
               </button>
             )}
             <button
@@ -1065,168 +1056,149 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
               title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
               aria-label="Toggle light/dark theme"
             >
-              {theme === "dark" ? <Sun size={15} color={COLORS.brass} /> : <Moon size={15} color={COLORS.brass} />}
+              {theme === "dark" ? <Sun size={16} color={COLORS.brass} /> : <Moon size={16} color={COLORS.brass} />}
             </button>
-            <button style={S.iconBtnGhost} onClick={onLock} title="Lock vault"><LogOut size={15} /></button>
+            <button style={S.iconBtnGhost} onClick={onLock} title="Lock vault"><LogOut size={16} /></button>
             <button
               type="button"
               className="mobile-drawer-close"
-              style={{ ...S.iconBtnGhost, color: COLORS.textDim, padding: 4 }}
+              style={{ ...S.iconBtnGhost, color: COLORS.textDim, padding: 5 }}
               onClick={() => setMobileSidebarOpen(false)}
               title="Close Menu"
               aria-label="Close Menu"
             >
-              <X size={17} />
+              <X size={18} />
             </button>
           </div>
         </div>
 
-        {/* Global Quick Search Shortcut (Ctrl+K) */}
+        {/* Global Quick Search Shortcut */}
         <button
           type="button"
+          className="sidebar-search-btn"
           style={{
             ...S.secondaryBtn,
             width: "100%",
             justifyContent: "space-between",
-            padding: "7px 10px",
-            fontSize: 11.5,
+            padding: "9px 12px",
+            fontSize: 13,
             background: "rgba(255,255,255,0.03)",
             borderColor: COLORS.line,
+            borderRadius: 8,
           }}
           onClick={() => { setOpenCmd(true); setMobileSidebarOpen(false); }}
           title="Open Quick Search & Command Palette (Ctrl+K)"
         >
-          <span style={{ display: "flex", alignItems: "center", gap: 6, color: COLORS.textDim }}>
-            <Search size={13} /> Search Vault...
+          <span style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.textDim }}>
+            <Search size={14} /> Search Vault...
           </span>
-          <span style={{ fontSize: 10, color: COLORS.textFaint, fontFamily: "IBM Plex Mono, monospace", background: "rgba(255,255,255,0.06)", padding: "1px 5px", borderRadius: 4 }}>
-            Ctrl+K
+          <span style={{ fontSize: 10.5, color: COLORS.textFaint, fontFamily: "IBM Plex Mono, monospace", background: "rgba(255,255,255,0.06)", padding: "2px 6px", borderRadius: 4 }}>
+            ⌘K
           </span>
         </button>
 
-        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+        {/* Primary View Segmented Tabs */}
+        <div style={{ display: "flex", gap: 4, background: "rgba(0,0,0,0.06)", padding: 4, borderRadius: 10 }}>
           <button
-            style={{ ...S.secondaryBtn, flex: "1 1 45%", justifyContent: "center", padding: "6px 4px", fontSize: 11.5, ...(view === "vault" ? { borderColor: COLORS.brass, color: COLORS.text } : {}) }}
-            onClick={() => { setView("vault"); setMobileSidebarOpen(false); }}
-          >
-            Vault
-          </button>
-          <button
+            type="button"
+            className="sidebar-nav-btn"
             style={{
-              ...S.secondaryBtn, flex: "1 1 45%", justifyContent: "center", padding: "6px 4px", fontSize: 11.5, position: "relative",
-              ...(view === "watchdog" ? { borderColor: COLORS.brass, color: COLORS.text } : {}),
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              padding: "10px 6px",
+              fontSize: 13,
+              fontWeight: view === "vault" ? 700 : 500,
+              borderRadius: 8,
+              border: "none",
+              cursor: "pointer",
+              background: view === "vault" ? COLORS.panel : "transparent",
+              color: view === "vault" ? COLORS.brass : COLORS.textDim,
+              boxShadow: view === "vault" ? "0 2px 6px rgba(0,0,0,0.12)" : "none",
+              transition: "all 0.15s ease",
+            }}
+            onClick={() => { setView("vault"); setSelectedClient(null); setSelectedProject(null); setMobileSidebarOpen(false); }}
+          >
+            <Crown size={15} color={view === "vault" ? COLORS.brass : COLORS.textDim} />
+            <span>Vault</span>
+          </button>
+
+          <button
+            type="button"
+            className="sidebar-nav-btn"
+            style={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              padding: "10px 6px",
+              fontSize: 13,
+              fontWeight: view === "watchdog" ? 700 : 500,
+              borderRadius: 8,
+              border: "none",
+              cursor: "pointer",
+              background: view === "watchdog" ? COLORS.panel : "transparent",
+              color: view === "watchdog" ? COLORS.brass : COLORS.textDim,
+              boxShadow: view === "watchdog" ? "0 2px 6px rgba(0,0,0,0.12)" : "none",
+              transition: "all 0.15s ease",
+              position: "relative",
             }}
             onClick={() => { setView("watchdog"); setMobileSidebarOpen(false); }}
-            title="Renewal Watchdog (API Subscriptions & Billing Tracker)"
+            title="Renewal Watchdog"
           >
-            Watchdog {criticalCount > 0 ? <span style={S.watchdogCounter}>{criticalCount}</span> : ""}
+            <Bell size={15} color={view === "watchdog" ? COLORS.brass : COLORS.textDim} />
+            <span>Watchdog</span>
+            {criticalCount > 0 && <span style={S.watchdogCounter}>{criticalCount}</span>}
           </button>
+
           <button
-            style={{ ...S.secondaryBtn, flex: "1 1 45%", justifyContent: "center", padding: "6px 4px", fontSize: 11.5, ...(view === "trash" ? { borderColor: COLORS.brass, color: COLORS.text } : {}) }}
-            onClick={() => { setView("trash"); setMobileSidebarOpen(false); }}
-          >
-            Trash {totalTrashCount > 0 ? `(${totalTrashCount})` : ""}
-          </button>
-          <button
-            style={{ ...S.secondaryBtn, flex: "1 1 45%", justifyContent: "center", padding: "6px 4px", fontSize: 11.5, ...(view === "profile" ? { borderColor: COLORS.brass, color: COLORS.text } : {}) }}
+            type="button"
+            className="sidebar-nav-btn"
+            style={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              padding: "10px 6px",
+              fontSize: 13,
+              fontWeight: view === "profile" ? 700 : 500,
+              borderRadius: 8,
+              border: "none",
+              cursor: "pointer",
+              background: view === "profile" ? COLORS.panel : "transparent",
+              color: view === "profile" ? COLORS.brass : COLORS.textDim,
+              boxShadow: view === "profile" ? "0 2px 6px rgba(0,0,0,0.12)" : "none",
+              transition: "all 0.15s ease",
+            }}
             onClick={() => { setView("profile"); setMobileSidebarOpen(false); }}
           >
-            Profile
-          </button>
-          <button
-            style={{
-              ...S.secondaryBtn,
-              flex: "1 1 calc(50% - 4px)",
-              justifyContent: "center",
-              padding: "6px 4px",
-              fontSize: 11.5,
-              ...(view === "workspace" ? { borderColor: COLORS.brass, color: COLORS.text } : {}),
-            }}
-            onClick={() => { setView("workspace"); setMobileSidebarOpen(false); }}
-            title="Resource Library (Shared Docs, Assets & SOPs)"
-          >
-            <Package size={13} /> Library
-          </button>
-          <button
-            style={{
-              ...S.secondaryBtn,
-              flex: "1 1 calc(50% - 4px)",
-              justifyContent: "center",
-              padding: "6px 4px",
-              fontSize: 11.5,
-              ...(view === "sharing" ? { borderColor: COLORS.brass, color: COLORS.text, background: "rgba(176,141,87,0.12)" } : {}),
-            }}
-            onClick={() => { setView("sharing"); setMobileSidebarOpen(false); }}
-            title="Zero-Knowledge Secret Sharing (ECDH P-256)"
-          >
-            <Share2 size={13} color={COLORS.brass} /> Sharing
-          </button>
-          <button
-            style={{
-              ...S.secondaryBtn,
-              flex: "1 1 calc(50% - 4px)",
-              justifyContent: "center",
-              padding: "6px 4px",
-              fontSize: 11.5,
-              ...(view === "generator" ? { borderColor: COLORS.brass, color: COLORS.text, background: "rgba(176,141,87,0.12)" } : {}),
-            }}
-            onClick={() => { setView("generator"); setMobileSidebarOpen(false); }}
-            title="Secure Password & API Key Generator"
-          >
-            <Dices size={13} color={COLORS.brass} /> Generator
-          </button>
-          <button
-            style={{
-              ...S.secondaryBtn,
-              flex: "1 1 100%",
-              justifyContent: "center",
-              padding: "6px 4px",
-              fontSize: 11.5,
-              position: "relative",
-              ...(showStickyNotes ? { borderColor: "#E2B714", background: "rgba(226,183,20,0.12)", color: COLORS.text } : {}),
-            }}
-            onClick={() => {
-              setShowStickyNotes((prev) => {
-                const next = !prev;
-                try { localStorage.setItem("custodian_show_stickies", next ? "true" : "false"); } catch {}
-                return next;
-              });
-            }}
-            title="Movable Floating Sticky Notes (Companion Scratchpad · Ctrl+Shift+N)"
-          >
-            <Pin size={13} style={{ transform: "rotate(45deg)", color: showStickyNotes ? "#E2B714" : COLORS.brass }} />
-            <span>Stickies</span>
-            {showStickyNotes && (
-              <span
-                style={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: "50%",
-                  background: "#E2B714",
-                  boxShadow: "0 0 6px #E2B714",
-                  marginLeft: 3,
-                }}
-              />
-            )}
+            <User size={15} color={view === "profile" ? COLORS.brass : COLORS.textDim} />
+            <span>Profile</span>
           </button>
         </div>
 
-        {(view === "vault" || view === "personal") && (
-          <>
-            <div
-              style={{
-                ...S.treeClientRow,
-                marginBottom: 6,
-                background: !selectedClient && !selectedProject && view === "vault" ? "var(--highlight-bg, rgba(148,110,55,0.12))" : "transparent",
-                border: `1px solid ${!selectedClient && !selectedProject && view === "vault" ? COLORS.brassDim : "transparent"}`,
-              }}
-              onClick={() => { setSelectedClient(null); setSelectedProject(null); setView("vault"); setMobileSidebarOpen(false); }}
-            >
-              <Crown size={14} color={COLORS.brass} />
-              <span style={{ ...S.treeLabel, fontWeight: 600, color: !selectedClient && !selectedProject && view === "vault" ? COLORS.brass : COLORS.text }}>
-                Vault Overview (All Projects)
-              </span>
-            </div>
+        {/* Dedicated Workspace Navigation (Always Visible Across All Views) */}
+        <div
+          style={{
+            ...S.treeClientRow,
+            marginTop: 4,
+            marginBottom: 6,
+            padding: "9px 10px",
+            fontSize: 13,
+            background: !selectedClient && !selectedProject && view === "vault" ? "var(--highlight-bg, rgba(148,110,55,0.12))" : "transparent",
+            border: `1px solid ${!selectedClient && !selectedProject && view === "vault" ? COLORS.brassDim : "transparent"}`,
+          }}
+          onClick={() => { setSelectedClient(null); setSelectedProject(null); setView("vault"); setMobileSidebarOpen(false); }}
+        >
+          <Crown size={15} color={COLORS.brass} />
+          <span style={{ ...S.treeLabel, fontWeight: 600, fontSize: 13, color: !selectedClient && !selectedProject && view === "vault" ? COLORS.brass : COLORS.text }}>
+            Vault Overview (All Projects)
+          </span>
+        </div>
 
             {/* Dedicated Top-Pinned Personal Space (My Vault) */}
             <div
@@ -1391,8 +1363,109 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
                 </button>
               </div>
             )}
-          </>
-        )}
+
+            {/* Tools & Utilities Section */}
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${COLORS.line}` }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "0 4px 8px" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: COLORS.textFaint, textTransform: "uppercase" }}>
+                  Tools & Utilities
+                </span>
+                <button
+                  type="button"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: showStickyNotes ? "#E2B714" : COLORS.textFaint,
+                    fontSize: 11,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                  onClick={() => {
+                    setShowStickyNotes((prev) => {
+                      const next = !prev;
+                      try { localStorage.setItem("custodian_show_stickies", next ? "true" : "false"); } catch {}
+                      return next;
+                    });
+                  }}
+                  title="Toggle Sticky Notes"
+                >
+                  <Pin size={11} style={{ transform: "rotate(45deg)" }} />
+                  <span>{showStickyNotes ? "Hide Stickies" : "Stickies"}</span>
+                </button>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                <button
+                  type="button"
+                  className="sidebar-nav-btn"
+                  style={{
+                    ...S.secondaryBtn,
+                    padding: "9px 10px",
+                    fontSize: 12.5,
+                    borderRadius: 8,
+                    ...(view === "generator" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
+                  }}
+                  onClick={() => { setView("generator"); setMobileSidebarOpen(false); }}
+                  title="Password & Key Generator"
+                >
+                  <Dices size={14} color={COLORS.brass} />
+                  <span>Generator</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="sidebar-nav-btn"
+                  style={{
+                    ...S.secondaryBtn,
+                    padding: "9px 10px",
+                    fontSize: 12.5,
+                    borderRadius: 8,
+                    ...(view === "sharing" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
+                  }}
+                  onClick={() => { setView("sharing"); setMobileSidebarOpen(false); }}
+                  title="Zero-Knowledge Secret Sharing"
+                >
+                  <Share2 size={14} color={COLORS.brass} />
+                  <span>Sharing</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="sidebar-nav-btn"
+                  style={{
+                    ...S.secondaryBtn,
+                    padding: "9px 10px",
+                    fontSize: 12.5,
+                    borderRadius: 8,
+                    ...(view === "workspace" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
+                  }}
+                  onClick={() => { setView("workspace"); setMobileSidebarOpen(false); }}
+                  title="Resource Library"
+                >
+                  <Package size={14} />
+                  <span>Library</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="sidebar-nav-btn"
+                  style={{
+                    ...S.secondaryBtn,
+                    padding: "9px 10px",
+                    fontSize: 12.5,
+                    borderRadius: 8,
+                    ...(view === "trash" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
+                  }}
+                  onClick={() => { setView("trash"); setMobileSidebarOpen(false); }}
+                  title="Recycle Bin"
+                >
+                  <Trash2 size={14} />
+                  <span>Trash {totalTrashCount > 0 ? `(${totalTrashCount})` : ""}</span>
+                </button>
+              </div>
+            </div>
       </div>
 
       <div style={S.main} className="custodian-main">
@@ -1522,145 +1595,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
           </div>
         )}
 
-        {/* Free Tier Optional 2FA Exploration Banner */}
-        {(!profile?.plan || profile?.plan === "free") && !isMfaEnrolled && !dismiss2faBanner && (
-          <div
-            style={{
-              margin: "12px 24px 0",
-              padding: "12px 16px",
-              borderRadius: 10,
-              background: "linear-gradient(135deg, rgba(176,141,87,0.12) 0%, rgba(20,20,20,0.4) 100%)",
-              border: `1px solid rgba(176,141,87,0.35)`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 16,
-              flexWrap: "wrap",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 260 }}>
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 8,
-                  background: "rgba(176,141,87,0.2)",
-                  border: `1px solid ${COLORS.brass}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <ShieldCheck size={20} color={COLORS.brass} />
-              </div>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.text }}>
-                    Two-Factor Authentication Available (Optional for Free Vaults)
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 600,
-                      padding: "2px 7px",
-                      borderRadius: 10,
-                      background: "rgba(78,186,111,0.15)",
-                      color: "#4EBA6F",
-                      border: "1px solid rgba(78,186,111,0.3)",
-                    }}
-                  >
-                    Zero-Knowledge TOTP
-                  </span>
-                </div>
-                <div style={{ fontSize: 11.5, color: COLORS.textDim, marginTop: 2, lineHeight: 1.4 }}>
-                  Scan a QR code with Google Authenticator or 1Password to activate 2FA and get 8 single-use recovery codes.
-                </div>
-              </div>
-            </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-              <button
-                type="button"
-                style={{
-                  ...S.primaryBtnSm,
-                  padding: "7px 13px",
-                  fontSize: 12,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-                onClick={() => setShowQuick2faModal(true)}
-              >
-                <Smartphone size={13} />
-                <span>View QR Code & Setup 2FA</span>
-              </button>
-              <button
-                type="button"
-                style={{
-                  ...S.secondaryBtn,
-                  padding: "7px 11px",
-                  fontSize: 12,
-                }}
-                onClick={() => setView("profile")}
-              >
-                Settings
-              </button>
-              <button
-                type="button"
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: COLORS.textFaint,
-                  cursor: "pointer",
-                  padding: 4,
-                  display: "flex",
-                  alignItems: "center",
-                }}
-                onClick={() => {
-                  setDismiss2faBanner(true);
-                  try {
-                    sessionStorage.setItem("custodian_dismiss_2fa_banner", "true");
-                  } catch {}
-                }}
-                title="Dismiss banner for this session"
-              >
-                <X size={15} />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Quick 2FA Setup Modal for Free Tier Exploration */}
-        {showQuick2faModal && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 9999,
-              background: "rgba(0,0,0,0.78)",
-              backdropFilter: "blur(6px)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 16,
-            }}
-          >
-            <Mandatory2FASetup
-              profile={profile}
-              vaultKey={vaultKey}
-              isMandatory={false}
-              onCancel={() => setShowQuick2faModal(false)}
-              onComplete={() => {
-                setShowQuick2faModal(false);
-                onMfaEnrolled?.();
-                showSuccess("Two-Factor Authentication successfully activated!");
-              }}
-              onSignOut={onLock}
-            />
-          </div>
-        )}
 
         {view === "personal" || (currentClient && isPersonalClient(currentClient)) ? (
           <PersonalSpaceView
