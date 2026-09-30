@@ -17,6 +17,7 @@ import { getLockoutState, recordFailedAttempt, clearFailedAttempts } from "./sec
 import { isBiometricsAvailable, isBiometricEnabled, unlockWithBiometrics } from "./native/nativeBridge";
 import { S, COLORS } from "./styles";
 import { Overlay } from "./components/shared";
+import { verifyAndConsumeRecoveryCode } from "./utils/mfaUtils";
 
 // profile: the current user's row from `profiles` (has vault_salt / vault_check, may be null on first run)
 export default function VaultUnlock({ userId, profile, onUnlocked }) {
@@ -31,9 +32,22 @@ export default function VaultUnlock({ userId, profile, onUnlocked }) {
   const [lockoutRemaining, setLockoutRemaining] = useState(() => getLockoutState(userId).remainingSeconds);
   const [bioAvailable, setBioAvailable] = useState(false);
   const [showForgotHelp, setShowForgotHelp] = useState(false);
-  const [resetPw, setResetPw] = useState("");
+  const [totpFactor, setTotpFactor] = useState(null);
+  const [newVaultPw, setNewVaultPw] = useState("");
+  const [newVaultPw2, setNewVaultPw2] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  const [resetModalErr, setResetModalErr] = useState("");
 
   const isBioEnrolled = isBiometricEnabled(userId);
+
+  useEffect(() => {
+    supabase.auth.mfa.listFactors().then(({ data }) => {
+      const verified =
+        data?.totp?.find((f) => f.status === "verified") ||
+        data?.all?.find((f) => f.status === "verified");
+      if (verified) setTotpFactor(verified);
+    }).catch(() => {});
+  }, [userId]);
 
   useEffect(() => {
     isBiometricsAvailable().then((avail) => {
@@ -261,24 +275,51 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
   }
 
   async function handleResetVaultWithPassword() {
-    if (!resetPw || resetPw.length < 8) {
-      return setErr("Please enter a password of at least 8 characters.");
+    setResetModalErr("");
+    if (!newVaultPw || newVaultPw.length < 8) {
+      return setResetModalErr("New vault password must be at least 8 characters.");
     }
-    setErr("");
+    if (newVaultPw !== newVaultPw2) {
+      return setResetModalErr("Passwords do not match.");
+    }
+
     setBusy(true);
     try {
+      // 1. If 2FA is active on the account, verify 6-digit TOTP or emergency recovery code
+      if (totpFactor) {
+        if (!mfaCode.trim()) {
+          setBusy(false);
+          return setResetModalErr("Please enter the 6-digit 2FA code from your authenticator app (or recovery code).");
+        }
+
+        const cleanCode = mfaCode.trim().toUpperCase();
+        if (cleanCode.startsWith("CUST-")) {
+          const ok = await verifyAndConsumeRecoveryCode(userId, cleanCode);
+          if (!ok) throw new Error("Invalid emergency recovery code.");
+        } else {
+          const { error: chalErr } = await supabase.auth.mfa.challengeAndVerify({
+            factorId: totpFactor.id,
+            code: mfaCode.trim(),
+          });
+          if (chalErr) throw new Error("Invalid 2FA code. Please check your authenticator clock.");
+        }
+      }
+
+      // 2. Derive new AES key with newVaultPw
       const newVaultSalt = newSalt();
-      const key = await deriveKey(resetPw, newVaultSalt);
+      const key = await deriveKey(newVaultPw, newVaultSalt);
       const newCheck = await encryptJSON(key, { marker: "ok" });
       const ecdhPair = await generateECDHKeyPair();
       const pubKeyJWK = await exportPublicKeyJWK(ecdhPair.publicKey);
       const encryptedPrivKey = await exportEncryptedPrivateKey(ecdhPair.privateKey, key);
 
+      // Clean local storage
       localStorage.setItem(`demo_vault_salt_${userId}`, newVaultSalt);
       localStorage.setItem(`demo_vault_check_${userId}`, JSON.stringify(newCheck));
       localStorage.setItem(`demo_vault_ecdh_pub_${userId}`, pubKeyJWK);
       localStorage.setItem(`demo_vault_ecdh_priv_${userId}`, encryptedPrivKey);
 
+      // Update Supabase profile
       try {
         await supabase.from("profiles").update({
           vault_salt: newVaultSalt,
@@ -299,10 +340,13 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
 
       clearFailedAttempts(userId);
       setShowForgotHelp(false);
+      setNewVaultPw("");
+      setNewVaultPw2("");
+      setMfaCode("");
       onUnlocked(key, ecdhPair.privateKey, pubKeyJWK);
     } catch (resetErr) {
       console.error("[VaultUnlock] Reset vault key error:", resetErr);
-      setErr(resetErr.message || "Failed to reset vault key.");
+      setResetModalErr(resetErr.message || "Failed to reset vault password.");
     } finally {
       setBusy(false);
     }
@@ -345,11 +389,11 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
           </div>
         ) : (
           <p style={{ ...S.authSub, fontSize: 12.5, lineHeight: 1.55, color: COLORS.textDim }}>
-            Enter your account password to decrypt your client credentials and workspace keys locally on this device.
+            Enter your master vault password to decrypt your client credentials and workspace keys locally on this device.
           </p>
         )}
 
-        <label style={S.label}>Account Password</label>
+        <label style={S.label}>Master Vault Password</label>
         <div style={{ position: "relative", width: "100%" }}>
           <input
             style={{ ...S.input, paddingRight: 38, opacity: lockoutRemaining > 0 ? 0.6 : 1 }}
@@ -359,7 +403,7 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
             onChange={(e) => setPw(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (isFirstTime ? handleFirstTimeSetup() : handleUnlock())}
             autoFocus
-            placeholder={isFirstTime ? "At least 8 characters" : lockoutRemaining > 0 ? `Locked (${lockoutRemaining}s remaining)` : "Your account password"}
+            placeholder={isFirstTime ? "At least 8 characters" : lockoutRemaining > 0 ? `Locked (${lockoutRemaining}s remaining)` : "Your master vault password"}
           />
           <button
             type="button"
@@ -375,7 +419,7 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
 
         {isFirstTime && (
           <>
-            <label style={S.label}>Confirm account password</label>
+            <label style={S.label}>Confirm master vault password</label>
             <div style={{ position: "relative", width: "100%" }}>
               <input
                 style={{ ...S.input, paddingRight: 38 }}
@@ -384,7 +428,7 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
                 disabled={busy}
                 onChange={(e) => setPw2(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleFirstTimeSetup()}
-                placeholder="Re-enter account password"
+                placeholder="Re-enter master vault password"
               />
               <button
                 type="button"
@@ -492,7 +536,7 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
               }}
               onClick={() => setShowForgotHelp(true)}
             >
-              <HelpCircle size={13} /> Forgot Account Password?
+              <HelpCircle size={13} /> Forgot Master Vault Password?
             </button>
           </div>
         )}
@@ -520,16 +564,19 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
         </div>
       </div>
 
-      {/* Zero-Knowledge Password Assistance Modal */}
+      {/* Zero-Knowledge Password Reset & Recovery Modal */}
       {showForgotHelp && (
         <Overlay
           onClose={() => {
             setShowForgotHelp(false);
-            setResetPw("");
+            setNewVaultPw("");
+            setNewVaultPw2("");
+            setMfaCode("");
+            setResetModalErr("");
           }}
-          title="Vault Recovery & Password Sync"
+          title={totpFactor ? "Reset Vault Password with 2FA" : "Set New Master Vault Password"}
           icon={<KeyRound size={18} color={COLORS.brass} />}
-          cardStyle={{ ...S.modalCard, maxWidth: 480 }}
+          cardStyle={{ ...S.modalCard, maxWidth: 460 }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 14, fontSize: 12.5, lineHeight: 1.5, color: COLORS.textDim }}>
             <div style={{
@@ -544,26 +591,53 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
               <Info size={18} color={COLORS.brass} style={{ flexShrink: 0, marginTop: 1 }} />
               <div>
                 <strong style={{ color: COLORS.brass, display: "block", marginBottom: 3 }}>
-                  Zero-Knowledge Vault Key Re-Sync
+                  {totpFactor ? "2FA-Verified Vault Reset" : "Reset Master Vault Password"}
                 </strong>
-                If your account password was recently changed or doesn't match your vault encryption salt, you can re-synchronize and unlock your vault right now with your account password.
+                {totpFactor
+                  ? "Enter the 6-digit code from your Authenticator app (or an Emergency Recovery Code) to verify your identity and set a new Master Vault Password."
+                  : "Enter a new Master Vault Password to reset your local encryption key and immediately unlock your vault."}
               </div>
             </div>
 
+            {totpFactor && (
+              <div>
+                <label style={S.label}>6-Digit 2FA Code (or Recovery Code)</label>
+                <input
+                  style={S.input}
+                  type="text"
+                  placeholder="e.g. 123456 or CUST-XXXX-XXXX"
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            )}
+
             <div>
-              <label style={S.label}>Enter Your Current Account Password to Re-sync Vault</label>
+              <label style={S.label}>New Master Vault Password</label>
               <input
                 style={S.input}
                 type="password"
-                placeholder="Enter account password (min 8 chars)"
-                value={resetPw}
-                onChange={(e) => setResetPw(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleResetVaultWithPassword()}
-                autoFocus
+                placeholder="At least 8 characters"
+                value={newVaultPw}
+                onChange={(e) => setNewVaultPw(e.target.value)}
+                autoFocus={!totpFactor}
               />
             </div>
 
-            {err && <div style={{ ...S.errBox, margin: 0 }}><AlertTriangle size={14} /> {err}</div>}
+            <div>
+              <label style={S.label}>Confirm New Master Vault Password</label>
+              <input
+                style={S.input}
+                type="password"
+                placeholder="Re-enter new password"
+                value={newVaultPw2}
+                onChange={(e) => setNewVaultPw2(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleResetVaultWithPassword()}
+              />
+            </div>
+
+            {resetModalErr && <div style={{ ...S.errBox, margin: 0 }}><AlertTriangle size={14} /> {resetModalErr}</div>}
 
             <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
               <button
@@ -571,7 +645,10 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
                 style={{ ...S.secondaryBtn, flex: 1, justifyContent: "center" }}
                 onClick={() => {
                   setShowForgotHelp(false);
-                  setResetPw("");
+                  setNewVaultPw("");
+                  setNewVaultPw2("");
+                  setMfaCode("");
+                  setResetModalErr("");
                 }}
               >
                 Cancel
@@ -579,10 +656,10 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
               <button
                 type="button"
                 style={{ ...S.primaryBtn, flex: 1, justifyContent: "center" }}
-                disabled={busy || !resetPw || resetPw.length < 8}
+                disabled={busy || !newVaultPw || newVaultPw.length < 8 || newVaultPw !== newVaultPw2 || (totpFactor && !mfaCode.trim())}
                 onClick={handleResetVaultWithPassword}
               >
-                {busy ? "Re-syncing…" : "Re-sync Vault Key & Unlock"}
+                {busy ? "Updating & Unlocking…" : (totpFactor ? "Verify 2FA & Unlock" : "Set New Password & Unlock")}
               </button>
             </div>
 
