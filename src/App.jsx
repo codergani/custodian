@@ -731,26 +731,7 @@ function AppContent() {
     session?.user?.id === "a0000000-0000-0000-0000-000000000001" ||
     session?.user?.email === "owner@custodian.app";
 
-  // Mandatory 2FA for Pro, Team, and Founder tiers (excluding demo judge bypass)
-  if (isProOrTeam && !isDemoUser && isMfaEnrolled === false) {
-    return (
-      <ErrorBoundary>
-        <Mandatory2FASetup
-          profile={profile}
-          vaultKey={vaultKey}
-          isMandatory={true}
-          onComplete={() => {
-            setIsMfaEnrolled(true);
-          }}
-          onSignOut={async () => {
-            await supabase.auth.signOut();
-            handleLock();
-            setSession(null);
-          }}
-        />
-      </ErrorBoundary>
-    );
-  }
+  // 2FA is optional: users can enable/disable TOTP in Profile Settings, vault access protected by Zero-Knowledge Master Password
 
   if (!vaultKey) {
     return (

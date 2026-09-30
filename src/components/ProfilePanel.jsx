@@ -1021,13 +1021,8 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 
         {/* Two-Factor Authentication (2FA / TOTP) Card */}
         {(() => {
-          const isMandatory =
-            profile?.role === "founder" ||
-            profile?.role === "admin" ||
-            profile?.plan === "founder" ||
-            profile?.plan === "pro" ||
-            profile?.plan === "team" ||
-            profile?.email?.toLowerCase() === "ygpksr456@gmail.com";
+          // 2FA is optional: users can freely enable, reconfigure, or disable it
+          const isMandatory = false;
 
           return (
             <div style={{
