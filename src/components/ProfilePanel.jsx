@@ -197,7 +197,14 @@ export default function ProfilePanel({
     setEnrollStep("scan");
     setBusy(true);
     try {
-      // Clean up any stale unverified TOTP factors first
+      // 1. Try resetting factors via RPC if available (allows resetting even if stuck at AAL1)
+      try {
+        await supabase.rpc("reset_my_mfa");
+      } catch (rpcErr) {
+        // Fallback to client unenroll
+      }
+
+      // 2. Clean up any stale unverified TOTP factors
       const { data: factors } = await supabase.auth.mfa.listFactors();
       const allFactors = factors?.all || [];
       for (const f of allFactors) {
