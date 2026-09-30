@@ -237,7 +237,11 @@ export default function ProfilePanel({
       setShowMfaEnrollModal(true);
     } catch (err) {
       console.error("[ProfilePanel] MFA enroll error:", err);
-      setMfaErr(err.message || "Failed to start 2FA enrollment.");
+      if (err.message?.toLowerCase().includes("aal2")) {
+        setMfaErr("Security verification required: To reconfigure or reset 2FA, your session must be verified with 2FA. Please sign out and log back in with your 6-digit Authenticator code.");
+      } else {
+        setMfaErr(err.message || "Failed to start 2FA enrollment.");
+      }
     } finally {
       setBusy(false);
     }
