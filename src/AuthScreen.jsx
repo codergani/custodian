@@ -117,23 +117,23 @@ export default function AuthScreen({ onAuthed, initialMode = "login", onBackToHo
 
         // Check if 2FA (MFA) is enrolled for this account
         try {
-          const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-          if (aalData?.nextLevel === "aal2" && aalData?.currentLevel !== "aal2") {
-            const { data: factorsData } = await supabase.auth.mfa.listFactors();
-            const totpFactor = factorsData?.totp?.find((f) => f.status === "verified") || factorsData?.totp?.[0];
-            if (totpFactor) {
-              const uId = data.user?.id || data.session?.user?.id;
-              setMfaUserId(uId);
-              setMfaFactorId(totpFactor.id);
-              setMfaSession(data.session);
-              const lockout = getLockoutState(uId);
-              setMfaLockoutRemaining(lockout.remainingSeconds);
-              setMode("2fa");
-              return;
-            }
+          const { data: factorsData } = await supabase.auth.mfa.listFactors();
+          const allFactors = factorsData?.all || factorsData?.totp || [];
+          const totpFactor =
+            allFactors.find((f) => f.status === "verified") ||
+            factorsData?.totp?.find((f) => f.status === "verified");
+          if (totpFactor) {
+            const uId = data.user?.id || data.session?.user?.id;
+            setMfaUserId(uId);
+            setMfaFactorId(totpFactor.id);
+            setMfaSession(data.session);
+            const lockout = getLockoutState(uId);
+            setMfaLockoutRemaining(lockout.remainingSeconds);
+            setMode("2fa");
+            return;
           }
         } catch (mfaCheckErr) {
-          console.warn("[AuthScreen] MFA assurance check notice:", mfaCheckErr);
+          console.warn("[AuthScreen] MFA factor check notice:", mfaCheckErr);
         }
 
         if (data?.session) {

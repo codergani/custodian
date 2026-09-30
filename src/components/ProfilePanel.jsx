@@ -198,24 +198,40 @@ export default function ProfilePanel({
     setBusy(true);
     try {
       // Clean up any stale unverified TOTP factors first
-      try {
-        const { data: factors } = await supabase.auth.mfa.listFactors();
-        const allFactors = factors?.all || [];
-        for (const f of allFactors) {
-          if (f.status === "unverified") {
-            await supabase.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
-          }
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const allFactors = factors?.all || [];
+      for (const f of allFactors) {
+        if (f.status === "unverified") {
+          await supabase.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
         }
-      } catch (cleanupErr) {
-        console.warn("[ProfilePanel] Cleanup unverified factors notice:", cleanupErr);
       }
 
       const friendly = `${profile?.email || "Custodian User"} (${Date.now().toString().slice(-4)})`;
-      const { data, error } = await supabase.auth.mfa.enroll({
+      let { data, error } = await supabase.auth.mfa.enroll({
         factorType: "totp",
         issuer: "Custodian Vault",
         friendlyName: friendly,
       });
+
+      // If enrollment fails because an active verified factor already exists, unenroll it and retry
+      if (
+        error &&
+        (error.code === "mfa_verified_factor_exists" ||
+          error.message?.toLowerCase().includes("factor") ||
+          error.message?.toLowerCase().includes("already exists"))
+      ) {
+        for (const f of allFactors) {
+          await supabase.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
+        }
+        const retry = await supabase.auth.mfa.enroll({
+          factorType: "totp",
+          issuer: "Custodian Vault",
+          friendlyName: friendly,
+        });
+        data = retry.data;
+        error = retry.error;
+      }
+
       if (error) throw error;
       setEnrollData(data);
       setShowMfaEnrollModal(true);
@@ -1047,6 +1063,12 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
               {mfaSuccessMsg && (
                 <div style={{ ...S.infoBox, margin: 0 }}>
                   <CheckCircle2 size={14} /> {mfaSuccessMsg}
+                </div>
+              )}
+
+              {mfaErr && !showMfaEnrollModal && !showMfaDisableModal && (
+                <div style={{ ...S.errBox, margin: 0 }}>
+                  <AlertTriangle size={14} /> {mfaErr}
                 </div>
               )}
 
