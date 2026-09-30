@@ -1,7 +1,19 @@
 const fs = require('fs');
 const path = require('path');
 
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
+const { execSync } = require('child_process');
+
+function getGitHubToken() {
+  if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN;
+  try {
+    const remoteUrl = execSync('git config --get remote.origin.url', { encoding: 'utf8' }).trim();
+    const match = remoteUrl.match(/:([^:@]+)@github\.com/);
+    if (match && match[1]) return match[1];
+  } catch {}
+  return '';
+}
+
+const GITHUB_TOKEN = getGitHubToken();
 const OWNER = 'codergani';
 const REPO = 'custodian';
 const TAG = 'v1.0.0';
@@ -10,7 +22,7 @@ const APK_PATH = path.resolve(__dirname, '../custodian-latest.apk');
 async function uploadRelease() {
   const headers = {
     'User-Agent': 'Custodian-Release-Uploader',
-    'Authorization': `Bearer ${GITHUB_TOKEN}`,
+    'Authorization': `token ${GITHUB_TOKEN}`,
     'Accept': 'application/vnd.github.v3+json',
   };
 
