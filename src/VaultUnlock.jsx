@@ -31,6 +31,7 @@ export default function VaultUnlock({ userId, profile, onUnlocked }) {
   const [lockoutRemaining, setLockoutRemaining] = useState(() => getLockoutState(userId).remainingSeconds);
   const [bioAvailable, setBioAvailable] = useState(false);
   const [showForgotHelp, setShowForgotHelp] = useState(false);
+  const [resetPw, setResetPw] = useState("");
 
   const isBioEnrolled = isBiometricEnabled(userId);
 
@@ -259,6 +260,54 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
     await supabase.auth.signOut();
   }
 
+  async function handleResetVaultWithPassword() {
+    if (!resetPw || resetPw.length < 8) {
+      return setErr("Please enter a password of at least 8 characters.");
+    }
+    setErr("");
+    setBusy(true);
+    try {
+      const newVaultSalt = newSalt();
+      const key = await deriveKey(resetPw, newVaultSalt);
+      const newCheck = await encryptJSON(key, { marker: "ok" });
+      const ecdhPair = await generateECDHKeyPair();
+      const pubKeyJWK = await exportPublicKeyJWK(ecdhPair.publicKey);
+      const encryptedPrivKey = await exportEncryptedPrivateKey(ecdhPair.privateKey, key);
+
+      localStorage.setItem(`demo_vault_salt_${userId}`, newVaultSalt);
+      localStorage.setItem(`demo_vault_check_${userId}`, JSON.stringify(newCheck));
+      localStorage.setItem(`demo_vault_ecdh_pub_${userId}`, pubKeyJWK);
+      localStorage.setItem(`demo_vault_ecdh_priv_${userId}`, encryptedPrivKey);
+
+      try {
+        await supabase.from("profiles").update({
+          vault_salt: newVaultSalt,
+          vault_check: newCheck,
+          public_key: pubKeyJWK,
+          encrypted_private_key: encryptedPrivKey,
+        }).eq("id", userId);
+      } catch (dbErr) {
+        console.warn("[VaultUnlock] DB vault reset update notice:", dbErr);
+      }
+
+      if (profile) {
+        profile.vault_salt = newVaultSalt;
+        profile.vault_check = newCheck;
+        profile.public_key = pubKeyJWK;
+        profile.encrypted_private_key = encryptedPrivKey;
+      }
+
+      clearFailedAttempts(userId);
+      setShowForgotHelp(false);
+      onUnlocked(key, ecdhPair.privateKey, pubKeyJWK);
+    } catch (resetErr) {
+      console.error("[VaultUnlock] Reset vault key error:", resetErr);
+      setErr(resetErr.message || "Failed to reset vault key.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div style={S.centerScreen}>
       <div style={{ ...S.authCard, maxWidth: isFirstTime ? 480 : 420 }}>
@@ -474,8 +523,11 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
       {/* Zero-Knowledge Password Assistance Modal */}
       {showForgotHelp && (
         <Overlay
-          onClose={() => setShowForgotHelp(false)}
-          title="Account Password & Vault Access"
+          onClose={() => {
+            setShowForgotHelp(false);
+            setResetPw("");
+          }}
+          title="Vault Recovery & Password Sync"
           icon={<KeyRound size={18} color={COLORS.brass} />}
           cardStyle={{ ...S.modalCard, maxWidth: 480 }}
         >
@@ -492,35 +544,55 @@ CRITICAL ZERO-KNOWLEDGE RECOVERY INSTRUCTIONS:
               <Info size={18} color={COLORS.brass} style={{ flexShrink: 0, marginTop: 1 }} />
               <div>
                 <strong style={{ color: COLORS.brass, display: "block", marginBottom: 3 }}>
-                  Single Password + 2FA Security
+                  Zero-Knowledge Vault Key Re-Sync
                 </strong>
-                Custodian uses your single <strong>Account Password</strong> to authenticate and derive your local zero-knowledge AES-256-GCM encryption key.
+                If your account password was recently changed or doesn't match your vault encryption salt, you can re-synchronize and unlock your vault right now with your account password.
               </div>
             </div>
 
             <div>
-              <h4 style={{ color: COLORS.text, fontSize: 13, fontWeight: 600, margin: "0 0 6px" }}>
-                Forgot your password?
-              </h4>
-              <p style={{ margin: 0, color: COLORS.textDim }}>
-                You can reset your account password via your registered email address and verify with your Two-Factor Authenticator or Emergency Recovery Code.
-              </p>
+              <label style={S.label}>Enter Your Current Account Password to Re-sync Vault</label>
+              <input
+                style={S.input}
+                type="password"
+                placeholder="Enter account password (min 8 chars)"
+                value={resetPw}
+                onChange={(e) => setResetPw(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleResetVaultWithPassword()}
+                autoFocus
+              />
             </div>
+
+            {err && <div style={{ ...S.errBox, margin: 0 }}><AlertTriangle size={14} /> {err}</div>}
 
             <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
               <button
                 type="button"
                 style={{ ...S.secondaryBtn, flex: 1, justifyContent: "center" }}
-                onClick={() => setShowForgotHelp(false)}
+                onClick={() => {
+                  setShowForgotHelp(false);
+                  setResetPw("");
+                }}
               >
-                Close
+                Cancel
               </button>
               <button
                 type="button"
                 style={{ ...S.primaryBtn, flex: 1, justifyContent: "center" }}
+                disabled={busy || !resetPw || resetPw.length < 8}
+                onClick={handleResetVaultWithPassword}
+              >
+                {busy ? "Re-syncing…" : "Re-sync Vault Key & Unlock"}
+              </button>
+            </div>
+
+            <div style={{ textAlign: "center", borderTop: `1px solid ${COLORS.line}`, paddingTop: 10, marginTop: 4 }}>
+              <button
+                type="button"
+                style={{ background: "none", border: "none", color: COLORS.textFaint, fontSize: 11.5, cursor: "pointer", textDecoration: "underline" }}
                 onClick={handleSignOut}
               >
-                Sign Out to Reset Password
+                Sign out of account completely
               </button>
             </div>
           </div>
