@@ -1478,12 +1478,12 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                     padding: "9px 10px",
                     fontSize: 12.5,
                     borderRadius: 8,
-                    ...(view === "generator" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
+                    ...(view === "generator" ? { borderColor: "rgba(0, 210, 255, 0.5)", color: COLORS.cyan, background: "linear-gradient(90deg, rgba(0, 210, 255, 0.15) 0%, rgba(99, 102, 241, 0.08) 100%)", fontWeight: 600 } : {}),
                   }}
                   onClick={() => { setView("generator"); setMobileSidebarOpen(false); }}
                   title="Password & Key Generator"
                 >
-                  <Dices size={14} color={COLORS.brass} />
+                  <Dices size={14} color={COLORS.cyan} />
                   <span>Generator</span>
                 </button>
 
@@ -1495,12 +1495,12 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                     padding: "9px 10px",
                     fontSize: 12.5,
                     borderRadius: 8,
-                    ...(view === "sharing" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
+                    ...(view === "sharing" ? { borderColor: "rgba(0, 210, 255, 0.5)", color: COLORS.cyan, background: "linear-gradient(90deg, rgba(0, 210, 255, 0.15) 0%, rgba(99, 102, 241, 0.08) 100%)", fontWeight: 600 } : {}),
                   }}
                   onClick={() => { setView("sharing"); setMobileSidebarOpen(false); }}
                   title="Zero-Knowledge Secret Sharing"
                 >
-                  <Share2 size={14} color={COLORS.brass} />
+                  <Share2 size={14} color={COLORS.cyan} />
                   <span>Sharing</span>
                 </button>
 
@@ -1512,7 +1512,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                     padding: "9px 10px",
                     fontSize: 12.5,
                     borderRadius: 8,
-                    ...(view === "workspace" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
+                    ...(view === "workspace" ? { borderColor: "rgba(0, 210, 255, 0.5)", color: COLORS.cyan, background: "linear-gradient(90deg, rgba(0, 210, 255, 0.15) 0%, rgba(99, 102, 241, 0.08) 100%)", fontWeight: 600 } : {}),
                   }}
                   onClick={() => { setView("workspace"); setMobileSidebarOpen(false); }}
                   title="Resource Library"
@@ -1529,7 +1529,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                     padding: "9px 10px",
                     fontSize: 12.5,
                     borderRadius: 8,
-                    ...(view === "trash" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
+                    ...(view === "trash" ? { borderColor: "rgba(0, 210, 255, 0.5)", color: COLORS.cyan, background: "linear-gradient(90deg, rgba(0, 210, 255, 0.15) 0%, rgba(99, 102, 241, 0.08) 100%)", fontWeight: 600 } : {}),
                   }}
                   onClick={() => { setView("trash"); setMobileSidebarOpen(false); }}
                   title="Recycle Bin"
@@ -1563,10 +1563,10 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
               title="Open Navigation Menu"
               aria-label="Open Navigation Menu"
             >
-              <Menu size={22} color="#B08D57" />
+              <Menu size={22} color={COLORS.cyan} />
             </button>
             <div style={S.brandRow}>
-              <ShieldCheck size={18} color={COLORS.brass} />
+              <ShieldCheck size={18} color={COLORS.cyan} />
               <span style={S.brandText}>CUSTODIAN</span>
             </div>
           </div>

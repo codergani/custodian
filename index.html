@@ -6,79 +6,101 @@
     <meta name="color-scheme" content="light dark" />
     <title>Custodian</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
     <style>
       *, *::before, *::after {
         box-sizing: border-box;
       }
-      :root, [data-theme="light"] {
-        color-scheme: light;
-        --bg-main: #F8F6F1;
-        --panel-main: #FFFFFF;
-        --panel-alt: #F2EEE7;
-        --line-main: #E2DDD5;
-        --text-main: #1A1816;
-        --text-dim: #5C564E;
-        --text-faint: #8A8275;
-        --brass-main: #946E37;
-        --brass-dim: #785627;
-        --green-main: #2D6A42;
-        --red-main: #B5382B;
-        --primary-btn-text: #FFFFFF;
-        --sidebar-bg: #F5EFE6;
-        --card-shadow: 0 1px 3px rgba(28, 24, 18, 0.06), 0 4px 14px rgba(28, 24, 18, 0.04);
-        --modal-overlay-bg: rgba(28, 24, 18, 0.48);
-        --highlight-bg: rgba(148, 110, 55, 0.12);
-        --scrollbar-thumb: rgba(92, 86, 78, 0.28);
-        --scrollbar-thumb-hover: rgba(92, 86, 78, 0.5);
-        --scrollbar-track: transparent;
-      }
-      [data-theme="dark"] {
+      :root, [data-theme="dark"] {
         color-scheme: dark;
-        --bg-main: #171615;
-        --panel-main: #1F1E1C;
-        --panel-alt: #242320;
-        --line-main: #302E2A;
-        --text-main: #EDE9E3;
-        --text-dim: #A8A399;
-        --text-faint: #6E6A64;
-        --brass-main: #B08D57;
-        --brass-dim: #8B7148;
-        --green-main: #8FA98C;
-        --red-main: #C06B5F;
-        --primary-btn-text: #1A1611;
-        --sidebar-bg: #1A1917;
-        --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-        --modal-overlay-bg: rgba(10, 9, 8, 0.85);
-        --highlight-bg: rgba(176, 141, 87, 0.14);
-        --scrollbar-thumb: rgba(255, 255, 255, 0.18);
-        --scrollbar-thumb-hover: rgba(255, 255, 255, 0.32);
+        --bg-main: #06080D;
+        --bg-ambient: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, rgba(0, 210, 255, 0.05) 30%, transparent 70%);
+        --panel-main: #0B0E17;
+        --panel-alt: #101522;
+        --panel-card: #0F1420;
+        --panel-glass: rgba(11, 14, 23, 0.82);
+        --line-main: rgba(255, 255, 255, 0.08);
+        --line-hover: rgba(0, 210, 255, 0.4);
+        --line-subtle: rgba(255, 255, 255, 0.04);
+        --text-main: #F8FAFC;
+        --text-dim: #94A3B8;
+        --text-faint: #64748B;
+        --brand-cyan: #00D2FF;
+        --brand-blue: #3A7BD5;
+        --brand-indigo: #6366F1;
+        --brand-violet: #8B5CF6;
+        --brass-main: #00D2FF;
+        --brass-dim: #4F46E5;
+        --green-main: #10B981;
+        --red-main: #F43F5E;
+        --primary-btn-text: #FFFFFF;
+        --sidebar-bg: #07090F;
+        --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7), 0 0 1px 1px rgba(255, 255, 255, 0.06);
+        --modal-overlay-bg: rgba(3, 4, 7, 0.82);
+        --highlight-bg: rgba(0, 210, 255, 0.12);
+        --scrollbar-thumb: rgba(255, 255, 255, 0.14);
+        --scrollbar-thumb-hover: rgba(0, 210, 255, 0.4);
         --scrollbar-track: transparent;
+        --aegis-gradient: linear-gradient(135deg, #00D2FF 0%, #3B82F6 50%, #6366F1 100%);
+        --aegis-btn-glow: 0 4px 20px -2px rgba(0, 210, 255, 0.35);
+      }
+      [data-theme="light"] {
+        color-scheme: light;
+        --bg-main: #06080D;
+        --panel-main: #0B0E17;
+        --panel-alt: #101522;
+        --panel-card: #0F1420;
+        --panel-glass: rgba(11, 14, 23, 0.82);
+        --line-main: rgba(255, 255, 255, 0.08);
+        --line-hover: rgba(0, 210, 255, 0.4);
+        --text-main: #F8FAFC;
+        --text-dim: #94A3B8;
+        --text-faint: #64748B;
+        --brass-main: #00D2FF;
+        --brass-dim: #4F46E5;
+        --green-main: #10B981;
+        --red-main: #F43F5E;
+        --primary-btn-text: #FFFFFF;
+        --sidebar-bg: #07090F;
+        --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+        --modal-overlay-bg: rgba(3, 4, 7, 0.82);
+        --highlight-bg: rgba(0, 210, 255, 0.12);
+        --scrollbar-thumb: rgba(255, 255, 255, 0.14);
+        --scrollbar-thumb-hover: rgba(0, 210, 255, 0.4);
+        --scrollbar-track: transparent;
+        --aegis-gradient: linear-gradient(135deg, #00D2FF 0%, #3B82F6 50%, #6366F1 100%);
+        --aegis-btn-glow: 0 4px 20px -2px rgba(0, 210, 255, 0.35);
       }
       html, body {
         margin: 0;
         padding: 0;
         background: var(--bg-main) !important;
         background-color: var(--bg-main) !important;
+        background-image: var(--bg-ambient) !important;
+        background-repeat: no-repeat !important;
+        background-attachment: fixed !important;
         color: var(--text-main);
-        font-family: 'Inter', sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         -webkit-font-smoothing: antialiased;
-        transition: background 0.2s ease, color 0.2s ease;
+        -moz-osx-font-smoothing: grayscale;
+        transition: background 0.25s ease, color 0.25s ease;
       }
       .custodian-main {
-        background: var(--bg-main) !important;
-        background-color: var(--bg-main) !important;
+        background: transparent !important;
+        background-color: transparent !important;
       }
       input, button, textarea, select {
         font: inherit;
       }
       /* Keyboard Accessibility Focus Visible */
       :focus-visible {
-        outline: 2px solid var(--brass-main) !important;
+        outline: 2px solid var(--brand-cyan) !important;
         outline-offset: 2px !important;
+        box-shadow: 0 0 14px rgba(0, 210, 255, 0.4) !important;
       }
       /* Sleek Theme-Aware Custom Scrollbars */
       * {
@@ -107,6 +129,52 @@
         display: none !important;
         width: 0 !important;
         height: 0 !important;
+      }
+      /* Aegis Cyber-Void Signature Glass & Card Hover System */
+      .aegis-glass {
+        background: var(--panel-glass) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1px solid var(--line-main) !important;
+      }
+      .aegis-card {
+        background: var(--panel-card) !important;
+        border: 1px solid var(--line-main) !important;
+        border-radius: 14px !important;
+        box-shadow: var(--card-shadow) !important;
+        transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease, box-shadow 0.22s ease !important;
+      }
+      .aegis-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(0, 210, 255, 0.3) !important;
+        box-shadow: 0 14px 34px -10px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 210, 255, 0.1) !important;
+      }
+      .aegis-btn-primary {
+        background: var(--aegis-gradient) !important;
+        color: #FFFFFF !important;
+        font-weight: 600 !important;
+        border: none !important;
+        box-shadow: var(--aegis-btn-glow) !important;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease !important;
+      }
+      .aegis-btn-primary:hover {
+        transform: translateY(-1px) !important;
+        filter: brightness(1.1) !important;
+        box-shadow: 0 6px 26px rgba(0, 210, 255, 0.45) !important;
+      }
+      .aegis-btn-primary:active {
+        transform: scale(0.98) !important;
+      }
+      .aegis-input {
+        background: var(--panel-alt) !important;
+        border: 1px solid var(--line-main) !important;
+        color: var(--text-main) !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+      }
+      .aegis-input:focus {
+        border-color: var(--brand-cyan) !important;
+        box-shadow: 0 0 0 2px rgba(0, 210, 255, 0.25) !important;
+        outline: none !important;
       }
       /* Shimmer Animation for Skeletons */
       @keyframes shimmer {

@@ -373,32 +373,32 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
     : "GLOBAL";
 
   const typeConfig = {
-    note: { label: "📝 SECURE NOTE / CODES", color: "#3ECF8E" },
-    login: { label: "📧 ACCOUNT LOGIN", color: "#7AA2E3" },
-    pin: { label: "📱 PIN / PASSCODE", color: "#E07A6D" },
-    card: { label: "💳 CARD & BANK", color: "#F0A24A" },
-    database: { label: "🗄️ DATABASE", color: "#B08D57" },
-    api_key: { label: "🔑 API KEY", color: "#7AA2E3" },
-    ssh: { label: "🔒 SSH KEY", color: "#E07A6D" },
-    supabase: { label: "⚡ SUPABASE", color: "#3ECF8E" },
-    stripe: { label: "💳 STRIPE", color: "#635BFF" },
-    aws: { label: "☁️ AWS", color: "#FF9900" },
-    jwt: { label: "🎫 JWT", color: "#F0A24A" },
-    env_var: { label: "📦 ENV VAR", color: COLORS.textDim },
-    generic: { label: "🌐 CREDENTIAL", color: COLORS.textDim },
-  }[secretType] || { label: "📦 SECRET", color: COLORS.textDim };
+    note: { label: "📝 SECURE NOTE / CODES", color: "#10B981" },
+    login: { label: "📧 LOGIN", color: "#00D2FF" },
+    pin: { label: "📱 PASSCODE", color: "#F43F5E" },
+    card: { label: "💳 CARD & BANK", color: "#F59E0B" },
+    database: { label: "🗄️ DATABASE", color: "#8B5CF6" },
+    api_key: { label: "🔑 API KEY", color: "#00D2FF" },
+    ssh: { label: "🔒 SSH KEY", color: "#EC4899" },
+    supabase: { label: "⚡ SUPABASE", color: "#10B981" },
+    stripe: { label: "💳 STRIPE", color: "#6366F1" },
+    aws: { label: "☁️ AWS", color: "#F59E0B" },
+    jwt: { label: "🎫 JWT", color: "#3B82F6" },
+    env_var: { label: "📦 ENV VAR", color: "#94A3B8" },
+    generic: { label: "🌐 SECRET", color: "#94A3B8" },
+  }[secretType] || { label: "📦 SECRET", color: "#94A3B8" };
 
   const keyName = (cred.username || cred.label || "KEY").trim().toUpperCase().replace(/[^A-Z0-9_]/g, "_");
   const rawSecret = cred.password || "";
 
   return (
-    <div style={S.credCard}>
+    <div className="aegis-card" style={S.credCard}>
       <div style={S.credCardTop}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span style={S.credLabel}>{cred.label}</span>
             <span style={envBadgeStyle}>{envLabel}</span>
-            <span style={{ fontSize: 9.5, padding: "1px 6px", borderRadius: 4, background: "rgba(255,255,255,0.06)", color: typeConfig.color, fontWeight: 600, letterSpacing: "0.03em" }}>
+            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", color: typeConfig.color, fontWeight: 700, letterSpacing: "0.04em", fontFamily: "JetBrains Mono, monospace" }}>
               {typeConfig.label}
             </span>
           </div>

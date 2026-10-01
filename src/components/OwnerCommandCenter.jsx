@@ -95,12 +95,23 @@ export default function OwnerCommandCenter({
       {/* Executive Owner Banner */}
       <div style={S.ownerHeaderCard}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ ...S.dialRing, width: 44, height: 44, background: "var(--highlight-bg, rgba(148,110,55,0.12))", borderColor: COLORS.brass }}>
-            <Crown size={22} color={COLORS.brass} />
+          <div style={{
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            background: "linear-gradient(135deg, rgba(0, 210, 255, 0.15) 0%, rgba(99, 102, 241, 0.12) 100%)",
+            border: "1px solid rgba(0, 210, 255, 0.35)",
+            boxShadow: "0 0 16px rgba(0, 210, 255, 0.2)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            <Crown size={22} color={COLORS.cyan} />
           </div>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, letterSpacing: "-0.01em" }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, fontFamily: "Outfit, sans-serif", letterSpacing: "-0.01em" }}>
                 Vault Overview & Deadlines
               </span>
               <span style={{ ...S.rolePillOwner, fontSize: 10 }}>WORKSPACE CONTROL</span>
@@ -108,10 +119,10 @@ export default function OwnerCommandCenter({
                 style={{ fontSize: 11, color: COLORS.green, display: "inline-flex", alignItems: "center", gap: 4, cursor: "help" }}
                 title="Client-Side Zero-Knowledge Protection: All passwords, API keys, and environment variables are encrypted locally with AES-256-GCM before leaving your device. Even database administrators cannot read your secrets."
               >
-                <ShieldCheck size={12} /> 🔒 AES-256 Protection Active ⓘ
+                <ShieldCheck size={12} /> 🔒 AES-256 Active ⓘ
               </span>
             </div>
-            <div style={{ fontSize: 12, color: COLORS.textDim, marginTop: 3 }}>
+            <div style={{ fontSize: 12.5, color: COLORS.textDim, marginTop: 3 }}>
               Manage client workspaces, encrypted secrets, contract delivery buffers, and API renewal budgets.
             </div>
           </div>
@@ -119,8 +130,8 @@ export default function OwnerCommandCenter({
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           {onAddSecret && (
-            <button style={S.primaryBtn} onClick={onAddSecret}>
-              <Plus size={13} /> + New Secret
+            <button style={{ ...S.primaryBtnSm, padding: "8px 16px" }} onClick={onAddSecret}>
+              <Plus size={14} /> + New Secret
             </button>
           )}
           <button style={S.secondaryBtn} onClick={onAddClient}>
@@ -299,15 +310,16 @@ export default function OwnerCommandCenter({
               return (
                 <div
                   key={p.id}
+                  className="aegis-card"
                   style={S.overviewProjectCard}
                   onClick={() => onSelectProject(p.clientId, p.id, "creds")}
                 >
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
                     <div>
-                      <div style={{ fontSize: 11, color: COLORS.brass, fontFamily: "IBM Plex Mono, monospace", fontWeight: 600 }}>
+                      <div style={{ fontSize: 11, color: COLORS.cyan, fontFamily: "JetBrains Mono, monospace", fontWeight: 600 }}>
                         {p.clientName.toUpperCase()}
                       </div>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, marginTop: 2 }}>
+                      <div style={{ fontSize: 16.5, fontWeight: 700, color: COLORS.text, fontFamily: "Outfit, sans-serif", marginTop: 2 }}>
                         {p.name}
                       </div>
                     </div>
