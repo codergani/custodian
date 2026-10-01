@@ -769,17 +769,23 @@ CREATE INDEX IF NOT EXISTS idx_mfa_recovery_codes_lookup
 
 
 
+-- ============================================================
+-- PART 6: SELF-SERVICE MFA RESET RPC
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.reset_my_mfa()
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+BEGIN
+  -- Deletes any MFA factors for the calling user so they can enroll fresh
+  DELETE FROM auth.mfa_factors WHERE user_id = auth.uid();
+  DELETE FROM public.mfa_recovery_codes WHERE user_id = auth.uid();
+  RETURN true;
+END;
+$$;
 
--- ============================================================
--- Notes:
--- - Text content (templates, guidelines, notes) is stored as plaintext
---   in text_content. These are NOT secrets — they are reusable templates
---   and workflow notes. Credentials remain zero-knowledge encrypted.
--- - Files are stored in the 'workspace-files' Supabase Storage bucket
---   under the path: {user_id}/{unique_filename}
--- - The storage_used_bytes column is automatically kept in sync via
---   triggers on INSERT and DELETE of workspace_items.
--- - Quota enforcement happens server-side via the BEFORE INSERT trigger,
---   so even if client-side checks are bypassed, the quota is enforced.
--- ============================================================
+GRANT EXECUTE ON FUNCTION public.reset_my_mfa() TO authenticated;
+
 
