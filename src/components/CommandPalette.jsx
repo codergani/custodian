@@ -71,6 +71,15 @@ export default function CommandPalette({ clients, onClose, onSelectClient, onSel
                 Developer Quick Commands
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <div style={S.cmdItem} onClick={() => onOpenModal("cred", {})} tabIndex={0} role="button">
+                  <KeyRound size={14} color="#B08D57" />
+                  <span style={{ flex: 1, fontSize: 13, color: COLORS.text, fontWeight: 600 }}>+ Add New Secret / API Key</span>
+                  <span style={{ fontSize: 11, color: COLORS.brass }}>AES-256</span>
+                </div>
+                <div style={S.cmdItem} onClick={() => onNavigate("sharing")} tabIndex={0} role="button">
+                  <ShieldCheck size={14} color="#B08D57" />
+                  <span style={{ flex: 1, fontSize: 13, color: COLORS.text }}>Zero-Knowledge Secret Sharing (ECDH)</span>
+                </div>
                 <div style={S.cmdItem} onClick={() => onNavigate("vault")} tabIndex={0} role="button">
                   <Crown size={14} color="#B08D57" />
                   <span style={{ flex: 1, fontSize: 13, color: COLORS.text }}>Vault Projects Overview</span>

@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Check, ChevronDown, X, Eye, EyeOff, Copy, Edit3, Trash2,
+  Check, ChevronDown, X, Eye, EyeOff, Copy, Edit3, Trash2, Share2,
   Clock, RefreshCw, ExternalLink, CheckCircle, AlertTriangle, HelpCircle, ShieldCheck,
   History, Calendar, FileText
 } from "lucide-react";
@@ -351,7 +351,7 @@ export function PromptModal({
 }
 
 // ──── Credential Card ────
-export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, onDelete }) {
+export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, onDelete, onShare }) {
   const [showTimeline, setShowTimeline] = useState(false);
   const [showFormatInfo, setShowFormatInfo] = useState(false);
   const renewal = cred.renewalInfo;
@@ -444,6 +444,16 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
             <a href={cred.cancelUrl} target="_blank" rel="noopener noreferrer" style={S.portalBtn} title="Open billing portal">
               <ExternalLink size={11} /> Portal
             </a>
+          )}
+          {onShare && (
+            <button
+              style={{ ...S.iconBtnGhost, color: COLORS.brass }}
+              onClick={onShare}
+              title="Share Secret (Zero-Knowledge ECDH)"
+              aria-label="Share Secret"
+            >
+              <Share2 size={13} />
+            </button>
           )}
           <button style={S.iconBtnGhost} onClick={onEdit} title="Edit credential" aria-label="Edit credential"><Edit3 size={13} /></button>
           <button style={S.iconBtnGhost} onClick={onDelete} title="Move to Trash" aria-label="Delete credential"><Trash2 size={13} /></button>

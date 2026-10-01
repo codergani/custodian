@@ -19,6 +19,7 @@ export default function OwnerCommandCenter({
   onSelectProject,
   onAddClient,
   onAddProject,
+  onAddSecret,
   onOpenUpgrade,
   onOpenWatchdog,
   onStartTour,
@@ -116,7 +117,12 @@ export default function OwnerCommandCenter({
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          {onAddSecret && (
+            <button style={S.primaryBtn} onClick={onAddSecret}>
+              <Plus size={13} /> + New Secret
+            </button>
+          )}
           <button style={S.secondaryBtn} onClick={onAddClient}>
             <Plus size={13} /> New Client
           </button>

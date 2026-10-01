@@ -273,6 +273,24 @@ function AppContent() {
             if (!ecdhPrivKey) {
               const ecdhPair = await generateECDHKeyPair();
               ecdhPrivKey = ecdhPair.privateKey;
+              const pubKeyJWK = await exportPublicKeyJWK(ecdhPair.publicKey);
+              const newEncPrivKey = await exportEncryptedPrivateKey(ecdhPair.privateKey, key);
+
+              localStorage.setItem(`demo_vault_ecdh_pub_${uId}`, pubKeyJWK);
+              localStorage.setItem(`demo_vault_ecdh_priv_${uId}`, newEncPrivKey);
+
+              try {
+                await supabase.from("profiles").update({
+                  public_key: pubKeyJWK,
+                  encrypted_private_key: newEncPrivKey,
+                }).eq("id", uId);
+              } catch (dbErr) {
+                console.warn("[App] Key migration notice:", dbErr);
+              }
+              if (currProfile) {
+                currProfile.public_key = pubKeyJWK;
+                currProfile.encrypted_private_key = newEncPrivKey;
+              }
             }
             await handleUnlocked(key, ecdhPrivKey);
           }
@@ -280,6 +298,41 @@ function AppContent() {
       }
     } catch (autoUnlockErr) {
       console.warn("[App] Auto-unlock with login password notice:", autoUnlockErr);
+    }
+  }
+
+  async function ensureEcdhPrivateKey() {
+    if (ecdhPrivateKey) return ecdhPrivateKey;
+    if (!vaultKey || !session?.user?.id) return null;
+    const uId = session.user.id;
+    const encPriv = profile?.encrypted_private_key || localStorage.getItem(`demo_vault_ecdh_priv_${uId}`);
+    if (encPriv) {
+      try {
+        const priv = await importDecryptedPrivateKey(encPriv, vaultKey);
+        setEcdhPrivateKey(priv);
+        return priv;
+      } catch (e) {
+        console.warn("[App] Decrypt private key error:", e);
+      }
+    }
+    try {
+      const pair = await generateECDHKeyPair();
+      const pubKeyJWK = await exportPublicKeyJWK(pair.publicKey);
+      const newEncPriv = await exportEncryptedPrivateKey(pair.privateKey, vaultKey);
+      localStorage.setItem(`demo_vault_ecdh_pub_${uId}`, pubKeyJWK);
+      localStorage.setItem(`demo_vault_ecdh_priv_${uId}`, newEncPriv);
+      try {
+        await supabase.from("profiles").update({
+          public_key: pubKeyJWK,
+          encrypted_private_key: newEncPriv,
+        }).eq("id", uId);
+      } catch {}
+      setProfile((prev) => (prev ? { ...prev, public_key: pubKeyJWK, encrypted_private_key: newEncPriv } : prev));
+      setEcdhPrivateKey(pair.privateKey);
+      return pair.privateKey;
+    } catch (genErr) {
+      console.warn("[App] ensureEcdhPrivateKey error:", genErr);
+      return null;
     }
   }
 
@@ -440,6 +493,16 @@ function AppContent() {
           loaded = { ...loaded, plan: promoOverride };
         }
         setProfile(loaded);
+        if (loaded && !loaded.public_key) {
+          generateECDHKeyPair().then(async (pair) => {
+            const pubKeyJWK = await exportPublicKeyJWK(pair.publicKey);
+            localStorage.setItem(`demo_vault_ecdh_pub_${session.user.id}`, pubKeyJWK);
+            try {
+              await supabase.from("profiles").update({ public_key: pubKeyJWK }).eq("id", session.user.id);
+            } catch {}
+            setProfile((prev) => (prev ? { ...prev, public_key: pubKeyJWK } : prev));
+          }).catch(() => {});
+        }
         const pendingPassword = lastAuthPasswordRef.current;
         lastAuthPasswordRef.current = null;
         if (pendingPassword) {
@@ -747,6 +810,7 @@ function AppContent() {
         profile={profile}
         vaultKey={vaultKey}
         ecdhPrivateKey={ecdhPrivateKey}
+        ensureEcdhPrivateKey={ensureEcdhPrivateKey}
         onLock={handleLock}
         onProfileUpdate={setProfile}
         isMfaEnrolled={isMfaEnrolled}

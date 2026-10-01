@@ -49,7 +49,7 @@ import {
   PERSONAL_PROJECT_NAME
 } from "./utils/personalSpace";
 
-export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLock, onProfileUpdate, isMfaEnrolled, onMfaEnrolled }) {
+export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensureEcdhPrivateKey, onLock, onProfileUpdate, isMfaEnrolled, onMfaEnrolled }) {
   const { theme, toggleTheme } = useTheme();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showStickyNotes, setShowStickyNotes] = useState(() => {
@@ -640,30 +640,43 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
   }
 
   async function addCredential(projectId, cred) {
-    const nowISO = new Date().toISOString();
-    const payload = {
-      ...cred,
-      createdAt: cred.createdAt || nowISO,
-      updatedAt: nowISO,
-      history: [
-        {
-          action: "Created",
-          timestamp: nowISO,
-          label: cred.label || "Secret",
-        },
-      ],
-    };
-    const blob = await encryptJSON(vaultKey, payload);
-    const { error } = await supabase.from("credentials").insert({ project_id: projectId, encrypted_blob: blob });
-    if (error) { setActionErr(error.message); return; }
-    setModal(null);
-    showSuccess(`Saved "${cred.label || "secret"}"`);
-    loadAll();
+    setActionErr("");
+    try {
+      if (!vaultKey) throw new Error("Vault is locked. Please unlock your vault first.");
+      let targetId = projectId;
+      if (!targetId) {
+        targetId = await ensureProjectForSecret();
+      }
+      const nowISO = new Date().toISOString();
+      const payload = {
+        ...cred,
+        createdAt: cred.createdAt || nowISO,
+        updatedAt: nowISO,
+        history: [
+          {
+            action: "Created",
+            timestamp: nowISO,
+            label: cred.label || "Secret",
+          },
+        ],
+      };
+      const blob = await encryptJSON(vaultKey, payload);
+      const { error } = await supabase.from("credentials").insert({ project_id: targetId, encrypted_blob: blob });
+      if (error) throw error;
+      setModal(null);
+      showSuccess(`Saved "${cred.label || "secret"}"`);
+      await loadAll();
+    } catch (err) {
+      console.error("[Vault] addCredential error:", err);
+      setActionErr(err.message || "Failed to save secret");
+      throw err;
+    }
   }
 
   async function updateCredential(id, updatedCred) {
     setActionErr("");
     try {
+      if (!vaultKey) throw new Error("Vault is locked. Please unlock your vault first.");
       const nowISO = new Date().toISOString();
       const existingHistory = Array.isArray(updatedCred.history) ? updatedCred.history : [];
       const payload = {
@@ -684,9 +697,11 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
       if (error) throw error;
       setModal(null);
       showSuccess(`Updated "${updatedCred.label || "secret"}"`);
-      loadAll();
+      await loadAll();
     } catch (e) {
-      setActionErr(e.message);
+      console.error("[Vault] updateCredential error:", e);
+      setActionErr(e.message || "Failed to update secret");
+      throw e;
     }
   }
 
@@ -888,6 +903,64 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
     if (!personalClient) return null;
     return (personalClient.projects || [])[0] || null;
   }, [personalClient]);
+
+  const allAvailableProjects = useMemo(() => {
+    const list = [];
+    if (personalProject) {
+      list.push({ id: personalProject.id, name: "🔒 Personal Space (Private)", clientName: "Personal Space" });
+    }
+    (clients || []).forEach((c) => {
+      if (!isPersonalClient(c)) {
+        (c.projects || []).forEach((p) => {
+          list.push({ id: p.id, name: `${c.name} → ${p.name}`, clientName: c.name });
+        });
+      }
+    });
+    return list;
+  }, [clients, personalProject]);
+
+  async function ensureProjectForSecret(targetProjectId = null) {
+    if (targetProjectId) return targetProjectId;
+    if (selectedProject) return selectedProject;
+    if (currentProject?.id) return currentProject.id;
+    if (personalProject?.id) return personalProject.id;
+    for (const c of (clients || [])) {
+      if (c.projects && c.projects.length > 0) {
+        return c.projects[0].id;
+      }
+    }
+    let cId = personalClient?.id;
+    if (!cId) {
+      const { data: newPC, error: cErr } = await supabase
+        .from("clients")
+        .insert({ owner_id: userId, name: PERSONAL_WORKSPACE_NAME })
+        .select()
+        .single();
+      if (cErr) throw cErr;
+      cId = newPC.id;
+    }
+    const { data: newPP, error: pErr } = await supabase
+      .from("projects")
+      .insert({ client_id: cId, name: PERSONAL_PROJECT_NAME })
+      .select()
+      .single();
+    if (pErr) throw pErr;
+    await loadAll();
+    return newPP.id;
+  }
+
+  async function openAddSecretModal(initialData = null, targetProjectId = null) {
+    try {
+      const projId = await ensureProjectForSecret(targetProjectId);
+      setModal({
+        type: "cred",
+        projectId: projId,
+        initialData: initialData || { secretType: "login" },
+      });
+    } catch (err) {
+      setActionErr("Could not open secret creator: " + (err.message || String(err)));
+    }
+  }
 
   const freelanceClients = useMemo(() => {
     return getFreelanceClients(clients);
@@ -1498,6 +1571,26 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button
+              type="button"
+              id="top-nav-add-secret-btn"
+              style={{
+                ...S.primaryBtnSm,
+                padding: "6px 12px",
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                fontSize: 12,
+                fontWeight: 600,
+                borderRadius: 8,
+                cursor: "pointer",
+              }}
+              onClick={() => openAddSecretModal()}
+              title="Add a new encrypted secret (AES-256-GCM)"
+            >
+              <Plus size={14} />
+              <span>New Secret</span>
+            </button>
             {(profile?.plan === "founder" ||
               profile?.role === "founder" ||
               profile?.role === "admin" ||
@@ -1602,44 +1695,10 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
             personalClient={personalClient}
             personalProject={personalProject}
             creds={personalProject?.credentials || []}
-            onAddCred={async (initial) => {
-              let targetProjId = personalProject?.id || personalClient?.projects?.[0]?.id;
-              if (!targetProjId) {
-                try {
-                  let cId = personalClient?.id;
-                  if (!cId) {
-                    const { data: newPC } = await supabase
-                      .from("clients")
-                      .insert({ owner_id: userId, name: PERSONAL_WORKSPACE_NAME })
-                      .select()
-                      .single();
-                    if (newPC) cId = newPC.id;
-                  }
-                  if (cId) {
-                    const { data: newPP } = await supabase
-                      .from("projects")
-                      .insert({ client_id: cId, name: PERSONAL_PROJECT_NAME })
-                      .select()
-                      .single();
-                    if (newPP) {
-                      targetProjId = newPP.id;
-                      await loadAll();
-                    }
-                  }
-                } catch {}
-              }
-              if (targetProjId) {
-                setModal({
-                  type: "cred",
-                  projectId: targetProjId,
-                  initialData: initial || { secretType: "login" },
-                });
-              } else {
-                setModal({ type: "client" });
-              }
-            }}
+            onAddCred={async (initial) => openAddSecretModal(initial, personalProject?.id)}
             onEditCred={(cred) => setModal({ type: "edit_cred", cred, projectId: cred.projectId })}
             onDeleteCred={(credId) => deleteCredential(credId)}
+            onShareCred={(cred) => setModal({ type: "share_secret", initialCred: cred })}
             onCopy={copyText}
             copiedId={copiedId}
           />
@@ -1703,8 +1762,18 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
           <SharedSecretsView
             userId={userId}
             profile={profile}
+            vaultKey={vaultKey}
             ecdhPrivateKey={ecdhPrivateKey}
-            onOpenShareModal={() => setModal({ type: "share_secret" })}
+            ensureEcdhPrivateKey={ensureEcdhPrivateKey}
+            onOpenShareModal={(initCred) => setModal({ type: "share_secret", initialCred: initCred })}
+            onSaveToVault={async (secretObj) => {
+              await openAddSecretModal({
+                label: secretObj.title || "Imported Secret",
+                secretType: secretObj.category?.toLowerCase() || "api_key",
+                username: secretObj.fields?.[0]?.key || "API_KEY",
+                password: secretObj.fields?.[0]?.value || "",
+              });
+            }}
           />
         ) : view === "generator" ? (
           <PasswordGenerator compact={false} />
@@ -1731,6 +1800,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
             }}
             onAddClient={() => setModal({ type: "client" })}
             onAddProject={(clientId) => setModal({ type: "project", clientId })}
+            onAddSecret={() => openAddSecretModal()}
             onOpenUpgrade={() => setModal({ type: "upgrade" })}
             onOpenWatchdog={() => setView("watchdog")}
             onStartTour={() => setShowTour(true)}
@@ -2305,6 +2375,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
                           copiedId={copiedId}
                           onEdit={() => setModal({ type: "edit_cred", cred, projectId: currentProject.id })}
                           onDelete={() => deleteCredential(cred.id)}
+                          onShare={() => setModal({ type: "share_secret", initialCred: cred })}
                         />
                       ))}
                     </div>
@@ -2323,7 +2394,10 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, onLoc
           defaultCurrency={defaultCurrency}
           userId={userId}
           userEmail={profile?.email}
+          vaultKey={vaultKey}
           ecdhPrivateKey={ecdhPrivateKey}
+          ensureEcdhPrivateKey={ensureEcdhPrivateKey}
+          availableProjects={allAvailableProjects}
           onClose={() => setModal(null)}
           onAddClient={addClient}
           onAddProject={addProject}

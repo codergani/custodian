@@ -7,7 +7,7 @@ import { supabase } from "../supabaseClient";
 import { receiveSharedSecret, importPublicKey } from "../crypto";
 import { S, COLORS } from "../styles";
 
-export default function SharedSecretsView({ userId, profile, ecdhPrivateKey, onOpenShareModal }) {
+export default function SharedSecretsView({ userId, profile, vaultKey, ecdhPrivateKey, ensureEcdhPrivateKey, onOpenShareModal, onSaveToVault }) {
   const [subTab, setSubTab] = useState("received"); // received | sent
   const [receivedItems, setReceivedItems] = useState([]);
   const [sentItems, setSentItems] = useState([]);
@@ -98,8 +98,13 @@ export default function SharedSecretsView({ userId, profile, ecdhPrivateKey, onO
       return;
     }
 
-    if (!ecdhPrivateKey) {
-      alert("Asymmetric private key not found in memory. Please lock and re-unlock your vault.");
+    let activeKey = ecdhPrivateKey;
+    if (!activeKey && typeof ensureEcdhPrivateKey === "function") {
+      activeKey = await ensureEcdhPrivateKey();
+    }
+
+    if (!activeKey) {
+      alert("Asymmetric private key not available. Please unlock your vault.");
       return;
     }
 
@@ -107,7 +112,7 @@ export default function SharedSecretsView({ userId, profile, ecdhPrivateKey, onO
     try {
       const senderPubKey = item.sender_public_key_snapshot || item.sender_public_key;
       const cipherBlob = item.secret_ciphertext || item.encrypted_payload;
-      const decrypted = await receiveSharedSecret(cipherBlob, senderPubKey, ecdhPrivateKey);
+      const decrypted = await receiveSharedSecret(cipherBlob, senderPubKey, activeKey);
       setDecryptedCache((prev) => ({ ...prev, [item.id]: decrypted }));
     } catch (dErr) {
       console.error("[SharedSecretsView] Decryption error:", dErr);
@@ -392,6 +397,19 @@ export default function SharedSecretsView({ userId, profile, ecdhPrivateKey, onO
                         );
                       })}
                     </div>
+
+                    {onSaveToVault && (
+                      <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
+                        <button
+                          type="button"
+                          style={{ ...S.primaryBtnSm, display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}
+                          onClick={() => onSaveToVault({ ...decrypted, title: item.title, category: item.category })}
+                        >
+                          <KeyRound size={13} />
+                          Save to My Vault
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

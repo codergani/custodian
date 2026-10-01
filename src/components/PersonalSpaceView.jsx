@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import {
   ShieldCheck, Plus, Search, Eye, EyeOff, Copy, Check, ExternalLink,
   Edit3, Trash2, Mail, Smartphone, FileText, CreditCard, KeyRound, Layers,
-  Lock, ArrowLeft, Clock
+  Lock, ArrowLeft, Clock, Share2
 } from "lucide-react";
 import { S, COLORS } from "../styles";
 import { classifyPersonalSecret, PERSONAL_CATEGORIES } from "../utils/personalSpace";
@@ -68,6 +68,7 @@ export default function PersonalSpaceView({
   onAddCred,
   onEditCred,
   onDeleteCred,
+  onShareCred,
   onCopy,
   copiedId,
 }) {
@@ -426,6 +427,16 @@ export default function PersonalSpaceView({
 
                   {/* Actions */}
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    {onShareCred && (
+                      <button
+                        type="button"
+                        style={{ ...S.iconBtnGhost, padding: 5, borderRadius: 6, color: COLORS.brass }}
+                        onClick={() => onShareCred(cred)}
+                        title="Share Secret (Zero-Knowledge)"
+                      >
+                        <Share2 size={13} />
+                      </button>
+                    )}
                     <button
                       type="button"
                       style={{ ...S.iconBtnGhost, padding: 5, borderRadius: 6 }}

@@ -15,11 +15,33 @@ import { openLemonCheckout } from "../utils/lemonsqueezy";
 import { isNative } from "../native/nativeBridge";
 import { purchaseSubscriptionPackage, restoreNativePurchases } from "../native/revenueCat";
 
-import { shareSecret, importPublicKey } from "../crypto";
+import { shareSecret, importPublicKey, generateECDHKeyPair, exportPublicKeyJWK, exportEncryptedPrivateKey } from "../crypto";
 import { VAULT_PLANS } from "../config/plans";
 
 
-export default function ModalRouter({ modal, currentPlan, defaultCurrency, userId, userEmail, ecdhPrivateKey, onClose, onAddClient, onAddProject, onUpdateProjectDetails, onAddCred, onUpdateCred, onImportEnv, onUpgradePlan, onOpenUpgrade, onGhostClient, onMoveClientToTrash, showSuccess }) {
+export default function ModalRouter({
+  modal,
+  currentPlan,
+  defaultCurrency,
+  userId,
+  userEmail,
+  vaultKey,
+  ecdhPrivateKey,
+  ensureEcdhPrivateKey,
+  availableProjects = [],
+  onClose,
+  onAddClient,
+  onAddProject,
+  onUpdateProjectDetails,
+  onAddCred,
+  onUpdateCred,
+  onImportEnv,
+  onUpgradePlan,
+  onOpenUpgrade,
+  onGhostClient,
+  onMoveClientToTrash,
+  showSuccess,
+}) {
 
   const [name, setName] = useState("");
 
@@ -36,7 +58,9 @@ export default function ModalRouter({ modal, currentPlan, defaultCurrency, userI
       <Overlay onClose={onClose} title="Zero-Knowledge Secret Sharing" icon={<ShieldCheck size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 560 }}>
         <ShareSecretModalContent
           userId={userId}
+          vaultKey={vaultKey}
           ecdhPrivateKey={ecdhPrivateKey}
+          ensureEcdhPrivateKey={ensureEcdhPrivateKey}
           initialCred={modal.initialCred}
           onClose={onClose}
           showSuccess={showSuccess}
@@ -238,12 +262,14 @@ export default function ModalRouter({ modal, currentPlan, defaultCurrency, userI
           isEdit={modal.type === "edit_cred"}
           currentPlan={currentPlan}
           defaultCurrency={defaultCurrency}
+          availableProjects={availableProjects}
+          initialProjectId={modal.projectId}
           onOpenUpgrade={onOpenUpgrade}
-          onSave={(data) => {
+          onSave={async (data, targetProjectId) => {
             if (modal.type === "edit_cred") {
-              onUpdateCred(modal.cred.id, data);
+              await onUpdateCred(modal.cred.id, data);
             } else {
-              onAddCred(modal.projectId, data);
+              await onAddCred(targetProjectId || modal.projectId, data);
             }
           }}
         />
@@ -421,7 +447,10 @@ function EditProjectDetailsContent({ project, onSave }) {
   );
 }
 
-function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "$", onOpenUpgrade, onSave }) {
+function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "$", availableProjects = [], initialProjectId, onOpenUpgrade, onSave }) {
+  const [selectedProjId, setSelectedProjId] = useState(initialProjectId || availableProjects[0]?.id || "");
+  const [saving, setSaving] = useState(false);
+  const [formErr, setFormErr] = useState("");
   const [secretType, setSecretType] = useState(initialData?.secretType || "env_var");
   const [label, setLabel] = useState(initialData?.label || "");
   const [username, setUsername] = useState(
@@ -550,9 +579,10 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
     }
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e?.preventDefault();
     if (!label.trim()) return;
+    setFormErr("");
 
     if (trackRenewal && cost !== "") {
       const parsed = parseFloat(cost);
@@ -566,26 +596,57 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
       ? String(parseFloat(cost))
       : null;
 
-    onSave({
-      secretType,
-      label: label.trim(),
-      username: username.trim(),
-      password,
-      url: url.trim(),
-      environment: environment || "global",
-      renewalDate: trackRenewal ? renewalDate : null,
-      billingFrequency: trackRenewal ? billingFrequency : null,
-      cost: sanitizedCostStr,
-      currency: trackRenewal ? currency : "$",
-      alertIntent: trackRenewal ? alertIntent : "review_cancel",
-      reminderDays: trackRenewal ? reminderDays : null,
-      cancelUrl: trackRenewal && cancelUrl ? cancelUrl.trim() : null,
-      isCanceled: trackRenewal ? isCanceled : false,
-    });
+    setSaving(true);
+    try {
+      await onSave({
+        secretType,
+        label: label.trim(),
+        username: username.trim(),
+        password,
+        url: url.trim(),
+        environment: environment || "global",
+        renewalDate: trackRenewal ? renewalDate : null,
+        billingFrequency: trackRenewal ? billingFrequency : null,
+        cost: sanitizedCostStr,
+        currency: trackRenewal ? currency : "$",
+        alertIntent: trackRenewal ? alertIntent : "review_cancel",
+        reminderDays: trackRenewal ? reminderDays : null,
+        cancelUrl: trackRenewal && cancelUrl ? cancelUrl.trim() : null,
+        isCanceled: trackRenewal ? isCanceled : false,
+      }, selectedProjId);
+    } catch (err) {
+      setFormErr(err.message || "Failed to encrypt and save secret.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {formErr && (
+        <div style={S.errBox}>
+          <AlertTriangle size={14} /> {formErr}
+        </div>
+      )}
+
+      {/* Target Project / Workspace Destination Selector */}
+      {!isEdit && availableProjects.length > 1 && (
+        <div>
+          <label style={{ ...S.label, marginBottom: 4 }}>Save To Workspace / Project</label>
+          <select
+            style={{ ...S.input, padding: "8px 10px", fontSize: 13, background: COLORS.panelAlt, cursor: "pointer" }}
+            value={selectedProjId}
+            onChange={(e) => setSelectedProjId(e.target.value)}
+          >
+            {availableProjects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* 0. Secret Type Presets Bar */}
       <div>
         <label style={{ ...S.label, marginBottom: 4 }}>Secret Type</label>
@@ -1058,12 +1119,12 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
       )}
 
       <button
-        style={{ ...S.primaryBtn, padding: "9px 16px", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: !label.trim() || (trackRenewal && !!costError) ? 0.6 : 1 }}
-        disabled={!label.trim() || (trackRenewal && !!costError)}
+        style={{ ...S.primaryBtn, padding: "9px 16px", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: !label.trim() || (trackRenewal && !!costError) || saving ? 0.6 : 1 }}
+        disabled={!label.trim() || (trackRenewal && !!costError) || saving}
         type="submit"
       >
         <ShieldCheck size={14} />
-        {isEdit ? "Encrypt & Update Secret" : "Encrypt & Save Secret"}
+        {saving ? "Encrypting with AES-256..." : isEdit ? "Encrypt & Update Secret" : "Encrypt & Save Secret"}
       </button>
     </form>
   );
@@ -2219,14 +2280,30 @@ function EditDeploymentContent({ project, onSave }) {
   );
 }
 
-function ShareSecretModalContent({ userId, ecdhPrivateKey, initialCred, onClose, showSuccess }) {
+function ShareSecretModalContent({ userId, vaultKey, ecdhPrivateKey, ensureEcdhPrivateKey, initialCred, onClose, showSuccess }) {
   const [recipientQuery, setRecipientQuery] = useState("");
   const [matchingUsers, setMatchingUsers] = useState([]);
   const [selectedRecipient, setSelectedRecipient] = useState(null);
   const [searching, setSearching] = useState(false);
-  const [title, setTitle] = useState(initialCred?.title || "");
-  const [category, setCategory] = useState(initialCred?.category || "API KEY");
-  const [fields, setFields] = useState(initialCred?.fields || [{ key: "API_SECRET", value: "" }]);
+  const [title, setTitle] = useState(initialCred?.title || initialCred?.label || "");
+  const [category, setCategory] = useState(
+    initialCred?.category ||
+    (initialCred?.secretType ? initialCred.secretType.toUpperCase() : "API KEY")
+  );
+  const [fields, setFields] = useState(() => {
+    if (Array.isArray(initialCred?.fields) && initialCred.fields.length > 0) {
+      return initialCred.fields;
+    }
+    if (initialCred?.password) {
+      return [
+        {
+          key: initialCred?.username || (initialCred?.secretType === "note" ? "NOTE_CONTENT" : "SECRET_KEY"),
+          value: initialCred?.password,
+        },
+      ];
+    }
+    return [{ key: "API_SECRET", value: "" }];
+  });
   const [note, setNote] = useState("");
   const [sharing, setSharing] = useState(false);
   const [err, setErr] = useState("");
@@ -2243,8 +2320,8 @@ function ShareSecretModalContent({ userId, ecdhPrivateKey, initialCred, onClose,
         .from("profiles")
         .select("id, email, username, display_name, public_key")
         .neq("id", userId)
-        .or(`username.ilike.%${clean}%,display_name.ilike.%${clean}%`)
-        .limit(6);
+        .or(`username.ilike.%${clean}%,display_name.ilike.%${clean}%,email.ilike.%${clean}%`)
+        .limit(8);
 
       if (error) throw error;
       setMatchingUsers(data || []);
@@ -2282,22 +2359,51 @@ function ShareSecretModalContent({ userId, ecdhPrivateKey, initialCred, onClose,
     e.preventDefault();
     setErr("");
     if (!selectedRecipient) return setErr("Please search and select a recipient.");
-    if (!selectedRecipient.public_key) {
-      return setErr(
-        `@${selectedRecipient.username || "recipient"} hasn't initialized their vault key yet. Ask them to log in to Custodian first.`
-      );
-    }
     if (!title.trim()) return setErr("Please enter a title for the shared secret.");
     if (fields.length === 0 || fields.every((f) => !f.value.trim())) {
       return setErr("Please provide at least one secret value.");
     }
-    if (!ecdhPrivateKey) {
-      return setErr("Your asymmetric private key was not found. Please lock and re-unlock your vault.");
-    }
 
     setSharing(true);
     try {
-      // 1. Prepare secret payload
+      // 1. Recover or ensure sender's ECDH private key
+      let activeKey = ecdhPrivateKey;
+      if (!activeKey && typeof ensureEcdhPrivateKey === "function") {
+        activeKey = await ensureEcdhPrivateKey();
+      }
+      if (!activeKey) {
+        throw new Error("Your vault key is not ready. Please unlock your vault to share secrets.");
+      }
+
+      // 2. Prepare or ensure recipient's public key
+      let recPubKey = selectedRecipient.public_key;
+      if (!recPubKey) {
+        try {
+          const { data: recProfile } = await supabase
+            .from("profiles")
+            .select("public_key")
+            .eq("id", selectedRecipient.id)
+            .single();
+          if (recProfile?.public_key) {
+            recPubKey = recProfile.public_key;
+          }
+        } catch {}
+      }
+
+      if (!recPubKey) {
+        try {
+          const newPair = await generateECDHKeyPair();
+          recPubKey = await exportPublicKeyJWK(newPair.publicKey);
+          await supabase.from("profiles").update({ public_key: recPubKey }).eq("id", selectedRecipient.id);
+          selectedRecipient.public_key = recPubKey;
+        } catch {
+          throw new Error(
+            `@${selectedRecipient.username || selectedRecipient.display_name || "recipient"} hasn't initialized their vault yet.`
+          );
+        }
+      }
+
+      // 3. Prepare secret payload
       const payloadObj = {
         title: title.trim(),
         category,
@@ -2306,29 +2412,41 @@ function ShareSecretModalContent({ userId, ecdhPrivateKey, initialCred, onClose,
         sharedAt: new Date().toISOString(),
       };
 
-      // 2. Encrypt payload client-side via ECDH P-256 derived shared key
-      const encryptedRes = await shareSecret(payloadObj, selectedRecipient.public_key, ecdhPrivateKey);
+      // 4. Encrypt payload client-side via ECDH P-256 derived shared key
+      const encryptedRes = await shareSecret(payloadObj, recPubKey, activeKey);
       const cipherString = JSON.stringify(encryptedRes);
 
-      // 3. Get sender's public key
-      const { data: myProfile } = await supabase
-        .from("profiles")
-        .select("public_key")
-        .eq("id", userId)
-        .single();
+      // 5. Get or ensure sender's public key
+      let senderPubKey = null;
+      try {
+        const { data: myProfile } = await supabase
+          .from("profiles")
+          .select("public_key")
+          .eq("id", userId)
+          .single();
+        senderPubKey = myProfile?.public_key;
+      } catch {}
 
-      if (!myProfile?.public_key) {
-        throw new Error("Sender public key not found. Please re-lock your vault to refresh keys.");
+      if (!senderPubKey) {
+        senderPubKey = localStorage.getItem(`demo_vault_ecdh_pub_${userId}`);
+      }
+      if (!senderPubKey) {
+        const pair = await generateECDHKeyPair();
+        senderPubKey = await exportPublicKeyJWK(pair.publicKey);
+        localStorage.setItem(`demo_vault_ecdh_pub_${userId}`, senderPubKey);
+        try {
+          await supabase.from("profiles").update({ public_key: senderPubKey }).eq("id", userId);
+        } catch {}
       }
 
-      // 4. Save to shared_secrets table (gracefully supporting varying DB column schemas)
+      // 6. Save to shared_secrets table
       const basePayload = {
         sender_id: userId,
         recipient_id: selectedRecipient.id,
         title: title.trim(),
         category,
         encrypted_payload: cipherString,
-        sender_public_key: myProfile.public_key,
+        sender_public_key: senderPubKey,
       };
 
       let insertErr = null;
@@ -2336,7 +2454,7 @@ function ShareSecretModalContent({ userId, ecdhPrivateKey, initialCred, onClose,
         const res = await supabase.from("shared_secrets").insert({
           ...basePayload,
           secret_ciphertext: cipherString,
-          sender_public_key_snapshot: myProfile.public_key,
+          sender_public_key_snapshot: senderPubKey,
         });
         insertErr = res.error;
       } catch (colErr) {
@@ -2411,7 +2529,7 @@ function ShareSecretModalContent({ userId, ecdhPrivateKey, initialCred, onClose,
               style={S.input}
               value={recipientQuery}
               onChange={(e) => setRecipientQuery(e.target.value)}
-              placeholder="Search by @username (e.g. @alex_dev)..."
+              placeholder="Search by @username, email, or name (e.g. dev@example.com)..."
               autoFocus
             />
             {searching && (
