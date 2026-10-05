@@ -72,28 +72,28 @@ export default function CommandPalette({ clients, onClose, onSelectClient, onSel
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <div style={S.cmdItem} onClick={() => onOpenModal("cred", {})} tabIndex={0} role="button">
-                  <KeyRound size={14} color="#B08D57" />
+                  <KeyRound size={14} color={COLORS.cyan} />
                   <span style={{ flex: 1, fontSize: 13, color: COLORS.text, fontWeight: 600 }}>+ Add New Secret / API Key</span>
-                  <span style={{ fontSize: 11, color: COLORS.brass }}>AES-256</span>
+                  <span style={{ fontSize: 11, color: COLORS.cyan }}>AES-256</span>
                 </div>
                 <div style={S.cmdItem} onClick={() => onNavigate("sharing")} tabIndex={0} role="button">
-                  <ShieldCheck size={14} color="#B08D57" />
+                  <ShieldCheck size={14} color={COLORS.cyan} />
                   <span style={{ flex: 1, fontSize: 13, color: COLORS.text }}>Zero-Knowledge Secret Sharing (ECDH)</span>
                 </div>
                 <div style={S.cmdItem} onClick={() => onNavigate("vault")} tabIndex={0} role="button">
-                  <Crown size={14} color="#B08D57" />
+                  <Crown size={14} color="#FFD700" />
                   <span style={{ flex: 1, fontSize: 13, color: COLORS.text }}>Vault Projects Overview</span>
                 </div>
                 <div style={S.cmdItem} onClick={() => onNavigate("personal")} tabIndex={0} role="button">
-                  <ShieldCheck size={14} color="#B08D57" />
+                  <ShieldCheck size={14} color={COLORS.cyan} />
                   <span style={{ flex: 1, fontSize: 13, color: COLORS.text }}>Personal Space (Logins, PINs, Seed Words)</span>
                 </div>
                 <div style={S.cmdItem} onClick={() => onNavigate("watchdog")} tabIndex={0} role="button">
-                  <Bell size={14} color="#B08D57" />
+                  <Bell size={14} color={COLORS.cyan} />
                   <span style={{ flex: 1, fontSize: 13, color: COLORS.text }}>SSL & Domain Renewal Watchdog</span>
                 </div>
                 <div style={S.cmdItem} onClick={() => onOpenModal("client", {})} tabIndex={0} role="button">
-                  <Plus size={14} color="#8FA98C" />
+                  <Plus size={14} color={COLORS.green} />
                   <span style={{ flex: 1, fontSize: 13, color: COLORS.text }}>Create Client Workspace</span>
                 </div>
               </div>
@@ -108,7 +108,7 @@ export default function CommandPalette({ clients, onClose, onSelectClient, onSel
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {matchingCreds.slice(0, 8).map((cr) => (
                   <div key={cr.id} style={S.cmdItem} onClick={() => onSelectProject(cr.clientId, cr.projectId, "creds")} tabIndex={0} role="button">
-                    <KeyRound size={13} color="#B08D57" />
+                    <KeyRound size={13} color={COLORS.cyan} />
                     <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, overflow: "hidden" }}>
                       <span style={{ fontSize: 13, color: COLORS.text, fontWeight: 600 }}>{cr.label}</span>
                       <span style={{ fontSize: 11, color: COLORS.textDim }}>({cr.clientName} &gt; {cr.projectName})</span>
@@ -143,7 +143,7 @@ export default function CommandPalette({ clients, onClose, onSelectClient, onSel
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {matchingProjects.slice(0, 5).map((p) => (
                   <div key={p.id} style={S.cmdItem} onClick={() => onSelectProject(p.clientId, p.id, "env_studio")} tabIndex={0} role="button">
-                    <Folder size={13} color="#B08D57" />
+                    <Folder size={13} color={COLORS.cyan} />
                     <div style={{ flex: 1, fontSize: 13, color: COLORS.text }}>
                       <strong style={{ color: COLORS.brass }}>{p.clientName}</strong> &gt; {p.name}
                     </div>
@@ -162,7 +162,7 @@ export default function CommandPalette({ clients, onClose, onSelectClient, onSel
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {matchingClients.slice(0, 5).map((c) => (
                   <div key={c.id} style={S.cmdItem} onClick={() => onSelectClient?.(c.id)} tabIndex={0} role="button">
-                    <Briefcase size={13} color="#B08D57" />
+                    <Briefcase size={13} color={COLORS.cyan} />
                     <div style={{ flex: 1, fontSize: 13, color: COLORS.text, fontWeight: 600 }}>
                       {c.name}
                     </div>

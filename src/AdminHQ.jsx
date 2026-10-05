@@ -454,8 +454,8 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
         <div style={{ ...S.modalCard, maxWidth: 440, width: "100%", padding: 28, background: COLORS.panel, border: `1.5px solid ${COLORS.brassDim}` }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ ...S.dialRing, width: 38, height: 38, background: "rgba(176,141,87,0.2)", borderColor: COLORS.brass }}>
-                <Crown size={20} color="#B08D57" />
+              <div style={{ ...S.dialRing, width: 38, height: 38, background: "rgba(255, 215, 0, 0.15)", borderColor: "#FFD700" }}>
+                <Crown size={20} color="#FFD700" />
               </div>
               <div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, letterSpacing: "-0.01em" }}>
@@ -566,8 +566,8 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
       <div style={{ width: 260, background: COLORS.panel, borderRight: `1px solid ${COLORS.line}`, padding: "20px 16px", display: "flex", flexDirection: "column", gap: 14, boxSizing: "border-box", flexShrink: 0 }}>
         {/* Sidebar Brand */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 12, borderBottom: `1px solid ${COLORS.line}` }}>
-          <div style={{ ...S.dialRing, width: 34, height: 34, background: "rgba(176,141,87,0.2)", borderColor: COLORS.brass }}>
-            <Crown size={17} color="#B08D57" />
+          <div style={{ ...S.dialRing, width: 34, height: 34, background: "rgba(255, 215, 0, 0.15)", borderColor: "#FFD700" }}>
+            <Crown size={17} color="#FFD700" />
           </div>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -655,7 +655,7 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
             }}
             onClick={() => setActiveTab("threats")}
           >
-            <ShieldAlert size={15} color={activeTab === "threats" ? COLORS.brass : "#8FA98C"} /> Security & Threats
+            <ShieldAlert size={15} color={activeTab === "threats" ? COLORS.brass : COLORS.green} /> Security & Threats
           </button>
 
           <button
@@ -807,8 +807,8 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
               </div>
 
               <div style={S.founderRevenueCard}>
-                <div style={{ ...S.watchdogStatLabel, color: "#8FA98C" }}>Annual Run Rate (ARR)</div>
-                <div style={{ ...S.watchdogStatValue, fontSize: 24, color: "#8FA98C" }}>
+                <div style={{ ...S.watchdogStatLabel, color: COLORS.green }}>Annual Run Rate (ARR)</div>
+                <div style={{ ...S.watchdogStatValue, fontSize: 24, color: COLORS.green }}>
                   ${arrUSD.toLocaleString()} <span style={{ fontSize: 13, color: COLORS.textDim, fontWeight: 400 }}>/ yr</span>
                 </div>
                 <div style={{ fontSize: 12, color: COLORS.textDim, marginTop: 2 }}>
@@ -819,7 +819,7 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
               <div style={S.watchdogStatCard}>
                 <div style={S.watchdogStatLabel}>Paid Subscribers & Conversion</div>
                 <div style={{ ...S.watchdogStatValue, color: COLORS.text }}>
-                  {proUsers + teamUsers} <span style={{ fontSize: 13, color: "#8FA98C", fontWeight: 600 }}>({conversionRate}% Paid)</span>
+                  {proUsers + teamUsers} <span style={{ fontSize: 13, color: COLORS.green, fontWeight: 600 }}>({conversionRate}% Paid)</span>
                 </div>
                 <div style={{ fontSize: 11.5, color: COLORS.textFaint, marginTop: 2 }}>
                   {proUsers} Pro ($8) • {teamUsers} Teams ($19)
@@ -869,10 +869,10 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
                 </div>
               </div>
 
-              <div style={{ ...S.watchdogStatCard, background: "rgba(143,169,140,0.08)", borderColor: "rgba(143,169,140,0.4)" }}>
+              <div style={{ ...S.watchdogStatCard, background: "rgba(16, 185, 129, 0.08)", borderColor: "rgba(16, 185, 129, 0.4)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={S.planBadgeTeam}>TEAM PLAN ($19/mo)</span>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: "#8FA98C" }}>{teamUsers} Teams</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: COLORS.green }}>{teamUsers} Teams</span>
                 </div>
                 <div style={{ fontSize: 11.5, color: COLORS.textDim, marginTop: 6 }}>
                   Generates ${teamUsers * 19}/mo (${teamUsers * 19 * 12}/yr)
@@ -1011,7 +1011,7 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
                           {plan === "founder" ? (
                             <Crown size={16} color="#FFD700" />
                           ) : (
-                            <UserCheck size={16} color={plan === "team" ? "#C49B66" : plan === "pro" ? "#8FA98C" : COLORS.textDim} />
+                            <UserCheck size={16} color={plan === "team" ? COLORS.indigo : plan === "pro" ? COLORS.cyan : COLORS.textDim} />
                           )}
                         </div>
                         <div>
@@ -1031,7 +1031,7 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
                           onClick={() => handleOpenDiagnostics(u)}
                           title="Inspect Zero-Knowledge Account Diagnostics"
                         >
-                          <Terminal size={12} color="#8FA98C" /> Inspect
+                          <Terminal size={12} color={COLORS.cyan} /> Inspect
                         </button>
 
                         <span style={plan === "founder" ? S.planBadgeFounder : plan === "team" ? S.planBadgeTeam : plan === "pro" ? S.planBadgePro : S.planBadge}>
@@ -1131,9 +1131,9 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
 
             {/* Security Status Cards */}
             <div style={S.watchdogStatGrid}>
-              <div style={{ ...S.watchdogStatCard, borderColor: "rgba(143,169,140,0.4)" }}>
-                <div style={{ ...S.watchdogStatLabel, color: "#8FA98C" }}>Zero-Knowledge Integrity</div>
-                <div style={{ ...S.watchdogStatValue, fontSize: 18, color: "#8FA98C" }}>VERIFIED · SECURE</div>
+              <div style={{ ...S.watchdogStatCard, borderColor: "rgba(16, 185, 129, 0.4)" }}>
+                <div style={{ ...S.watchdogStatLabel, color: COLORS.green }}>Zero-Knowledge Integrity</div>
+                <div style={{ ...S.watchdogStatValue, fontSize: 18, color: COLORS.green }}>VERIFIED · SECURE</div>
                 <div style={{ fontSize: 11.5, color: COLORS.textFaint, marginTop: 2 }}>
                   AES-256-GCM + PBKDF2 100,000 Iterations
                 </div>
@@ -1157,7 +1157,7 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
 
               <div style={S.watchdogStatCard}>
                 <div style={S.watchdogStatLabel}>Database RLS Guard</div>
-                <div style={{ ...S.watchdogStatValue, fontSize: 18, color: "#8FA98C" }}>6 of 6 TABLES</div>
+                <div style={{ ...S.watchdogStatValue, fontSize: 18, color: COLORS.green }}>6 of 6 TABLES</div>
                 <div style={{ fontSize: 11.5, color: COLORS.textFaint, marginTop: 2 }}>
                   Row-level security policies active
                 </div>
@@ -1185,11 +1185,11 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
             {/* Defense Stream Log */}
             <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 10, padding: "16px 18px" }}>
               <div style={{ fontSize: 13.5, fontWeight: 700, color: COLORS.text, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
-                <Terminal size={15} color="#8FA98C" /> Live Threat Defense Event Stream
+                <Terminal size={15} color={COLORS.green} /> Live Threat Defense Event Stream
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, fontFamily: "IBM Plex Mono, monospace", fontSize: 11.5, color: COLORS.textDim }}>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <span style={{ color: "#8FA98C" }}>[SECURITY SENTINEL]</span>
+                  <span style={{ color: COLORS.green }}>[SECURITY SENTINEL]</span>
                   <span>PBKDF2 100,000-iteration key derivation verified client-side.</span>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -1197,11 +1197,11 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
                   <span>Brute-force penalty active: Exponential backoff on failed passcode attempts.</span>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <span style={{ color: "#8FA98C" }}>[AUTH GUARD]</span>
+                  <span style={{ color: COLORS.green }}>[AUTH GUARD]</span>
                   <span>Founder VIP immunity active for ygpksr456@gmail.com.</span>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <span style={{ color: "#8FA98C" }}>[STORAGE GUARD]</span>
+                  <span style={{ color: COLORS.green }}>[STORAGE GUARD]</span>
                   <span>Bucket 'workspace-files' owner isolation policy enforced.</span>
                 </div>
               </div>
@@ -1284,7 +1284,7 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
                             <span>{log.details?.note || "Administrative event"}</span>
                           )}
                           {log.details?.newPlan && (
-                            <span style={{ color: "#8FA98C", marginLeft: 6 }}>
+                            <span style={{ color: COLORS.green, marginLeft: 6 }}>
                               &rarr; Set to {log.details.newPlan.toUpperCase()}
                             </span>
                           )}
@@ -1350,7 +1350,7 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
         <Overlay
           onClose={() => setInspectUser(null)}
           title={`Account Diagnostics: ${inspectUser.email || inspectUser.id}`}
-          icon={<Terminal size={18} color="#8FA98C" />}
+          icon={<Terminal size={18} color={COLORS.cyan} />}
           cardStyle={{ ...S.modalCard, maxWidth: 540 }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -1428,8 +1428,8 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
                 </div>
 
                 {/* Zero-Knowledge Security Verification Banner */}
-                <div style={{ ...S.infoBox, background: "rgba(143,169,140,0.08)", borderColor: "rgba(143,169,140,0.3)", fontSize: 11.5, padding: "10px 12px" }}>
-                  <ShieldCheck size={16} color="#8FA98C" style={{ flexShrink: 0 }} />
+                <div style={{ ...S.infoBox, background: "rgba(16, 185, 129, 0.08)", borderColor: "rgba(16, 185, 129, 0.3)", fontSize: 11.5, padding: "10px 12px" }}>
+                  <ShieldCheck size={16} color={COLORS.green} style={{ flexShrink: 0 }} />
                   <span>
                     <strong>Cryptographic Isolation Active:</strong> Account secrets, passwords, and tokens cannot be accessed or decrypted by admins or servers under any circumstances.
                   </span>

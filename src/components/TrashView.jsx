@@ -75,14 +75,16 @@ export default function TrashView({
           <button
             key={tab.id}
             style={{
-              background: activeTab === tab.id ? "rgba(176,141,87,0.15)" : "transparent",
-              color: activeTab === tab.id ? COLORS.brass : COLORS.textDim,
-              border: `1px solid ${activeTab === tab.id ? COLORS.brassDim : COLORS.line}`,
-              borderRadius: 6,
-              padding: "5px 12px",
+              background: activeTab === tab.id ? "rgba(0, 210, 255, 0.14)" : "transparent",
+              color: activeTab === tab.id ? COLORS.cyan : COLORS.textDim,
+              border: `1px solid ${activeTab === tab.id ? "rgba(0, 210, 255, 0.4)" : COLORS.line}`,
+              borderRadius: 8,
+              padding: "6px 14px",
               fontSize: 12,
+              fontWeight: activeTab === tab.id ? 600 : 500,
               cursor: "pointer",
               fontFamily: "Inter, sans-serif",
+              transition: "all 0.15s ease",
             }}
             onClick={() => setActiveTab(tab.id)}
           >
@@ -93,7 +95,7 @@ export default function TrashView({
 
       {grandTotalCount === 0 ? (
         <div style={S.welcomeState}>
-          <Trash2 size={36} color="#3A3835" />
+          <Trash2 size={36} color={COLORS.textFaint} />
           <div style={S.welcomeTitle}>Trash is empty</div>
           <div style={S.welcomeSub}>
             When you delete a secret, project, or client, you'll have 30 days to restore it from here.
@@ -101,8 +103,8 @@ export default function TrashView({
         </div>
       ) : activeTab === "ghosted" && ghostedClients.length === 0 ? (
         <div style={S.welcomeState}>
-          <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(176,141,87,0.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
-            <Ghost size={24} color={COLORS.brass} />
+          <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(0, 210, 255, 0.12)", border: "1px solid rgba(0, 210, 255, 0.35)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+            <Ghost size={24} color={COLORS.cyan} />
           </div>
           <div style={S.welcomeTitle}>No Ghosted Clients</div>
           <div style={S.welcomeSub}>
@@ -130,8 +132,8 @@ export default function TrashView({
                   key={"ghost-" + client.id}
                   style={{
                     ...S.trashCard,
-                    border: "1px solid rgba(176,141,87,0.3)",
-                    background: "rgba(176,141,87,0.03)",
+                    border: "1px solid rgba(0, 210, 255, 0.25)",
+                    background: "rgba(0, 210, 255, 0.03)",
                     flexDirection: "column",
                     alignItems: "stretch",
                     gap: 12,
@@ -139,13 +141,13 @@ export default function TrashView({
                 >
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                      <div style={{ ...S.dialRing, width: 38, height: 38, background: "rgba(176,141,87,0.12)", flexShrink: 0 }}>
-                        <Ghost size={18} color="#B08D57" />
+                      <div style={{ ...S.dialRing, width: 38, height: 38, background: "rgba(0, 210, 255, 0.12)", flexShrink: 0 }}>
+                        <Ghost size={18} color={COLORS.cyan} />
                       </div>
                       <div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                           <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>{client.name}</span>
-                          <span style={{ ...S.trashBadge, background: "rgba(176,141,87,0.15)", color: COLORS.brass, borderColor: COLORS.brassDim }}>
+                          <span style={{ ...S.trashBadge, background: "rgba(0, 210, 255, 0.15)", color: COLORS.cyan, borderColor: "rgba(0, 210, 255, 0.35)" }}>
                             👻 GHOSTED / CANCELLED
                           </span>
                           <span style={{ fontSize: 11, color: COLORS.textFaint, fontFamily: "IBM Plex Mono, monospace" }}>
@@ -208,7 +210,7 @@ export default function TrashView({
                 <div key={"c-" + cred.id} style={S.trashCard}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ ...S.dialRing, width: 36, height: 36 }}>
-                      <KeyRound size={17} color="#B08D57" />
+                      <KeyRound size={17} color={COLORS.cyan} />
                     </div>
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -216,11 +218,11 @@ export default function TrashView({
                         <span style={S.trashBadge}>Auto-purges in {days}d</span>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: COLORS.textDim, marginTop: 3, fontFamily: "IBM Plex Mono, monospace" }}>
-                        <span style={{ color: COLORS.brass }}>{cred.clientName || "Client"}</span>
+                        <span style={{ color: COLORS.cyan }}>{cred.clientName || "Client"}</span>
                         <span style={{ color: COLORS.textFaint }}>&gt;</span>
                         <span style={{ color: COLORS.text }}>{cred.projectName || "Project"}</span>
                         <span style={{ color: COLORS.textFaint }}>&gt;</span>
-                        <span style={{ color: "#8FA98C", fontWeight: 600 }}>{cred.label}</span>
+                        <span style={{ color: COLORS.green, fontWeight: 600 }}>{cred.label}</span>
                       </div>
                     </div>
                   </div>
@@ -253,7 +255,7 @@ export default function TrashView({
                 <div key={"p-" + proj.id} style={S.trashCard}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ ...S.dialRing, width: 36, height: 36 }}>
-                      <Folder size={17} color="#8FA98C" />
+                      <Folder size={17} color={COLORS.cyan} />
                     </div>
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -261,7 +263,7 @@ export default function TrashView({
                         <span style={S.trashBadge}>Auto-purges in {days}d</span>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: COLORS.textDim, marginTop: 3, fontFamily: "IBM Plex Mono, monospace" }}>
-                        <span style={{ color: COLORS.brass }}>{proj.clientName || "Client"}</span>
+                        <span style={{ color: COLORS.cyan }}>{proj.clientName || "Client"}</span>
                         <span style={{ color: COLORS.textFaint }}>&gt;</span>
                         <span style={{ color: COLORS.text, fontWeight: 600 }}>{proj.name}</span>
                         <span style={{ color: COLORS.textFaint }}>({proj.credentials?.length || 0} secrets)</span>
@@ -297,11 +299,11 @@ export default function TrashView({
                 <div key={"cl-" + client.id} style={S.trashCard}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ ...S.dialRing, width: 36, height: 36 }}>
-                      <Building2 size={17} color="#B08D57" />
+                      <Building2 size={17} color={COLORS.cyan} />
                     </div>
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.text }}>{client.name}</span>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>{client.name}</span>
                         <span style={S.trashBadge}>Auto-purges in {days}d</span>
                       </div>
                       <div style={{ fontSize: 11.5, color: COLORS.textFaint, marginTop: 2 }}>

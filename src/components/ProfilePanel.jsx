@@ -646,7 +646,7 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {autoLockSaved && <span style={{ fontSize: 11, color: "#8FA98C", display: "flex", alignItems: "center", gap: 3 }}><Check size={11} /> Saved</span>}
+            {autoLockSaved && <span style={{ fontSize: 11, color: COLORS.green, display: "flex", alignItems: "center", gap: 3 }}><Check size={11} /> Saved</span>}
             <CustomDropdown
               value={autoLockMins}
               onChange={handleAutoLockChange}
@@ -660,7 +660,7 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
         <div style={{ display: "flex", flexDirection: "column", gap: 8, background: COLORS.panelAlt, padding: "14px", borderRadius: 8, border: `1px solid ${COLORS.line}` }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ ...S.dialRing, width: 34, height: 34, background: "rgba(176,141,87,0.12)", borderColor: COLORS.brass }}>
+              <div style={{ ...S.dialRing, width: 34, height: 34, background: "rgba(0, 210, 255, 0.12)", borderColor: COLORS.cyan }}>
                 <Fingerprint size={17} color={COLORS.brass} />
               </div>
               <div>
@@ -673,7 +673,7 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {bioMsg && <span style={{ fontSize: 11, color: "#8FA98C", display: "flex", alignItems: "center", gap: 3 }}><Check size={11} /> {bioMsg}</span>}
+              {bioMsg && <span style={{ fontSize: 11, color: COLORS.green, display: "flex", alignItems: "center", gap: 3 }}><Check size={11} /> {bioMsg}</span>}
               <ToggleSwitch checked={bioEnabled} onChange={handleToggleBiometric} />
             </div>
           </div>
@@ -704,7 +704,7 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {notifSaved && <span style={{ fontSize: 11, color: "#8FA98C", display: "flex", alignItems: "center", gap: 3 }}><Check size={11} /> Saved</span>}
+              {notifSaved && <span style={{ fontSize: 11, color: COLORS.green, display: "flex", alignItems: "center", gap: 3 }}><Check size={11} /> Saved</span>}
               <ToggleSwitch checked={notifyEmail} onChange={handleToggleNotify} />
             </div>
           </div>
@@ -853,7 +853,7 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 
         {/* Account Password Management Card */}
         <div style={{
-          background: "rgba(255, 255, 255, 0.02)",
+          background: COLORS.panelAlt,
           border: `1px solid ${COLORS.line}`,
           borderRadius: 10,
           padding: 16,
@@ -1026,7 +1026,7 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 
           return (
             <div style={{
-              background: "rgba(255, 255, 255, 0.02)",
+              background: COLORS.panelAlt,
               border: `1px solid ${COLORS.line}`,
               borderRadius: 10,
               padding: 16,
@@ -1134,7 +1134,7 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 
         {/* Privacy Policy & Compliance Card */}
         <div style={{
-          background: "rgba(255, 255, 255, 0.02)",
+          background: COLORS.panelAlt,
           border: `1px solid ${COLORS.line}`,
           borderRadius: 10,
           padding: 16,
@@ -1169,7 +1169,7 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 
         {/* Customer Support & Help Desk */}
         <div style={{
-          background: "rgba(255, 255, 255, 0.02)",
+          background: COLORS.panelAlt,
           border: `1px solid ${COLORS.line}`,
           borderRadius: 10,
           padding: 16,
@@ -1323,8 +1323,8 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
           <button style={S.secondaryBtn} onClick={signOut}><LogOut size={13} /> Sign out</button>
 
           {isFounder ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: COLORS.brass, fontWeight: 600, background: "rgba(176,141,87,0.1)", padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(176,141,87,0.25)" }}>
-              <ShieldCheck size={14} color="#B08D57" /> Founder Account Protected
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: COLORS.cyan, fontWeight: 600, background: "rgba(0, 210, 255, 0.1)", padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(0, 210, 255, 0.25)" }}>
+              <ShieldCheck size={14} color={COLORS.cyan} /> Founder Account Protected
             </div>
           ) : (
             <button

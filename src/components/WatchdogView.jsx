@@ -23,9 +23,9 @@ export default function WatchdogView({
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 440, textAlign: "center", padding: "16px" }}>
         <div style={{ ...S.dialRing, width: 56, height: 56, marginBottom: 14 }}>
-          <Sparkles size={28} color="#B08D57" />
+          <Sparkles size={28} color={COLORS.cyan} />
         </div>
-        <div style={{ ...S.eyebrow, color: COLORS.brass }}>PRO & TEAM EXCLUSIVE</div>
+        <div style={{ ...S.eyebrow, color: COLORS.cyan }}>PRO & TEAM EXCLUSIVE</div>
         <h2 style={{ ...S.mainTitle, fontSize: 24, marginBottom: 8 }}>Renewal Watchdog & Money Saved Tracker</h2>
         <p style={{ fontSize: 13.5, color: COLORS.textDim, maxWidth: 520, lineHeight: 1.6, marginBottom: 24 }}>
           Never get billed for forgotten API subscriptions on past client projects.
@@ -34,7 +34,7 @@ export default function WatchdogView({
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, maxWidth: 640, width: "100%", textAlign: "left", marginBottom: 26 }}>
           <div style={S.watchdogStatCard}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.brass, fontWeight: 600, fontSize: 13 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.cyan, fontWeight: 600, fontSize: 13 }}>
               <Clock size={15} /> 1-Day Prior Alerts
             </div>
             <div style={{ fontSize: 11.5, color: COLORS.textFaint, marginTop: 4 }}>
@@ -42,7 +42,7 @@ export default function WatchdogView({
             </div>
           </div>
           <div style={S.watchdogStatCard}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#8FA98C", fontWeight: 600, fontSize: 13 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.green, fontWeight: 600, fontSize: 13 }}>
               <PiggyBank size={15} /> Total Money Saved Log
             </div>
             <div style={{ fontSize: 11.5, color: COLORS.textFaint, marginTop: 4 }}>
@@ -50,7 +50,7 @@ export default function WatchdogView({
             </div>
           </div>
           <div style={S.watchdogStatCard}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#FFA296", fontWeight: 600, fontSize: 13 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.red, fontWeight: 600, fontSize: 13 }}>
               <ExternalLink size={15} /> 1-Click Cancellation
             </div>
             <div style={{ fontSize: 11.5, color: COLORS.textFaint, marginTop: 4 }}>
@@ -58,7 +58,7 @@ export default function WatchdogView({
             </div>
           </div>
           <div style={S.watchdogStatCard}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.brass, fontWeight: 600, fontSize: 13 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.cyan, fontWeight: 600, fontSize: 13 }}>
               <ShieldCheck size={15} /> Zero-Knowledge Privacy
             </div>
             <div style={{ fontSize: 11.5, color: COLORS.textFaint, marginTop: 4 }}>
@@ -109,15 +109,15 @@ export default function WatchdogView({
 
         <div style={S.watchdogStatCard}>
           <div style={S.watchdogStatLabel}>Estimated Monthly Spend</div>
-          <div style={{ ...S.watchdogStatValue, color: COLORS.brass, fontSize: 18 }}>
+          <div style={{ ...S.watchdogStatValue, color: COLORS.cyan, fontSize: 18 }}>
             {formattedMonthlySpend}
           </div>
           <div style={{ fontSize: 11, color: COLORS.textFaint }}>Active ongoing API expenses</div>
         </div>
 
-        <div style={{ ...S.watchdogStatCard, ...(urgentCreds.length ? { borderColor: "rgba(224,122,109,0.3)" } : {}) }}>
+        <div style={{ ...S.watchdogStatCard, ...(urgentCreds.length ? { borderColor: "rgba(244,63,94,0.3)" } : {}) }}>
           <div style={S.watchdogStatLabel}>Action Needed (Soon)</div>
-          <div style={{ ...S.watchdogStatValue, color: urgentCreds.length ? "#E07A6D" : "#8FA98C" }}>
+          <div style={{ ...S.watchdogStatValue, color: urgentCreds.length ? COLORS.red : COLORS.green }}>
             {urgentCreds.length}
           </div>
           <div style={{ fontSize: 11, color: COLORS.textFaint }}>
@@ -126,8 +126,8 @@ export default function WatchdogView({
         </div>
 
         <div style={S.savingsStatCard}>
-          <div style={{ ...S.watchdogStatLabel, color: "#8FA98C" }}>Total Money Saved</div>
-          <div style={{ ...S.watchdogStatValue, color: "#8FA98C", fontSize: 18 }}>
+          <div style={{ ...S.watchdogStatLabel, color: COLORS.green }}>Total Money Saved</div>
+          <div style={{ ...S.watchdogStatValue, color: COLORS.green, fontSize: 18 }}>
             {formattedMonthlySavings}/mo
           </div>
           <div style={{ fontSize: 11, color: COLORS.textFaint }}>
@@ -138,21 +138,21 @@ export default function WatchdogView({
 
       {/* #1 Pinned Item: Custodian Platform Membership */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.brass, fontSize: 12.5, fontWeight: 600 }}>
-          <Crown size={15} color="#B08D57" /> Platform & Security Infrastructure (Rank #1)
+        <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.cyan, fontSize: 12.5, fontWeight: 600 }}>
+          <Crown size={15} color={COLORS.cyan} /> Platform & Security Infrastructure (Rank #1)
         </div>
 
         <div
           style={{
             ...S.watchdogCard,
-            background: "linear-gradient(135deg, rgba(176,141,87,0.12) 0%, rgba(26,22,17,0.85) 100%)",
-            border: `1.5px solid ${COLORS.brassDim}`,
+            background: "linear-gradient(135deg, rgba(0, 210, 255, 0.12) 0%, rgba(99, 102, 241, 0.08) 50%, var(--panel-card, #0F1420) 100%)",
+            border: "1px solid rgba(0, 210, 255, 0.35)",
             padding: "16px 18px",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ ...S.dialRing, width: 40, height: 40, background: "rgba(176,141,87,0.2)", borderColor: COLORS.brass }}>
-              <ShieldCheck size={20} color="#B08D57" />
+            <div style={{ ...S.dialRing, width: 40, height: 40, background: "rgba(0, 210, 255, 0.15)", borderColor: "rgba(0, 210, 255, 0.35)" }}>
+              <ShieldCheck size={20} color={COLORS.cyan} />
             </div>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -178,7 +178,7 @@ export default function WatchdogView({
                 >
                   {currentPlan.toUpperCase()}
                 </span>
-                <span style={{ fontSize: 11, color: "#8FA98C", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <span style={{ fontSize: 11, color: COLORS.green, display: "inline-flex", alignItems: "center", gap: 4 }}>
                   <CheckCircle2 size={11} /> {currentPlan === "founder" ? "Platform Creator VIP" : "Active Security Vault"}
                 </span>
               </div>
@@ -196,7 +196,7 @@ export default function WatchdogView({
 
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: currentPlan === "founder" ? "#FFD700" : COLORS.brass, fontFamily: "IBM Plex Mono, monospace" }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: currentPlan === "founder" ? "#FFD700" : COLORS.cyan, fontFamily: "JetBrains Mono, monospace" }}>
                 {currentPlan === "founder" ? "LIFETIME VIP" : currentPlan === "team" ? "$19.00 / mo" : currentPlan === "pro" ? "$8.00 / mo" : "$0.00 / mo"}
               </div>
               <div style={{ fontSize: 10.5, color: COLORS.textFaint }}>
@@ -216,8 +216,8 @@ export default function WatchdogView({
       {/* Action Needed (Renews Soon) */}
       {urgentCreds.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#FFA296", fontSize: 12.5, fontWeight: 600 }}>
-            <BellRing size={15} color="#FFA296" /> Action Needed (Renews Soon — Review or Cancel)
+          <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.red, fontSize: 12.5, fontWeight: 600 }}>
+            <BellRing size={15} color={COLORS.red} /> Action Needed (Renews Soon — Review or Cancel)
           </div>
           {urgentCreds.map((cred) => (
             <WatchdogItemCard
@@ -233,8 +233,8 @@ export default function WatchdogView({
       {/* Core / Permanent Services (Quiet Auto-Renew) */}
       {permanentCreds.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#8FA98C", fontSize: 12.5, fontWeight: 600 }}>
-            <RefreshCw size={14} color="#8FA98C" /> Core Infrastructure (Auto-Renew / Permanent)
+          <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.green, fontSize: 12.5, fontWeight: 600 }}>
+            <RefreshCw size={14} color={COLORS.green} /> Core Infrastructure (Auto-Renew / Permanent)
           </div>
           {permanentCreds.map((cred) => (
             <WatchdogItemCard
@@ -251,7 +251,7 @@ export default function WatchdogView({
       {upcomingSafeCreds.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.textDim, fontSize: 12.5, fontWeight: 600 }}>
-            <Calendar size={15} color="#8FA98C" /> Upcoming Renewals & Active Keys
+            <Calendar size={15} color={COLORS.cyan} /> Upcoming Renewals & Active Keys
           </div>
           {upcomingSafeCreds.map((cred) => (
             <WatchdogItemCard
@@ -268,8 +268,8 @@ export default function WatchdogView({
       {canceledCreds.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.brass, fontSize: 12.5, fontWeight: 600 }}>
-              <History size={15} color="#B08D57" /> Savings & Cancellation History Log
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.cyan, fontSize: 12.5, fontWeight: 600 }}>
+              <History size={15} color={COLORS.cyan} /> Savings & Cancellation History Log
             </div>
             <span style={S.savingsBadge}>
               <PiggyBank size={13} /> Total Saved: {formattedMonthlySavings}/mo
@@ -284,7 +284,7 @@ export default function WatchdogView({
                 <div key={"canceled-" + c.id} style={S.historyRow}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ ...S.dialRing, width: 32, height: 32 }}>
-                      <CheckCircle size={15} color="#8FA98C" />
+                      <CheckCircle size={15} color={COLORS.green} />
                     </div>
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -299,7 +299,7 @@ export default function WatchdogView({
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "#8FA98C", fontFamily: "IBM Plex Mono, monospace" }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: COLORS.green, fontFamily: "JetBrains Mono, monospace" }}>
                       +{currency}{cost.toFixed(2)}/mo saved
                     </span>
                     <button
@@ -319,7 +319,7 @@ export default function WatchdogView({
 
       {trackedCreds.length === 0 && canceledCreds.length === 0 && (
         <div style={S.welcomeState}>
-          <Bell size={38} color="#3A3835" />
+          <Bell size={38} color={COLORS.textFaint} />
           <div style={S.welcomeTitle}>No API Renewals Tracked Yet</div>
           <div style={{ ...S.welcomeSub, maxWidth: 440 }}>
             Attach a purchase or renewal date when adding or editing credentials (e.g. OpenAI, AWS, Twilio, Vercel) to track monthly expenses, switch plans, and get auto-debit reminders.
@@ -345,7 +345,7 @@ function WatchdogItemCard({ cred, onEdit, onCancel }) {
     >
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ ...S.dialRing, width: 36, height: 36 }}>
-          <KeyRound size={17} color={renewal?.urgency === "critical" && !isPermanent ? "#E07A6D" : "#B08D57"} />
+          <KeyRound size={17} color={renewal?.urgency === "critical" && !isPermanent ? COLORS.red : COLORS.cyan} />
         </div>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -392,7 +392,7 @@ function WatchdogItemCard({ cred, onEdit, onCancel }) {
           </a>
         )}
         <button
-          style={{ ...S.secondaryBtn, color: "#FFA296" }}
+          style={{ ...S.secondaryBtn, color: COLORS.red }}
           onClick={onCancel}
           title="Mark subscription as canceled and log money saved"
         >

@@ -286,7 +286,7 @@ export default function DocAnnotationViewerModal({ previewDoc, details, onUpdate
         >
           {/* Doc Title */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, paddingRight: 4 }}>
-            {previewDoc.type === "file" ? <FileText size={14} color="#B08D57" /> : <Link2 size={14} color="#8FA98C" />}
+            {previewDoc.type === "file" ? <FileText size={14} color={COLORS.cyan} /> : <Link2 size={14} color={COLORS.green} />}
             <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 140 }}>
               {previewDoc.name}
             </span>
@@ -308,9 +308,9 @@ export default function DocAnnotationViewerModal({ previewDoc, details, onUpdate
                 fontSize: 11,
                 padding: "4px 8px",
                 borderRadius: 14,
-                background: activeTool === "navigate" ? "rgba(176,141,87,0.25)" : "transparent",
-                borderColor: activeTool === "navigate" ? COLORS.brass : COLORS.line,
-                color: activeTool === "navigate" ? COLORS.brass : COLORS.textDim,
+                background: activeTool === "navigate" ? "var(--highlight-bg, rgba(0, 210, 255, 0.15))" : "transparent",
+                borderColor: activeTool === "navigate" ? COLORS.cyan : COLORS.line,
+                color: activeTool === "navigate" ? COLORS.cyan : COLORS.textDim,
               }}
               onClick={() => setActiveTool("navigate")}
               title="Read & Scroll (Standard Mouse Mode)"
@@ -325,9 +325,9 @@ export default function DocAnnotationViewerModal({ previewDoc, details, onUpdate
                 fontSize: 11,
                 padding: "4px 8px",
                 borderRadius: 14,
-                background: activeTool === "pen" ? "rgba(176,141,87,0.25)" : "transparent",
-                borderColor: activeTool === "pen" ? COLORS.brass : COLORS.line,
-                color: activeTool === "pen" ? COLORS.brass : COLORS.textDim,
+                background: activeTool === "pen" ? "var(--highlight-bg, rgba(0, 210, 255, 0.15))" : "transparent",
+                borderColor: activeTool === "pen" ? COLORS.cyan : COLORS.line,
+                color: activeTool === "pen" ? COLORS.cyan : COLORS.textDim,
               }}
               onClick={() => setActiveTool("pen")}
               title="Draw & Write on Paper"
@@ -390,7 +390,7 @@ export default function DocAnnotationViewerModal({ previewDoc, details, onUpdate
                       cursor: "pointer",
                       padding: 0,
                       border: c === "#FFFFFF" ? "1px solid #999" : "none",
-                      outline: penColor === c ? `2px solid ${c === "#FFFFFF" ? "#B08D57" : "#FFFFFF"}` : "none",
+                      outline: penColor === c ? `2px solid ${c === "#FFFFFF" ? COLORS.cyan : "#FFFFFF"}` : "none",
                       outlineOffset: 2,
                       transform: penColor === c ? "scale(1.15)" : "scale(1)",
                       boxShadow: penColor === c ? "0 0 8px rgba(255,255,255,0.4)" : "none",
@@ -562,17 +562,17 @@ export default function DocAnnotationViewerModal({ previewDoc, details, onUpdate
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            background: "#12100E",
+            background: COLORS.bg,
           }}
         >
           {loadingDoc ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 12, color: COLORS.brass }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 12, color: COLORS.cyan }}>
               <RefreshCw size={28} className="spin" />
               <div style={{ fontSize: 13, fontWeight: 600 }}>Rendering document pages...</div>
             </div>
           ) : previewDoc.type === "link" ? (
             <div style={{ ...S.welcomeState, padding: "80px 20px" }}>
-              <Link2 size={48} color="#8FA98C" />
+              <Link2 size={48} color={COLORS.green} />
               <div style={{ ...S.welcomeTitle, marginTop: 14, fontSize: 19 }}>{previewDoc.name}</div>
               <div style={{ ...S.welcomeSub, maxWidth: 460, fontSize: 13, marginTop: 6 }}>
                 Live specification board (Figma / Notion / Google Docs).
@@ -701,7 +701,7 @@ export default function DocAnnotationViewerModal({ previewDoc, details, onUpdate
             />
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10.5, color: "#8FA98C" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10.5, color: COLORS.green }}>
                 <span>✓ Auto-saved to project</span>
                 <button
                   type="button"

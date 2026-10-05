@@ -297,7 +297,7 @@ export default function AboutProjectView({ project, activeTab = "timeline", onUp
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ ...S.dialRing, width: 38, height: 38 }}>
-                <Pin size={18} color="#B08D57" />
+                <Pin size={18} color={COLORS.cyan} />
               </div>
               <div>
                 <div style={{ fontSize: 14.5, fontWeight: 700, color: COLORS.text }}>Pinned PRDs, SOPs & Client Documents</div>
@@ -309,7 +309,7 @@ export default function AboutProjectView({ project, activeTab = "timeline", onUp
 
             <div style={{ display: "flex", gap: 8 }}>
               <label style={{ ...S.secondaryBtn, cursor: "pointer", fontSize: 12, padding: "6px 12px" }}>
-                <Paperclip size={13} color="#B08D57" /> Pin PDF / File
+                <Paperclip size={13} color={COLORS.cyan} /> Pin PDF / File
                 <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt,.md" style={{ display: "none" }} onChange={handleFileUpload} />
               </label>
               <button
@@ -321,7 +321,7 @@ export default function AboutProjectView({ project, activeTab = "timeline", onUp
                   setShowAddLinkModal(true);
                 }}
               >
-                <Link2 size={13} color="#8FA98C" /> Pin Web Link
+                <Link2 size={13} color={COLORS.green} /> Pin Web Link
               </button>
             </div>
           </div>
@@ -349,7 +349,7 @@ export default function AboutProjectView({ project, activeTab = "timeline", onUp
                   title={`Click to view ${att.name}`}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                    {att.type === "file" ? <FileText size={16} color="#B08D57" style={{ flexShrink: 0 }} /> : <Link2 size={16} color="#8FA98C" style={{ flexShrink: 0 }} />}
+                    {att.type === "file" ? <FileText size={16} color={COLORS.cyan} style={{ flexShrink: 0 }} /> : <Link2 size={16} color={COLORS.green} style={{ flexShrink: 0 }} />}
                     <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
                       <span style={{ color: COLORS.text, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {att.name}
@@ -399,7 +399,7 @@ export default function AboutProjectView({ project, activeTab = "timeline", onUp
           <Overlay
             onClose={() => setShowAddLinkModal(false)}
             title="Pin Web Link / Spec Document"
-            icon={<Link2 size={18} color="#8FA98C" />}
+            icon={<Link2 size={18} color={COLORS.green} />}
             cardStyle={{ ...S.modalCard, maxWidth: 460 }}
           >
             <form onSubmit={handleSaveLink} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -460,7 +460,7 @@ export default function AboutProjectView({ project, activeTab = "timeline", onUp
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ ...S.dialRing, width: 38, height: 38 }}>
-              <FileText size={18} color="#B08D57" />
+              <FileText size={18} color={COLORS.cyan} />
             </div>
             <div>
               <div style={{ fontSize: 14.5, fontWeight: 700, color: COLORS.text }}>Client Specs, Scope & Staging Notes</div>

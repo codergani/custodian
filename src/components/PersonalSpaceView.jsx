@@ -7,6 +7,7 @@ import {
 import { S, COLORS } from "../styles";
 import { classifyPersonalSecret, PERSONAL_CATEGORIES } from "../utils/personalSpace";
 import { formatDateUSA } from "../utils/dateFormatter";
+import { ConfirmModal } from "./shared";
 
 const CATEGORY_ICONS = {
   all: Layers,
@@ -75,6 +76,7 @@ export default function PersonalSpaceView({
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [revealedIds, setRevealedIds] = useState(new Set());
+  const [confirmDeleteCred, setConfirmDeleteCred] = useState(null);
 
   const toggleReveal = (id) => {
     setRevealedIds((prev) => {
@@ -141,34 +143,39 @@ export default function PersonalSpaceView({
             width: 44,
             height: 44,
             borderRadius: 12,
-            background: "linear-gradient(135deg, rgba(176,141,87,0.2) 0%, rgba(143,169,140,0.15) 100%)",
-            border: `1.5px solid ${COLORS.brassDim}`,
+            background: "linear-gradient(135deg, rgba(0, 210, 255, 0.15) 0%, rgba(99, 102, 241, 0.12) 100%)",
+            border: "1px solid rgba(0, 210, 255, 0.35)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
-            boxShadow: "0 2px 8px rgba(176,141,87,0.15)",
+            boxShadow: "0 0 16px rgba(0, 210, 255, 0.2)",
           }}>
-            <ShieldCheck size={22} color={COLORS.brass} />
+            <ShieldCheck size={22} color={COLORS.cyan} />
           </div>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 16.5, fontWeight: 700, color: COLORS.text, letterSpacing: "-0.01em" }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, fontFamily: "Outfit, sans-serif", letterSpacing: "-0.01em" }}>
                 Personal Space
               </span>
               <span
                 style={{
                   fontSize: 11,
-                  color: COLORS.textFaint,
+                  color: COLORS.cyan,
+                  background: "rgba(0, 210, 255, 0.08)",
+                  border: "1px solid rgba(0, 210, 255, 0.25)",
+                  padding: "2px 8px",
+                  borderRadius: 20,
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 4,
+                  fontFamily: "JetBrains Mono, monospace",
                 }}
               >
                 🔒 Client-Side AES-256-GCM
               </span>
             </div>
-            <div style={{ fontSize: 12, color: COLORS.textDim, marginTop: 3 }}>
+            <div style={{ fontSize: 12.5, color: COLORS.textDim, marginTop: 3 }}>
               Your private personal vault for email passwords, app PINs, Wi-Fi codes, cards, and crypto seed phrases.
             </div>
           </div>
@@ -178,24 +185,25 @@ export default function PersonalSpaceView({
           <button
             type="button"
             id="btn-add-personal-secret"
+            className="aegis-btn-primary"
             style={{
-              background: "linear-gradient(135deg, #B08D57 0%, #8C6F3E 100%)",
+              background: "var(--aegis-gradient, linear-gradient(135deg, #00D2FF 0%, #3B82F6 50%, #6366F1 100%))",
               color: "#FFFFFF",
               border: "none",
-              borderRadius: 8,
-              padding: "9px 16px",
-              fontSize: 12.5,
+              borderRadius: 10,
+              padding: "10px 18px",
+              fontSize: 13,
               fontWeight: 600,
               display: "inline-flex",
               alignItems: "center",
               gap: 7,
               cursor: "pointer",
-              boxShadow: "0 2px 8px rgba(176,141,87,0.25)",
+              boxShadow: "var(--aegis-btn-glow, 0 4px 18px rgba(0, 210, 255, 0.35))",
               transition: "transform 0.15s ease, box-shadow 0.15s ease",
             }}
             onClick={() => onAddCred(emptyMeta.preset ? { secretType: emptyMeta.preset } : { secretType: "login" })}
           >
-            <Plus size={14} />
+            <Plus size={15} />
             <span>Add Personal Secret</span>
           </button>
         </div>
@@ -203,7 +211,7 @@ export default function PersonalSpaceView({
 
       {/* 2. Category Filter Tabs & Search Bar */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {PERSONAL_CATEGORIES.map((cat) => {
             const isActive = activeCategory === cat.id;
             const count = countsByCategory[cat.id] || 0;
@@ -213,31 +221,33 @@ export default function PersonalSpaceView({
                 key={cat.id}
                 type="button"
                 style={{
-                  padding: "6px 12px",
-                  fontSize: 12,
-                  borderRadius: 8,
-                  background: isActive ? "var(--highlight-bg, rgba(176,141,87,0.15))" : COLORS.panel,
-                  border: `1px solid ${isActive ? COLORS.brass : COLORS.line}`,
-                  color: isActive ? COLORS.brass : COLORS.textDim,
-                  fontWeight: isActive ? 600 : 400,
+                  padding: "7px 14px",
+                  fontSize: 12.5,
+                  borderRadius: 10,
+                  background: isActive ? "linear-gradient(135deg, rgba(0, 210, 255, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%)" : "var(--panel-card, #0F1420)",
+                  border: `1px solid ${isActive ? "rgba(0, 210, 255, 0.5)" : COLORS.line}`,
+                  color: isActive ? COLORS.cyan : COLORS.textDim,
+                  fontWeight: isActive ? 600 : 500,
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: 6,
+                  gap: 7,
                   cursor: "pointer",
                   transition: "all 0.15s ease",
+                  boxShadow: isActive ? "0 0 16px rgba(0, 210, 255, 0.15)" : "none",
                 }}
                 onClick={() => setActiveCategory(cat.id)}
               >
-                <CatIcon size={13} color={isActive ? COLORS.brass : COLORS.textFaint} />
+                <CatIcon size={14} color={isActive ? COLORS.cyan : COLORS.textFaint} />
                 <span>{cat.label}</span>
                 <span style={{
-                  fontSize: 10,
+                  fontSize: 10.5,
                   fontWeight: 700,
-                  padding: "1px 6px",
+                  padding: "1px 7px",
                   borderRadius: 10,
-                  background: isActive ? COLORS.brass : "rgba(128,128,128,0.12)",
+                  background: isActive ? COLORS.cyan : "var(--panel-alt, rgba(255,255,255,0.08))",
                   color: isActive ? "#FFFFFF" : COLORS.textFaint,
                   lineHeight: 1.3,
+                  fontFamily: "JetBrains Mono, monospace",
                 }}>
                   {count}
                 </span>
@@ -285,14 +295,15 @@ export default function PersonalSpaceView({
             width: 52,
             height: 52,
             borderRadius: "50%",
-            background: "rgba(176,141,87,0.12)",
-            border: `1px solid ${COLORS.brassDim}`,
+            background: "rgba(0, 210, 255, 0.12)",
+            border: "1px solid rgba(0, 210, 255, 0.35)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             marginBottom: 14,
+            boxShadow: "0 0 16px rgba(0, 210, 255, 0.2)",
           }}>
-            <EmptyIcon size={24} color={COLORS.brass} />
+            <EmptyIcon size={24} color={COLORS.cyan} />
           </div>
 
           <h3 style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, margin: "0 0 6px 0" }}>
@@ -308,19 +319,20 @@ export default function PersonalSpaceView({
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
             <button
               type="button"
+              className="aegis-btn-primary"
               style={{
-                background: "linear-gradient(135deg, #B08D57 0%, #8C6F3E 100%)",
+                background: "var(--aegis-gradient, linear-gradient(135deg, #00D2FF 0%, #3B82F6 50%, #6366F1 100%))",
                 color: "#FFFFFF",
                 border: "none",
-                borderRadius: 8,
-                padding: "9px 18px",
+                borderRadius: 10,
+                padding: "10px 20px",
                 fontSize: 13,
                 fontWeight: 600,
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
                 cursor: "pointer",
-                boxShadow: "0 2px 10px rgba(176,141,87,0.25)",
+                boxShadow: "var(--aegis-btn-glow, 0 4px 18px rgba(0, 210, 255, 0.35))",
               }}
               onClick={() => {
                 if (searchQuery) {
@@ -340,7 +352,7 @@ export default function PersonalSpaceView({
                 style={{
                   background: "transparent",
                   border: "none",
-                  color: COLORS.brass,
+                  color: COLORS.cyan,
                   fontSize: 12,
                   cursor: "pointer",
                   display: "inline-flex",
@@ -368,48 +380,51 @@ export default function PersonalSpaceView({
             // If seed words (e.g. 12 or 24 space-separated words)
             const wordsList = isNoteOrWords && cred.password && cred.password.trim().split(/\s+/);
             const isSeedPhrase = wordsList && (wordsList.length === 12 || wordsList.length === 24);
+            const iconBg = isPin ? "rgba(244, 63, 94, 0.12)" : isNoteOrWords ? "rgba(16, 185, 129, 0.12)" : isCard ? "rgba(245, 158, 11, 0.12)" : "rgba(0, 210, 255, 0.12)";
+            const iconBorder = isPin ? "rgba(244, 63, 94, 0.3)" : isNoteOrWords ? "rgba(16, 185, 129, 0.3)" : isCard ? "rgba(245, 158, 11, 0.3)" : "rgba(0, 210, 255, 0.3)";
+            const iconColor = isPin ? "#F43F5E" : isNoteOrWords ? "#10B981" : isCard ? "#F59E0B" : COLORS.cyan;
 
             return (
               <div
                 key={cred.id}
+                className="aegis-card"
                 style={{
-                  background: COLORS.panel,
+                  background: "var(--panel-card, #0F1420)",
                   border: `1px solid ${COLORS.line}`,
-                  borderRadius: 12,
-                  padding: 15,
+                  borderRadius: 14,
+                  padding: 16,
                   display: "flex",
                   flexDirection: "column",
-                  gap: 10,
-                  transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-                  boxShadow: "var(--card-shadow, 0 2px 10px rgba(0,0,0,0.04))",
+                  gap: 12,
+                  boxShadow: "var(--card-shadow)",
                 }}
               >
                 {/* Card Head */}
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
                     <div style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 8,
-                      background: "rgba(176,141,87,0.12)",
-                      border: `1px solid ${COLORS.brassDim}`,
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      background: iconBg,
+                      border: `1px solid ${iconBorder}`,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       flexShrink: 0,
                     }}>
                       {isPin ? (
-                        <Smartphone size={16} color={COLORS.brass} />
+                        <Smartphone size={17} color={iconColor} />
                       ) : isNoteOrWords ? (
-                        <FileText size={16} color={COLORS.brass} />
+                        <FileText size={17} color={iconColor} />
                       ) : isCard ? (
-                        <CreditCard size={16} color={COLORS.brass} />
+                        <CreditCard size={17} color={iconColor} />
                       ) : (
-                        <Mail size={16} color={COLORS.brass} />
+                        <Mail size={17} color={iconColor} />
                       )}
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 600, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={{ fontSize: 14.5, fontWeight: 600, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "Outfit, sans-serif" }}>
                         {cred.label || "Untitled Secret"}
                       </div>
                       {cred.url && (
@@ -417,7 +432,7 @@ export default function PersonalSpaceView({
                           href={cred.url.startsWith("http") ? cred.url : `https://${cred.url}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{ fontSize: 11, color: COLORS.brass, display: "inline-flex", alignItems: "center", gap: 3, textDecoration: "none", marginTop: 1 }}
+                          style={{ fontSize: 11, color: COLORS.cyan, display: "inline-flex", alignItems: "center", gap: 3, textDecoration: "none", marginTop: 1 }}
                         >
                           <ExternalLink size={10} /> {cred.url.replace(/^https?:\/\//, "")}
                         </a>
@@ -430,7 +445,7 @@ export default function PersonalSpaceView({
                     {onShareCred && (
                       <button
                         type="button"
-                        style={{ ...S.iconBtnGhost, padding: 5, borderRadius: 6, color: COLORS.brass }}
+                        style={{ ...S.iconBtnGhost, padding: 5, borderRadius: 6, color: COLORS.cyan }}
                         onClick={() => onShareCred(cred)}
                         title="Share Secret (Zero-Knowledge)"
                       >
@@ -448,7 +463,7 @@ export default function PersonalSpaceView({
                     <button
                       type="button"
                       style={{ ...S.iconBtnGhost, padding: 5, borderRadius: 6 }}
-                      onClick={() => onDeleteCred(cred.id)}
+                      onClick={() => setConfirmDeleteCred(cred)}
                       title="Delete Item"
                     >
                       <Trash2 size={13} color="#E07A6D" />
@@ -496,7 +511,7 @@ export default function PersonalSpaceView({
                       }}>
                         {wordsList.map((word, idx) => (
                           <div key={idx} style={{ fontSize: 11, color: COLORS.text, background: "rgba(128,128,128,0.06)", padding: "3px 6px", borderRadius: 4 }}>
-                            <span style={{ color: COLORS.brass, fontWeight: 700, marginRight: 4 }}>{idx + 1}.</span>
+                            <span style={{ color: COLORS.cyan, fontWeight: 700, marginRight: 4 }}>{idx + 1}.</span>
                             {word}
                           </div>
                         ))}
@@ -514,7 +529,7 @@ export default function PersonalSpaceView({
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <span style={{ fontSize: 10.5, color: COLORS.brass, fontWeight: 600 }}>
+                          <span style={{ fontSize: 10.5, color: COLORS.cyan, fontWeight: 600 }}>
                             {cred.password ? `${cred.password.split("\n").filter((l) => l.trim().length > 0).length} CODES / LINES` : "NOTE CONTENT"}
                           </span>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -529,12 +544,12 @@ export default function PersonalSpaceView({
                             <button
                               type="button"
                               style={{
-                                background: copiedId === `${cred.id}-pass` ? "rgba(22,163,74,0.18)" : "rgba(176,141,87,0.14)",
-                                border: `1px solid ${copiedId === `${cred.id}-pass` ? "#16A34A" : COLORS.brassDim}`,
+                                background: copiedId === `${cred.id}-pass` ? "rgba(22,163,74,0.18)" : "rgba(0, 210, 255, 0.12)",
+                                border: `1px solid ${copiedId === `${cred.id}-pass` ? "#16A34A" : "rgba(0, 210, 255, 0.3)"}`,
                                 borderRadius: 4,
                                 padding: "2px 6px",
                                 cursor: "pointer",
-                                color: copiedId === `${cred.id}-pass` ? "#16A34A" : COLORS.brass,
+                                color: copiedId === `${cred.id}-pass` ? "#16A34A" : COLORS.cyan,
                                 fontSize: 10.5,
                                 display: "inline-flex",
                                 alignItems: "center",
@@ -640,11 +655,11 @@ export default function PersonalSpaceView({
                   </div>
                 )}
 
-                {/* Secret Timeline (USA Format: MM/DD/YYYY) */}
+                {/* Secret Timeline (Clean USA Format) */}
                 <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10.5, color: COLORS.textFaint, marginTop: 4, paddingTop: 4, borderTop: `1px dashed ${COLORS.line}` }}>
-                  <Clock size={10} color={COLORS.brass} />
+                  <Clock size={11} color={COLORS.cyan} />
                   <span>
-                    {cred.updatedAt ? `Updated: ${formatDateUSA(cred.updatedAt)} (MM/DD/YYYY)` : cred.createdAt ? `Created: ${formatDateUSA(cred.createdAt)} (MM/DD/YYYY)` : "Format: MM/DD/YYYY"}
+                    {cred.updatedAt ? `Updated ${formatDateUSA(cred.updatedAt)}` : cred.createdAt ? `Created ${formatDateUSA(cred.createdAt)}` : "Saved"}
                   </span>
                 </div>
               </div>
@@ -652,6 +667,104 @@ export default function PersonalSpaceView({
           })}
         </div>
       )}
+
+      {/* 4. Personal Security Status & Quick Templates Footer Card */}
+      {filteredCreds.length > 0 && !searchQuery && (
+        <div style={{
+          background: "linear-gradient(135deg, rgba(15, 20, 32, 0.75) 0%, rgba(11, 14, 23, 0.95) 100%)",
+          border: `1px solid ${COLORS.line}`,
+          borderRadius: 14,
+          padding: "16px 20px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          flexWrap: "wrap",
+          marginTop: 6,
+          boxShadow: "0 8px 24px -8px rgba(0,0,0,0.5)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{
+              width: 38,
+              height: 38,
+              borderRadius: 10,
+              background: "rgba(16, 185, 129, 0.12)",
+              border: "1px solid rgba(16, 185, 129, 0.35)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <ShieldCheck size={20} color={COLORS.green} />
+            </div>
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: COLORS.text, fontFamily: "Outfit, sans-serif" }}>
+                Personal Space Encrypted & Isolated
+              </div>
+              <div style={{ fontSize: 11.5, color: COLORS.textDim, marginTop: 2 }}>
+                Items here are stored with your personal master key and never visible to clients.
+              </div>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              style={{
+                ...S.secondaryBtn,
+                padding: "7px 12px",
+                fontSize: 11.5,
+                borderRadius: 8,
+                gap: 5,
+              }}
+              onClick={() => onAddCred({ secretType: "pin" })}
+            >
+              <Smartphone size={12} color={COLORS.red} /> Add Mobile PIN
+            </button>
+            <button
+              type="button"
+              style={{
+                ...S.secondaryBtn,
+                padding: "7px 12px",
+                fontSize: 11.5,
+                borderRadius: 8,
+                gap: 5,
+              }}
+              onClick={() => onAddCred({ secretType: "note" })}
+            >
+              <FileText size={12} color={COLORS.green} /> Add Seed Words
+            </button>
+            <button
+              type="button"
+              style={{
+                ...S.secondaryBtn,
+                padding: "7px 12px",
+                fontSize: 11.5,
+                borderRadius: 8,
+                gap: 5,
+              }}
+              onClick={() => onAddCred({ secretType: "card" })}
+            >
+              <CreditCard size={12} color="#F59E0B" /> Add Card
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Secret Modal */}
+      <ConfirmModal
+        isOpen={!!confirmDeleteCred}
+        onClose={() => setConfirmDeleteCred(null)}
+        onConfirm={() => {
+          if (confirmDeleteCred && onDeleteCred) {
+            onDeleteCred(confirmDeleteCred.id);
+            setConfirmDeleteCred(null);
+          }
+        }}
+        title="Move Secret to Trash"
+        message={`Are you sure you want to delete "${confirmDeleteCred?.label || "this secret"}"? It will be moved to the Recycle Bin and can be restored within 30 days.`}
+        confirmText="Move to Trash"
+        isDanger={true}
+      />
     </div>
   );
 }

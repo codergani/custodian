@@ -47,7 +47,7 @@ export default function ModalRouter({
 
   if (modal.type === "generator") {
     return (
-      <Overlay onClose={onClose} title="Secure Generator" icon={<Dices size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 600 }}>
+      <Overlay onClose={onClose} title="Secure Generator" icon={<Dices size={18} color={COLORS.cyan} />} cardStyle={{ ...S.modalCard, maxWidth: 600 }}>
         <PasswordGenerator compact={false} />
       </Overlay>
     );
@@ -55,7 +55,7 @@ export default function ModalRouter({
 
   if (modal.type === "share_secret") {
     return (
-      <Overlay onClose={onClose} title="Zero-Knowledge Secret Sharing" icon={<ShieldCheck size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 560 }}>
+      <Overlay onClose={onClose} title="Zero-Knowledge Secret Sharing" icon={<ShieldCheck size={18} color={COLORS.cyan} />} cardStyle={{ ...S.modalCard, maxWidth: 560 }}>
         <ShareSecretModalContent
           userId={userId}
           vaultKey={vaultKey}
@@ -72,7 +72,7 @@ export default function ModalRouter({
 
   if (modal.type === "readiness_audit") {
     return (
-      <Overlay onClose={onClose} title={`Operational Readiness — ${modal.project.name}`} icon={<ShieldCheck size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 580 }}>
+      <Overlay onClose={onClose} title={`Operational Readiness — ${modal.project.name}`} icon={<ShieldCheck size={18} color={COLORS.cyan} />} cardStyle={{ ...S.modalCard, maxWidth: 580 }}>
         <ProjectReadinessAuditModalContent project={modal.project} allRenewals={modal.allRenewals || []} onClose={onClose} />
       </Overlay>
     );
@@ -99,9 +99,9 @@ export default function ModalRouter({
   if (modal.type === "handover") {
     if (currentPlan === "free") {
       return (
-        <Overlay onClose={onClose} title="Pro Feature: Client Handover" icon={<PackageCheck size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 500 }}>
+        <Overlay onClose={onClose} title="Pro Feature: Client Handover" icon={<PackageCheck size={18} color={COLORS.cyan} />} cardStyle={{ ...S.modalCard, maxWidth: 500 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 14, textAlign: "center", padding: "16px 8px" }}>
-            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(176,141,87,0.12)", border: "1px solid #B08D57", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", color: COLORS.brass }}>
+            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(0, 210, 255, 0.12)", border: "1px solid rgba(0, 210, 255, 0.35)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", color: COLORS.cyan }}>
               <PackageCheck size={24} />
             </div>
             <div>
@@ -133,28 +133,28 @@ export default function ModalRouter({
       );
     }
     return (
-      <Overlay onClose={onClose} title={`Client Handover — ${modal.project.name}`} icon={<PackageCheck size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 620 }}>
+      <Overlay onClose={onClose} title={`Client Handover — ${modal.project.name}`} icon={<PackageCheck size={18} color={COLORS.cyan} />} cardStyle={{ ...S.modalCard, maxWidth: 620 }}>
         <HandoverPackageContent project={modal.project} clientName={modal.clientName} onClose={onClose} showSuccess={showSuccess} />
       </Overlay>
     );
   }
   if (modal.type === "health_audit") {
     return (
-      <Overlay onClose={onClose} title={`Vault Security Audit — ${modal.project.name}`} icon={<ShieldCheck size={18} color="#8FA98C" />} cardStyle={{ ...S.modalCard, maxWidth: 540 }}>
+      <Overlay onClose={onClose} title={`Vault Security Audit — ${modal.project.name}`} icon={<ShieldCheck size={18} color={COLORS.green} />} cardStyle={{ ...S.modalCard, maxWidth: 540 }}>
         <SecurityHealthAuditModalContent project={modal.project} onClose={onClose} />
       </Overlay>
     );
   }
   if (modal.type === "import_env") {
     return (
-      <Overlay onClose={onClose} title="Import .env Variables" icon={<Download size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 520 }}>
+      <Overlay onClose={onClose} title="Import .env Variables" icon={<Download size={18} color={COLORS.cyan} />} cardStyle={{ ...S.modalCard, maxWidth: 520 }}>
         <ImportEnvContent projectId={modal.projectId} onImport={onImportEnv} onClose={onClose} />
       </Overlay>
     );
   }
   if (modal.type === "export_env") {
     return (
-      <Overlay onClose={onClose} title={`Export .env — ${modal.project.name}`} icon={<Upload size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 560 }}>
+      <Overlay onClose={onClose} title={`Export .env — ${modal.project.name}`} icon={<Upload size={18} color={COLORS.cyan} />} cardStyle={{ ...S.modalCard, maxWidth: 560 }}>
         <ExportEnvContent project={modal.project} onClose={onClose} showSuccess={showSuccess} />
       </Overlay>
     );
@@ -163,9 +163,9 @@ export default function ModalRouter({
     const isTeamOrFounder = currentPlan === "team" || currentPlan === "founder";
     if (!isTeamOrFounder) {
       return (
-        <Overlay onClose={onClose} title="Team Feature: Shared Vaults" icon={<Users size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 500 }}>
+        <Overlay onClose={onClose} title="Team Feature: Shared Vaults" icon={<Users size={18} color={COLORS.indigo} />} cardStyle={{ ...S.modalCard, maxWidth: 500 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 14, textAlign: "center", padding: "16px 8px" }}>
-            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(176,141,87,0.12)", border: "1px solid #B08D57", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", color: COLORS.brass }}>
+            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(99, 102, 241, 0.12)", border: "1px solid rgba(99, 102, 241, 0.35)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", color: COLORS.indigo }}>
               <Users size={24} />
             </div>
             <div>
@@ -197,14 +197,14 @@ export default function ModalRouter({
       );
     }
     return (
-      <Overlay onClose={onClose} title={`Team & Members — ${modal.client.name}`} icon={<Users size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 560 }}>
+      <Overlay onClose={onClose} title={`Team & Members — ${modal.client.name}`} icon={<Users size={18} color={COLORS.indigo} />} cardStyle={{ ...S.modalCard, maxWidth: 560 }}>
         <TeamMembersContent client={modal.client} userId={userId} onClose={onClose} showSuccess={showSuccess} />
       </Overlay>
     );
   }
   if (modal.type === "edit_project_details") {
     return (
-      <Overlay onClose={onClose} title={`Deadlines & Scope — ${modal.project.name}`} icon={<FileText size={18} color="#B08D57" />} cardStyle={{ ...S.modalCard, maxWidth: 560 }}>
+      <Overlay onClose={onClose} title={`Deadlines & Scope — ${modal.project.name}`} icon={<FileText size={18} color={COLORS.cyan} />} cardStyle={{ ...S.modalCard, maxWidth: 560 }}>
         <EditProjectDetailsContent
           project={modal.project}
           onSave={(details) => onUpdateProjectDetails(modal.project.id, details)}
@@ -214,7 +214,7 @@ export default function ModalRouter({
   }
   if (modal.type === "upgrade") {
     return (
-      <Overlay onClose={onClose} title="Choose your plan" icon={<Sparkles size={18} color="#B08D57" />} cardStyle={S.upgradeModalCard}>
+      <Overlay onClose={onClose} title="Choose your plan" icon={<Sparkles size={18} color={COLORS.cyan} />} cardStyle={S.upgradeModalCard}>
         <UpgradePlansContent
           currentPlan={currentPlan}
           userId={userId}
@@ -282,7 +282,7 @@ export default function ModalRouter({
       <Overlay
         onClose={onClose}
         title={`Archive & Ghost Client — ${modal.client.name}`}
-        icon={<Ghost size={18} color="#B08D57" />}
+        icon={<Ghost size={18} color={COLORS.cyan} />}
         cardStyle={{ ...S.modalCard, maxWidth: 540 }}
       >
         <GhostClientModalContent
@@ -995,8 +995,8 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
                     ...S.intentToggleBtn,
                     padding: "5px 8px",
                     fontSize: 11,
-                    background: alertIntent === "permanent_auto" ? "rgba(143,169,140,0.2)" : "transparent",
-                    color: alertIntent === "permanent_auto" ? "#8FA98C" : COLORS.textDim,
+                    background: alertIntent === "permanent_auto" ? "rgba(16, 185, 129, 0.2)" : "transparent",
+                    color: alertIntent === "permanent_auto" ? COLORS.green : COLORS.textDim,
                   }}
                   onClick={() => setAlertIntent("permanent_auto")}
                 >
@@ -1100,7 +1100,7 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
             {isEdit && (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.panelAlt, padding: "6px 10px", borderRadius: 6, border: `1px solid ${COLORS.line}`, marginTop: 2 }}>
                 <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ fontSize: 11.5, fontWeight: 500, color: isCanceled ? "#8FA98C" : COLORS.text }}>
+                  <span style={{ fontSize: 11.5, fontWeight: 500, color: isCanceled ? COLORS.green : COLORS.text }}>
                     Mark subscription as stopped / canceled
                   </span>
                   <span style={{ fontSize: 10, color: COLORS.textFaint }}>
@@ -1732,11 +1732,11 @@ function TeamMembersContent({ client, userId, onClose, showSuccess }) {
           <div style={S.memberRow}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ ...S.dialRing, width: 28, height: 28 }}>
-                <Crown size={14} color="#B08D57" />
+                <Crown size={14} color="#FFD700" />
               </div>
               <div>
                 <div style={{ fontSize: 13, color: COLORS.text, fontWeight: 600 }}>Vault Owner (You)</div>
-                <div style={{ fontSize: 11, color: "#8FA98C" }}>🟢 Active Now • Team Lead</div>
+                <div style={{ fontSize: 11, color: COLORS.green }}>🟢 Active Now • Team Lead</div>
               </div>
             </div>
             <span style={S.rolePillOwner}>OWNER</span>
@@ -1746,11 +1746,11 @@ function TeamMembersContent({ client, userId, onClose, showSuccess }) {
             <div key={m.user_id} style={S.memberRow}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ ...S.dialRing, width: 28, height: 28 }}>
-                  <User size={14} color="#8FA98C" />
+                  <User size={14} color={COLORS.cyan} />
                 </div>
                 <div>
                   <div style={{ fontSize: 13, color: COLORS.text, fontWeight: 500 }}>{m.email}</div>
-                  <div style={{ fontSize: 11, color: "#8FA98C" }}>
+                  <div style={{ fontSize: 11, color: COLORS.green }}>
                     🟢 Joined & Logged In {m.added_at ? `• ${new Date(m.added_at).toLocaleDateString()}` : ""}
                   </div>
                 </div>
@@ -1843,8 +1843,8 @@ function SecurityHealthAuditModalContent({ project, onClose }) {
       <div
         style={{
           ...S.healthMeterCard,
-          border: `1px solid ${health.score >= 85 ? "#8FA98C40" : "#E07A6D40"}`,
-          background: health.score >= 85 ? "rgba(143,169,140,0.08)" : "rgba(224,122,109,0.08)",
+          border: `1px solid ${health.score >= 85 ? "rgba(16, 185, 129, 0.3)" : "rgba(244, 63, 94, 0.3)"}`,
+          background: health.score >= 85 ? "rgba(16, 185, 129, 0.08)" : "rgba(244, 63, 94, 0.08)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1852,7 +1852,7 @@ function SecurityHealthAuditModalContent({ project, onClose }) {
             <div style={{ fontSize: 11, color: COLORS.textFaint, letterSpacing: "0.04em", textTransform: "uppercase" }}>
               VAULT SECURITY RATING
             </div>
-            <div style={{ fontSize: 26, fontWeight: 800, color: health.score >= 85 ? "#8FA98C" : "#E07A6D", fontFamily: "IBM Plex Mono, monospace" }}>
+            <div style={{ fontSize: 26, fontWeight: 800, color: health.score >= 85 ? COLORS.green : COLORS.red, fontFamily: "IBM Plex Mono, monospace" }}>
               {health.score} <span style={{ fontSize: 15, color: COLORS.textFaint }}>/ 100</span>
             </div>
           </div>
@@ -1868,7 +1868,7 @@ function SecurityHealthAuditModalContent({ project, onClose }) {
             style={{
               width: `${health.score}%`,
               height: "100%",
-              background: health.score >= 85 ? "#8FA98C" : "#E07A6D",
+              background: health.score >= 85 ? COLORS.green : COLORS.red,
               transition: "width 0.3s ease",
             }}
           />
@@ -1881,8 +1881,8 @@ function SecurityHealthAuditModalContent({ project, onClose }) {
         </div>
 
         {health.warnings.length === 0 ? (
-          <div style={{ ...S.infoBox, background: "rgba(143,169,140,0.1)", borderColor: "#8FA98C40", color: "#C0D6BD" }}>
-            <CheckCircle2 size={16} color="#8FA98C" style={{ flexShrink: 0 }} />
+          <div style={S.infoBox}>
+            <CheckCircle2 size={16} color={COLORS.green} style={{ flexShrink: 0 }} />
             <span>
               <strong>All checks passed:</strong> No dummy placeholder strings or weak secrets found in this project.
             </span>
@@ -1984,7 +1984,7 @@ ${attachmentsText}
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ ...S.infoBox, fontSize: 12 }}>
-        <Sparkles size={16} color="#B08D57" style={{ flexShrink: 0 }} />
+        <Sparkles size={16} color={COLORS.cyan} style={{ flexShrink: 0 }} />
         <span>
           <strong>Client Handover Ready:</strong> Deliverables checklist, specification notes, and production secrets are packaged into an executive document to deliver to your client.
         </span>
@@ -1995,8 +1995,8 @@ ${attachmentsText}
           type="button"
           style={{
             flex: 1, padding: "7px 10px", fontSize: 12, fontWeight: 600, borderRadius: 6, border: "none", cursor: "pointer",
-            background: activeTab === "preview" ? "rgba(176,141,87,0.2)" : "transparent",
-            color: activeTab === "preview" ? COLORS.brass : COLORS.textDim,
+            background: activeTab === "preview" ? "rgba(0, 210, 255, 0.15)" : "transparent",
+            color: activeTab === "preview" ? COLORS.cyan : COLORS.textDim,
           }}
           onClick={() => setActiveTab("preview")}
         >
@@ -2006,8 +2006,8 @@ ${attachmentsText}
           type="button"
           style={{
             flex: 1, padding: "7px 10px", fontSize: 12, fontWeight: 600, borderRadius: 6, border: "none", cursor: "pointer",
-            background: activeTab === "raw_md" ? "rgba(176,141,87,0.2)" : "transparent",
-            color: activeTab === "raw_md" ? COLORS.brass : COLORS.textDim,
+            background: activeTab === "raw_md" ? "rgba(0, 210, 255, 0.15)" : "transparent",
+            color: activeTab === "raw_md" ? COLORS.cyan : COLORS.textDim,
           }}
           onClick={() => setActiveTab("raw_md")}
         >
@@ -2030,7 +2030,7 @@ ${attachmentsText}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 4 }}>
             <div style={{ ...S.watchdogStatCard, padding: "10px 12px" }}>
               <span style={S.watchdogStatLabel}>Deliverables Completed</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: "#8FA98C" }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.green }}>
                 {completedTasks.length} / {checklist.length} Tasks
               </span>
             </div>
@@ -2080,7 +2080,7 @@ function ProjectReadinessAuditModalContent({ project, allRenewals = [], onClose 
           <div style={{ fontSize: 11, color: COLORS.textDim, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
             Operational Readiness Score
           </div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: readiness.score >= 85 ? "#8FA98C" : readiness.score >= 60 ? COLORS.brass : "#E07A6D", marginTop: 2 }}>
+          <div style={{ fontSize: 24, fontWeight: 700, color: readiness.score >= 85 ? COLORS.green : readiness.score >= 60 ? COLORS.cyan : COLORS.red, marginTop: 2 }}>
             {readiness.score}% {readiness.status === "production_ready" ? "Production Ready" : readiness.status === "in_progress" ? "In Progress" : "Needs Attention"}
           </div>
         </div>
@@ -2090,7 +2090,7 @@ function ProjectReadinessAuditModalContent({ project, allRenewals = [], onClose 
             style={{
               height: "100%",
               width: `${readiness.score}%`,
-              background: readiness.score >= 85 ? "#8FA98C" : readiness.score >= 60 ? COLORS.brass : "#E07A6D",
+              background: readiness.score >= 85 ? COLORS.green : readiness.score >= 60 ? COLORS.cyan : COLORS.red,
               transition: "width 0.3s ease",
             }}
           />
@@ -2099,8 +2099,8 @@ function ProjectReadinessAuditModalContent({ project, allRenewals = [], onClose 
 
       {/* Issues / Recommendations Alert */}
       {readiness.issues.length > 0 && (
-        <div style={{ background: "rgba(217,130,43,0.08)", border: "1px solid rgba(217,130,43,0.3)", borderRadius: 8, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 6 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#F0A24A", display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ background: "rgba(245, 158, 11, 0.08)", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: 8, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#F59E0B", display: "flex", alignItems: "center", gap: 6 }}>
             <AlertTriangle size={14} /> Actionable Recommendations:
           </div>
           <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: COLORS.textDim, display: "flex", flexDirection: "column", gap: 4 }}>
@@ -2130,13 +2130,13 @@ function ProjectReadinessAuditModalContent({ project, allRenewals = [], onClose 
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {c.passed ? <CheckCircle2 size={14} color="#8FA98C" /> : <AlertTriangle size={14} color="#D9822B" />}
+                {c.passed ? <CheckCircle2 size={14} color={COLORS.green} /> : <AlertTriangle size={14} color="#F59E0B" />}
                 <div>
                   <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.text }}>{c.name}</span>
                   <div style={{ fontSize: 11, color: COLORS.textDim }}>{c.detail}</div>
                 </div>
               </div>
-              <span style={{ fontSize: 11, fontFamily: "monospace", color: c.passed ? "#8FA98C" : COLORS.textDim, fontWeight: 600 }}>
+              <span style={{ fontSize: 11, fontFamily: "monospace", color: c.passed ? COLORS.green : COLORS.textDim, fontWeight: 600 }}>
                 +{c.awarded}/{c.weight} pts
               </span>
             </div>

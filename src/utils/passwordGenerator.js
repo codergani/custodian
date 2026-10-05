@@ -239,10 +239,10 @@ export function calculateEntropy(mode, options = {}) {
     bits = Math.round(wordCount * Math.log2(EFF_SHORT_WORDLIST.length));
   }
 
-  if (bits < 40) return { bits, label: "Weak", color: "#E07A6D" };
-  if (bits < 60) return { bits, label: "Fair", color: "#D97706" };
-  if (bits < 80) return { bits, label: "Strong", color: "#8FA98C" };
-  if (bits < 128) return { bits, label: "Very Strong", color: "#2D6A42" };
+  if (bits < 40) return { bits, label: "Weak", color: "#F43F5E" };
+  if (bits < 60) return { bits, label: "Fair", color: "#F59E0B" };
+  if (bits < 80) return { bits, label: "Strong", color: "#10B981" };
+  if (bits < 128) return { bits, label: "Very Strong", color: "#059669" };
   return { bits, label: "Extreme", color: "#6366F1" };
 }
 
@@ -286,9 +286,9 @@ export function checkPasswordStrength(password = "") {
   if (/\d/.test(password)) score += 1;
   if (/[^a-zA-Z0-9]/.test(password)) score += 1;
 
-  if (score <= 1) return { score, label: "Weak", color: "#E07A6D", percent: 25 };
-  if (score === 2) return { score, label: "Fair", color: "#D97706", percent: 50 };
-  if (score === 3 || score === 4) return { score, label: "Strong", color: "#8FA98C", percent: 75 };
-  return { score, label: "Bulletproof", color: "#3ECF8E", percent: 100 };
+  if (score <= 1) return { score, label: "Weak", color: "#F43F5E", percent: 25 };
+  if (score === 2) return { score, label: "Fair", color: "#F59E0B", percent: 50 };
+  if (score === 3 || score === 4) return { score, label: "Strong", color: "#10B981", percent: 75 };
+  return { score, label: "Bulletproof", color: "#059669", percent: 100 };
 }
 

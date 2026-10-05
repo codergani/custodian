@@ -219,7 +219,7 @@ export default function OwnerCommandCenter({
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Folder size={15} color="#B08D57" />
+            <Folder size={15} color={COLORS.cyan} />
             <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.text }}>
               Project Workspaces ({allProjects.length})
             </span>

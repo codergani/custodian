@@ -299,11 +299,11 @@ export default function EnvironmentStudio({
           <div style={{ overflowX: "auto" }} className="custodian-hscroll">
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 12 }}>
               <thead>
-                <tr style={{ background: "rgba(255,255,255,0.02)", borderBottom: `1px solid ${COLORS.line}` }}>
+                <tr style={{ background: "var(--panel-alt, rgba(255,255,255,0.02))", borderBottom: `1px solid ${COLORS.line}` }}>
                   <th style={{ padding: "10px 14px", color: COLORS.textDim, fontWeight: 600, width: "26%" }}>VARIABLE KEY</th>
-                  <th style={{ padding: "10px 12px", color: "#8FA98C", fontWeight: 600, width: "24%" }}>🌐 GLOBAL / LOCAL</th>
-                  <th style={{ padding: "10px 12px", color: "#7AA2E3", fontWeight: 600, width: "24%" }}>💻 DEV / STAGING</th>
-                  <th style={{ padding: "10px 12px", color: "#B08D57", fontWeight: 600, width: "26%" }}>🚀 PRODUCTION</th>
+                  <th style={{ padding: "10px 12px", color: COLORS.green, fontWeight: 600, width: "24%" }}>🌐 GLOBAL / LOCAL</th>
+                  <th style={{ padding: "10px 12px", color: COLORS.cyan, fontWeight: 600, width: "24%" }}>💻 DEV / STAGING</th>
+                  <th style={{ padding: "10px 12px", color: "#F59E0B", fontWeight: 600, width: "26%" }}>🚀 PRODUCTION</th>
                 </tr>
               </thead>
               <tbody>
@@ -408,7 +408,7 @@ export default function EnvironmentStudio({
                             isProd
                           />
                         ) : row.global ? (
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#8FA98C", padding: "4px 0" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: COLORS.green, padding: "4px 0" }}>
                             <CheckCircle2 size={12} />
                             <span>Inherits 🌐 Global</span>
                             <button
@@ -631,11 +631,11 @@ function EnvCell({ inst, cellId, revealed, onToggleReveal, onCopy, isCopied, onA
         </button>
         <button
           type="button"
-          style={{ background: "none", border: "none", color: isCopied ? "#8FA98C" : COLORS.textDim, cursor: "pointer", padding: 2 }}
+          style={{ background: "none", border: "none", color: isCopied ? COLORS.green : COLORS.textDim, cursor: "pointer", padding: 2 }}
           onClick={() => onCopy(rawVal)}
           title="Copy Value"
         >
-          {isCopied ? <Check size={12} color="#8FA98C" /> : <Copy size={12} />}
+          {isCopied ? <Check size={12} color={COLORS.green} /> : <Copy size={12} />}
         </button>
       </div>
     </div>

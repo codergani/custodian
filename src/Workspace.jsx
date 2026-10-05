@@ -11,10 +11,10 @@ import { CustomDropdown } from "./components/shared";
 
 // ──── Constants ────
 const TYPE_META = {
-  template: { label: "Template", icon: BookOpen, color: "#B08D57", bg: "rgba(176,141,87,0.15)" },
-  guideline: { label: "Guideline", icon: Lightbulb, color: "#8FA98C", bg: "rgba(143,169,140,0.15)" },
-  workflow: { label: "Workflow", icon: GitBranch, color: "#C49B66", bg: "rgba(196,155,102,0.15)" },
-  note: { label: "Note", icon: StickyNote, color: "#A8A399", bg: "rgba(168,163,153,0.15)" },
+  template: { label: "Template", icon: BookOpen, color: COLORS.cyan, bg: "rgba(0, 210, 255, 0.12)" },
+  guideline: { label: "Guideline", icon: Lightbulb, color: COLORS.green, bg: "rgba(16, 185, 129, 0.12)" },
+  workflow: { label: "Workflow", icon: GitBranch, color: COLORS.indigo, bg: "rgba(99, 102, 241, 0.12)" },
+  note: { label: "Note", icon: StickyNote, color: COLORS.violet, bg: "rgba(139, 92, 246, 0.12)" },
 };
 
 const STARTER_ITEMS = [
@@ -254,7 +254,7 @@ export default function WorkspaceView({ userId, profile, clients, showSuccess, o
   const storageUsed = profile?.storage_used_bytes || 0;
   const storageQuota = QUOTA_BYTES[plan] || QUOTA_BYTES.free;
   const storagePercent = Math.min(100, (storageUsed / storageQuota) * 100);
-  const storageMeterColor = storagePercent > 85 ? "#E07A6D" : storagePercent > 60 ? "#E0B77D" : "#8FA98C";
+  const storageMeterColor = storagePercent > 85 ? COLORS.red : storagePercent > 60 ? "#F59E0B" : COLORS.green;
 
   // Helper to ensure authenticated user ID matches Supabase RLS policy
   const getActiveUserId = useCallback(async () => {
@@ -526,7 +526,7 @@ export default function WorkspaceView({ userId, profile, clients, showSuccess, o
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
             <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 12px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                <BookOpen size={14} color="#B08D57" />
+                <BookOpen size={14} color={COLORS.cyan} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.text }}>Templates</span>
               </div>
               <div style={{ fontSize: 11.5, color: COLORS.textDim, lineHeight: 1.45 }}>
@@ -536,7 +536,7 @@ export default function WorkspaceView({ userId, profile, clients, showSuccess, o
 
             <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 12px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                <Lightbulb size={14} color="#8FA98C" />
+                <Lightbulb size={14} color={COLORS.green} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.text }}>Guidelines</span>
               </div>
               <div style={{ fontSize: 11.5, color: COLORS.textDim, lineHeight: 1.45 }}>
@@ -546,7 +546,7 @@ export default function WorkspaceView({ userId, profile, clients, showSuccess, o
 
             <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 12px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                <GitBranch size={14} color="#C49B66" />
+                <GitBranch size={14} color={COLORS.indigo} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.text }}>Workflows</span>
               </div>
               <div style={{ fontSize: 11.5, color: COLORS.textDim, lineHeight: 1.45 }}>
@@ -556,7 +556,7 @@ export default function WorkspaceView({ userId, profile, clients, showSuccess, o
 
             <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 12px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                <StickyNote size={14} color="#A8A399" />
+                <StickyNote size={14} color={COLORS.violet} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.text }}>Shared Notes & Media</span>
               </div>
               <div style={{ fontSize: 11.5, color: COLORS.textDim, lineHeight: 1.45 }}>
@@ -1036,11 +1036,11 @@ function AddWorkspaceItemModal({ clients, plan, storageUsed, storageQuota, onClo
               <input ref={fileRef} type="file" style={{ display: "none" }} onChange={(e) => { if (e.target.files?.[0]) setFile(e.target.files[0]); }} />
               {file ? (
                 <div style={{ textAlign: "center" }}>
-                  <CheckCircle size={20} color="#8FA98C" />
+                  <CheckCircle size={20} color={COLORS.green} />
                   <div style={{ fontSize: 13, color: COLORS.text, marginTop: 6 }}>{file.name}</div>
                   <div style={{ fontSize: 11, color: COLORS.textDim }}>{formatBytes(file.size)}</div>
                   {wouldExceed && (
-                    <div style={{ fontSize: 11, color: "#E07A6D", marginTop: 6 }}>
+                    <div style={{ fontSize: 11, color: COLORS.red, marginTop: 6 }}>
                       <AlertTriangle size={12} style={{ verticalAlign: "middle" }} /> Exceeds your {plan} plan storage limit
                     </div>
                   )}

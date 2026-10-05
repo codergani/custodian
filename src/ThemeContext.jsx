@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { updateNativeStatusBar } from "./native/nativeBridge";
 
 const ThemeContext = createContext({
-  theme: "light",
+  theme: "dark",
   toggleTheme: () => {},
 });
 
@@ -10,7 +10,7 @@ export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem("custodian_theme");
     if (saved === "light" || saved === "dark") return saved;
-    return "light";
+    return "dark";
   });
 
   useEffect(() => {

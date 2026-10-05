@@ -401,7 +401,7 @@ export default function AuthScreen({ onAuthed, initialMode = "login", onBackToHo
               </div>
             </div>
 
-            <div style={{ background: "rgba(176,141,87,0.06)", border: `1px solid ${COLORS.brassDim}`, borderRadius: 10, padding: "12px 14px", textAlign: "left", fontSize: 12, color: COLORS.textDim, lineHeight: 1.6, width: "100%" }}>
+            <div style={{ background: "var(--highlight-bg, rgba(0, 210, 255, 0.08))", border: `1px solid ${COLORS.lineHover}`, borderRadius: 10, padding: "12px 14px", textAlign: "left", fontSize: 12, color: COLORS.textDim, lineHeight: 1.6, width: "100%" }}>
               <div style={{ fontWeight: 600, color: COLORS.brass, marginBottom: 4 }}>Next Steps:</div>
               <div>1. Open the email from <strong>Custodian</strong>.</div>
               <div>2. Click the secure <strong>"Reset Password"</strong> link.</div>

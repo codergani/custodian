@@ -115,5 +115,8 @@ describe("Google Backup Codes & Secure Notes UX Test Suite", () => {
     // Should show title
     expect(html).toContain("Google Backup Codes");
     expect(html).toContain("Personal Space");
+    expect(html).toContain("Delete Item");
+    expect(html).toContain("Edit Item");
   });
 });
+

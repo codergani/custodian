@@ -752,14 +752,20 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
       const { error } = await supabase.from("credentials").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) {
         // Fallback to hard delete if column is not present
-        await supabase.from("credentials").delete().eq("id", id);
+        const { error: delErr } = await supabase.from("credentials").delete().eq("id", id);
+        if (delErr) throw delErr;
         showSuccess("Secret permanently deleted.");
       } else {
         showSuccess("Secret moved to Recycle Bin (recoverable for 30 days)");
       }
-    } catch {
-      await supabase.from("credentials").delete().eq("id", id);
-      showSuccess("Secret deleted.");
+    } catch (e) {
+      try {
+        await supabase.from("credentials").delete().eq("id", id);
+        showSuccess("Secret deleted.");
+      } catch (innerErr) {
+        console.error("Failed to delete credential:", innerErr);
+        setActionErr(innerErr.message || "Failed to delete secret");
+      }
     }
     loadAll();
   }
@@ -1104,7 +1110,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
       <div style={S.sidebar} className={`custodian-sidebar ${mobileSidebarOpen ? "open" : ""}`}>
         <div style={S.sidebarHead}>
           <div style={S.brandRow}>
-            <ShieldCheck size={20} color={COLORS.brass} />
+            <ShieldCheck size={20} color={COLORS.cyan} />
             <span style={{ ...S.brandText, fontSize: 15, letterSpacing: "0.06em" }}>CUSTODIAN</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -1129,7 +1135,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
               title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
               aria-label="Toggle light/dark theme"
             >
-              {theme === "dark" ? <Sun size={16} color={COLORS.brass} /> : <Moon size={16} color={COLORS.brass} />}
+              {theme === "dark" ? <Sun size={16} color={COLORS.cyan} /> : <Moon size={16} color={COLORS.cyan} />}
             </button>
             <button style={S.iconBtnGhost} onClick={onLock} title="Lock vault"><LogOut size={16} /></button>
             <button
@@ -1155,23 +1161,23 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
             justifyContent: "space-between",
             padding: "9px 12px",
             fontSize: 13,
-            background: "rgba(255,255,255,0.03)",
+            background: "var(--panel-alt, #101522)",
             borderColor: COLORS.line,
-            borderRadius: 8,
+            borderRadius: 10,
           }}
           onClick={() => { setOpenCmd(true); setMobileSidebarOpen(false); }}
           title="Open Quick Search & Command Palette (Ctrl+K)"
         >
           <span style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.textDim }}>
-            <Search size={14} /> Search Vault...
+            <Search size={14} color={COLORS.cyan} /> Search Vault...
           </span>
-          <span style={{ fontSize: 10.5, color: COLORS.textFaint, fontFamily: "IBM Plex Mono, monospace", background: "rgba(255,255,255,0.06)", padding: "2px 6px", borderRadius: 4 }}>
+          <span style={{ fontSize: 10.5, color: COLORS.cyan, fontFamily: "JetBrains Mono, monospace", background: "var(--highlight-bg, rgba(0, 210, 255, 0.12))", border: "1px solid rgba(0, 210, 255, 0.25)", padding: "2px 6px", borderRadius: 4 }}>
             ⌘K
           </span>
         </button>
 
         {/* Primary View Segmented Tabs */}
-        <div style={{ display: "flex", gap: 4, background: "rgba(0,0,0,0.06)", padding: 4, borderRadius: 10 }}>
+        <div style={{ display: "flex", gap: 4, background: "var(--panel-alt, #101522)", border: `1px solid ${COLORS.line}`, padding: 4, borderRadius: 10 }}>
           <button
             type="button"
             className="sidebar-nav-btn"
@@ -1181,20 +1187,20 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
               alignItems: "center",
               justifyContent: "center",
               gap: 6,
-              padding: "10px 6px",
-              fontSize: 13,
+              padding: "9px 6px",
+              fontSize: 12.5,
               fontWeight: view === "vault" ? 700 : 500,
-              borderRadius: 8,
-              border: "none",
+              borderRadius: 7,
+              border: view === "vault" ? `1px solid ${COLORS.line}` : "1px solid transparent",
               cursor: "pointer",
-              background: view === "vault" ? COLORS.panel : "transparent",
-              color: view === "vault" ? COLORS.brass : COLORS.textDim,
-              boxShadow: view === "vault" ? "0 2px 6px rgba(0,0,0,0.12)" : "none",
+              background: view === "vault" ? "var(--panel-card, #0F1420)" : "transparent",
+              color: view === "vault" ? COLORS.cyan : COLORS.textDim,
+              boxShadow: view === "vault" ? "0 2px 8px rgba(0,0,0,0.3)" : "none",
               transition: "all 0.15s ease",
             }}
             onClick={() => { setView("vault"); setSelectedClient(null); setSelectedProject(null); setMobileSidebarOpen(false); }}
           >
-            <Crown size={15} color={view === "vault" ? COLORS.brass : COLORS.textDim} />
+            <Crown size={14} color={view === "vault" ? COLORS.cyan : COLORS.textDim} />
             <span>Vault</span>
           </button>
 
@@ -1207,22 +1213,22 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
               alignItems: "center",
               justifyContent: "center",
               gap: 6,
-              padding: "10px 6px",
-              fontSize: 13,
+              padding: "9px 6px",
+              fontSize: 12.5,
               fontWeight: view === "watchdog" ? 700 : 500,
-              borderRadius: 8,
-              border: "none",
+              borderRadius: 7,
+              border: view === "watchdog" ? `1px solid ${COLORS.line}` : "1px solid transparent",
               cursor: "pointer",
-              background: view === "watchdog" ? COLORS.panel : "transparent",
-              color: view === "watchdog" ? COLORS.brass : COLORS.textDim,
-              boxShadow: view === "watchdog" ? "0 2px 6px rgba(0,0,0,0.12)" : "none",
+              background: view === "watchdog" ? "var(--panel-card, #0F1420)" : "transparent",
+              color: view === "watchdog" ? COLORS.cyan : COLORS.textDim,
+              boxShadow: view === "watchdog" ? "0 2px 8px rgba(0,0,0,0.3)" : "none",
               transition: "all 0.15s ease",
               position: "relative",
             }}
-            onClick={() => { setView("watchdog"); setMobileSidebarOpen(false); }}
+            onClick={() => { setSelectedClient(null); setSelectedProject(null); setView("watchdog"); setMobileSidebarOpen(false); }}
             title="Renewal Watchdog"
           >
-            <Bell size={15} color={view === "watchdog" ? COLORS.brass : COLORS.textDim} />
+            <Bell size={14} color={view === "watchdog" ? COLORS.cyan : COLORS.textDim} />
             <span>Watchdog</span>
             {criticalCount > 0 && <span style={S.watchdogCounter}>{criticalCount}</span>}
           </button>
@@ -1236,20 +1242,20 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
               alignItems: "center",
               justifyContent: "center",
               gap: 6,
-              padding: "10px 6px",
-              fontSize: 13,
+              padding: "9px 6px",
+              fontSize: 12.5,
               fontWeight: view === "profile" ? 700 : 500,
-              borderRadius: 8,
-              border: "none",
+              borderRadius: 7,
+              border: view === "profile" ? `1px solid ${COLORS.line}` : "1px solid transparent",
               cursor: "pointer",
-              background: view === "profile" ? COLORS.panel : "transparent",
-              color: view === "profile" ? COLORS.brass : COLORS.textDim,
-              boxShadow: view === "profile" ? "0 2px 6px rgba(0,0,0,0.12)" : "none",
+              background: view === "profile" ? "var(--panel-card, #0F1420)" : "transparent",
+              color: view === "profile" ? COLORS.cyan : COLORS.textDim,
+              boxShadow: view === "profile" ? "0 2px 8px rgba(0,0,0,0.3)" : "none",
               transition: "all 0.15s ease",
             }}
-            onClick={() => { setView("profile"); setMobileSidebarOpen(false); }}
+            onClick={() => { setSelectedClient(null); setSelectedProject(null); setView("profile"); setMobileSidebarOpen(false); }}
           >
-            <User size={15} color={view === "profile" ? COLORS.brass : COLORS.textDim} />
+            <User size={14} color={view === "profile" ? COLORS.cyan : COLORS.textDim} />
             <span>Profile</span>
           </button>
         </div>
@@ -1262,13 +1268,13 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
             marginBottom: 6,
             padding: "9px 10px",
             fontSize: 13,
-            background: !selectedClient && !selectedProject && view === "vault" ? "var(--highlight-bg, rgba(148,110,55,0.12))" : "transparent",
-            border: `1px solid ${!selectedClient && !selectedProject && view === "vault" ? COLORS.brassDim : "transparent"}`,
+            background: !selectedClient && !selectedProject && view === "vault" ? "var(--highlight-bg, rgba(0, 210, 255, 0.12))" : "transparent",
+            border: `1px solid ${!selectedClient && !selectedProject && view === "vault" ? "rgba(0, 210, 255, 0.35)" : "transparent"}`,
           }}
           onClick={() => { setSelectedClient(null); setSelectedProject(null); setView("vault"); setMobileSidebarOpen(false); }}
         >
-          <Crown size={15} color={COLORS.brass} />
-          <span style={{ ...S.treeLabel, fontWeight: 600, fontSize: 13, color: !selectedClient && !selectedProject && view === "vault" ? COLORS.brass : COLORS.text }}>
+          <Crown size={15} color={!selectedClient && !selectedProject && view === "vault" ? COLORS.cyan : COLORS.textDim} />
+          <span style={{ ...S.treeLabel, fontWeight: 600, fontSize: 13, color: !selectedClient && !selectedProject && view === "vault" ? COLORS.cyan : COLORS.text }}>
             Vault Overview (All Projects)
           </span>
         </div>
@@ -1280,9 +1286,9 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                 ...S.treeClientRow,
                 marginBottom: 10,
                 background: (view === "personal" || (personalClient && selectedClient === personalClient.id))
-                  ? "var(--highlight-bg, rgba(148,110,55,0.12))"
+                  ? "var(--highlight-bg, rgba(0, 210, 255, 0.12))"
                   : "transparent",
-                border: `1px solid ${(view === "personal" || (personalClient && selectedClient === personalClient.id)) ? COLORS.brassDim : "transparent"}`,
+                border: `1px solid ${(view === "personal" || (personalClient && selectedClient === personalClient.id)) ? "rgba(0, 210, 255, 0.35)" : "transparent"}`,
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
@@ -1297,11 +1303,11 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                 setMobileSidebarOpen(false);
               }}
             >
-              <ShieldCheck size={14} color={COLORS.brass} />
+              <ShieldCheck size={14} color={(view === "personal" || (personalClient && selectedClient === personalClient.id)) ? COLORS.cyan : COLORS.textDim} />
               <span style={{
                 ...S.treeLabel,
                 fontWeight: 600,
-                color: (view === "personal" || (personalClient && selectedClient === personalClient.id)) ? COLORS.brass : COLORS.text,
+                color: (view === "personal" || (personalClient && selectedClient === personalClient.id)) ? COLORS.cyan : COLORS.text,
               }}>
                 Personal Space
               </span>
@@ -1310,8 +1316,8 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                 fontWeight: 700,
                 padding: "1px 6px",
                 borderRadius: 10,
-                background: (view === "personal" || (personalClient && selectedClient === personalClient.id)) ? COLORS.brass : "rgba(128,128,128,0.12)",
-                color: (view === "personal" || (personalClient && selectedClient === personalClient.id)) ? "#FFFFFF" : COLORS.textFaint,
+                background: (view === "personal" || (personalClient && selectedClient === personalClient.id)) ? COLORS.cyan : "var(--panel-alt, rgba(128,128,128,0.12))",
+                color: (view === "personal" || (personalClient && selectedClient === personalClient.id)) ? "#06080D" : COLORS.textFaint,
                 marginLeft: "auto",
               }}>
                 {personalProject?.credentials?.length || 0}
@@ -1378,7 +1384,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                       }}
                     >
                       {expanded[c.id] ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                      {isClientLocked ? <Lock size={12} color="#D97706" /> : <Building2 size={13} color="#B08D57" />}
+                      {isClientLocked ? <Lock size={12} color="#D97706" /> : <Building2 size={13} color={COLORS.cyan} />}
                       <span style={S.treeLabel}>{c.name}</span>
                       {isClientLocked ? (
                         <span style={{ fontSize: 9, fontWeight: 700, color: "#D97706", background: "rgba(245,158,11,0.15)", padding: "1px 4px", borderRadius: 4 }}>
@@ -1404,7 +1410,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                           setMobileSidebarOpen(false);
                         }}
                       >
-                        {selectedProject === p.id ? <FolderOpen size={12} color="#8FA98C" /> : <Folder size={12} color="#8A8680" />}
+                        {selectedProject === p.id ? <FolderOpen size={12} color={COLORS.cyan} /> : <Folder size={12} color={COLORS.textDim} />}
                         <span style={S.treeLabel}>{p.name}</span>
                         <span style={S.treeCount}>{p.credentials.length}</span>
                       </div>
@@ -1446,14 +1452,17 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                 <button
                   type="button"
                   style={{
-                    background: "none",
-                    border: "none",
-                    color: showStickyNotes ? "#E2B714" : COLORS.textFaint,
+                    background: showStickyNotes ? "rgba(0, 210, 255, 0.12)" : "none",
+                    border: `1px solid ${showStickyNotes ? "rgba(0, 210, 255, 0.3)" : "transparent"}`,
+                    color: showStickyNotes ? COLORS.cyan : COLORS.textFaint,
                     fontSize: 11,
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     gap: 4,
+                    padding: "2px 6px",
+                    borderRadius: 6,
+                    transition: "all 0.15s ease",
                   }}
                   onClick={() => {
                     setShowStickyNotes((prev) => {
@@ -1462,9 +1471,9 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                       return next;
                     });
                   }}
-                  title="Toggle Sticky Notes"
+                  title="Toggle Cyber Scratchpad Note"
                 >
-                  <Pin size={11} style={{ transform: "rotate(45deg)" }} />
+                  <Pin size={11} style={{ transform: "rotate(45deg)", color: showStickyNotes ? COLORS.cyan : COLORS.textFaint }} />
                   <span>{showStickyNotes ? "Hide Stickies" : "Stickies"}</span>
                 </button>
               </div>
@@ -1480,7 +1489,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                     borderRadius: 8,
                     ...(view === "generator" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
                   }}
-                  onClick={() => { setView("generator"); setMobileSidebarOpen(false); }}
+                  onClick={() => { setSelectedClient(null); setSelectedProject(null); setView("generator"); setMobileSidebarOpen(false); }}
                   title="Password & Key Generator"
                 >
                   <Dices size={14} color={COLORS.brass} />
@@ -1497,7 +1506,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                     borderRadius: 8,
                     ...(view === "sharing" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
                   }}
-                  onClick={() => { setView("sharing"); setMobileSidebarOpen(false); }}
+                  onClick={() => { setSelectedClient(null); setSelectedProject(null); setView("sharing"); setMobileSidebarOpen(false); }}
                   title="Zero-Knowledge Secret Sharing"
                 >
                   <Share2 size={14} color={COLORS.brass} />
@@ -1514,7 +1523,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                     borderRadius: 8,
                     ...(view === "workspace" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
                   }}
-                  onClick={() => { setView("workspace"); setMobileSidebarOpen(false); }}
+                  onClick={() => { setSelectedClient(null); setSelectedProject(null); setView("workspace"); setMobileSidebarOpen(false); }}
                   title="Resource Library"
                 >
                   <Package size={14} />
@@ -1531,7 +1540,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                     borderRadius: 8,
                     ...(view === "trash" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
                   }}
-                  onClick={() => { setView("trash"); setMobileSidebarOpen(false); }}
+                  onClick={() => { setSelectedClient(null); setSelectedProject(null); setView("trash"); setMobileSidebarOpen(false); }}
                   title="Recycle Bin"
                 >
                   <Trash2 size={14} />
@@ -1690,7 +1699,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
 
 
 
-        {view === "personal" || (currentClient && isPersonalClient(currentClient)) ? (
+        {(view === "personal" || (view === "vault" && currentClient && isPersonalClient(currentClient))) ? (
           <PersonalSpaceView
             personalClient={personalClient}
             personalProject={personalProject}
@@ -2208,7 +2217,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                     }}
                     onClick={() => setProjectTab("checklist")}
                   >
-                    <CheckSquare size={13} color={projectTab === "checklist" ? "#8FA98C" : COLORS.textDim} />
+                    <CheckSquare size={13} color={projectTab === "checklist" ? COLORS.green : COLORS.textDim} />
                     <span>Deliverables ({completedTasks}/{checklist.length})</span>
                   </button>
 
@@ -2327,8 +2336,8 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
 
                   {projectCreds.length === 0 ? (
                     <div style={{ ...S.welcomeState, padding: "48px 20px", height: "auto", minHeight: 320, background: "rgba(255,255,255,0.02)", border: `1px dashed ${COLORS.line}`, borderRadius: 12 }}>
-                      <div style={{ ...S.dialRing, width: 48, height: 48, background: "rgba(176,141,87,0.15)", borderColor: COLORS.brass }}>
-                        <KeyRound size={24} color="#B08D57" />
+                      <div style={{ ...S.dialRing, width: 48, height: 48, background: "rgba(0, 210, 255, 0.12)", borderColor: "rgba(0, 210, 255, 0.35)", boxShadow: "0 0 16px rgba(0, 210, 255, 0.2)" }}>
+                        <KeyRound size={24} color={COLORS.cyan} />
                       </div>
                       <div style={{ ...S.welcomeTitle, fontSize: 18, color: COLORS.text, marginTop: 4 }}>
                         Your Project Secret Vault
@@ -2462,6 +2471,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
       <FloatingStickyNotes
         isOpen={showStickyNotes}
         currentPlan={profile?.plan || "free"}
+        theme={theme}
         onOpenUpgrade={() => setModal({ type: "upgrade" })}
         onClose={() => {
           setShowStickyNotes(false);

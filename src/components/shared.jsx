@@ -106,8 +106,8 @@ export function CustomDropdown({ value, onChange, options, style, buttonStyle, d
                   gap: 8,
                   fontSize: 12.5,
                   fontFamily: "Inter, sans-serif",
-                  color: isSelected ? COLORS.brass : COLORS.text,
-                  background: isSelected ? "var(--highlight-bg, rgba(148,110,55,0.12))" : "transparent",
+                  color: isSelected ? COLORS.cyan : COLORS.text,
+                  background: isSelected ? "var(--highlight-bg, rgba(0, 210, 255, 0.12))" : "transparent",
                   fontWeight: isSelected ? 600 : 400,
                   transition: "background 0.1s",
                 }}
@@ -126,7 +126,7 @@ export function CustomDropdown({ value, onChange, options, style, buttonStyle, d
                 }}
               >
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
-                {isSelected && <Check size={13} color={COLORS.brass} style={{ flexShrink: 0 }} />}
+                {isSelected && <Check size={13} color={COLORS.cyan} style={{ flexShrink: 0 }} />}
               </div>
             );
           })}
@@ -512,15 +512,15 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
                     ...S.actionChipBtn,
                     fontSize: 11,
                     padding: "3px 9px",
-                    background: copiedId === cred.id + "-p" ? "rgba(22,163,74,0.18)" : "rgba(176,141,87,0.14)",
-                    borderColor: copiedId === cred.id + "-p" ? "#16A34A" : COLORS.brassDim,
-                    color: copiedId === cred.id + "-p" ? "#16A34A" : COLORS.brass,
+                    background: copiedId === cred.id + "-p" ? "rgba(16, 185, 129, 0.18)" : "rgba(0, 210, 255, 0.12)",
+                    borderColor: copiedId === cred.id + "-p" ? COLORS.green : "rgba(0, 210, 255, 0.35)",
+                    color: copiedId === cred.id + "-p" ? COLORS.green : COLORS.cyan,
                     fontWeight: 600,
                   }}
                   onClick={() => onCopy(cred.password, cred.id + "-p")}
                   title="Copy all backup codes to clipboard"
                 >
-                  {copiedId === cred.id + "-p" ? <Check size={11} color="#16A34A" /> : <Copy size={11} />}
+                  {copiedId === cred.id + "-p" ? <Check size={11} color={COLORS.green} /> : <Copy size={11} />}
                   <span>{copiedId === cred.id + "-p" ? "Copied All!" : "Copy All"}</span>
                 </button>
               </div>
@@ -628,7 +628,7 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
               onClick={() => onCopy(rawSecret, cred.id + "-raw")}
               title="Copy raw secret value"
             >
-              {copiedId === cred.id + "-raw" ? <Check size={10} color="#8FA98C" /> : null}
+              {copiedId === cred.id + "-raw" ? <Check size={10} color={COLORS.green} /> : null}
               <span>{copiedId === cred.id + "-raw" ? "Copied" : "RAW"}</span>
             </button>
             <button
@@ -637,7 +637,7 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
               onClick={() => onCopy(`${keyName}=${rawSecret}`, cred.id + "-env")}
               title="Copy as KEY=VALUE"
             >
-              {copiedId === cred.id + "-env" ? <Check size={10} color="#8FA98C" /> : null}
+              {copiedId === cred.id + "-env" ? <Check size={10} color={COLORS.green} /> : null}
               <span>{copiedId === cred.id + "-env" ? "Copied" : ".ENV"}</span>
             </button>
             <button
@@ -646,7 +646,7 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
               onClick={() => onCopy(`export ${keyName}="${rawSecret.replace(/"/g, '\\"')}"`, cred.id + "-bash")}
               title="Copy as export KEY=VAL"
             >
-              {copiedId === cred.id + "-bash" ? <Check size={10} color="#8FA98C" /> : null}
+              {copiedId === cred.id + "-bash" ? <Check size={10} color={COLORS.green} /> : null}
               <span>{copiedId === cred.id + "-bash" ? "Copied" : "BASH"}</span>
             </button>
             <button
@@ -655,7 +655,7 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
               onClick={() => onCopy(`-e ${keyName}="${rawSecret.replace(/"/g, '\\"')}"`, cred.id + "-docker")}
               title="Copy as Docker flag -e KEY=VAL"
             >
-              {copiedId === cred.id + "-docker" ? <Check size={10} color="#8FA98C" /> : null}
+              {copiedId === cred.id + "-docker" ? <Check size={10} color={COLORS.green} /> : null}
               <span>{copiedId === cred.id + "-docker" ? "Copied" : "DOCKER"}</span>
             </button>
             <button
@@ -664,7 +664,7 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
               onClick={() => onCopy(JSON.stringify({ [keyName]: rawSecret }, null, 2), cred.id + "-json")}
               title="Copy as JSON object"
             >
-              {copiedId === cred.id + "-json" ? <Check size={10} color="#8FA98C" /> : null}
+              {copiedId === cred.id + "-json" ? <Check size={10} color={COLORS.green} /> : null}
               <span>{copiedId === cred.id + "-json" ? "Copied" : "JSON"}</span>
             </button>
           </div>
@@ -688,8 +688,8 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
             <button
               type="button"
               style={{
-                background: showFormatInfo ? "rgba(176,141,87,0.25)" : "rgba(255,255,255,0.06)",
-                border: `1px solid ${showFormatInfo ? COLORS.brass : COLORS.line}`,
+                background: showFormatInfo ? "var(--highlight-bg, rgba(0, 210, 255, 0.15))" : "var(--panel-alt, rgba(255,255,255,0.06))",
+                border: `1px solid ${showFormatInfo ? COLORS.cyan : COLORS.line}`,
                 borderRadius: "50%",
                 width: 16,
                 height: 16,
@@ -698,7 +698,7 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: "pointer",
-                color: showFormatInfo ? COLORS.brass : COLORS.textDim,
+                color: showFormatInfo ? COLORS.cyan : COLORS.textDim,
                 fontSize: 10,
                 fontWeight: 700,
                 fontFamily: "serif",
@@ -722,16 +722,16 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
                   bottom: "calc(100% + 8px)",
                   left: "50%",
                   transform: "translateX(-50%)",
-                  background: "rgba(22, 19, 15, 0.97)",
-                  border: "1px solid rgba(176, 141, 87, 0.75)",
-                  borderRadius: 6,
+                  background: "var(--panel-card, #0F1420)",
+                  border: `1px solid ${COLORS.lineHover}`,
+                  borderRadius: 8,
                   padding: "8px 12px",
-                  color: "#FAF8F5",
+                  color: COLORS.text,
                   fontSize: 10.5,
                   whiteSpace: "nowrap",
                   zIndex: 9999,
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
-                  backdropFilter: "blur(10px)",
+                  boxShadow: "var(--card-shadow)",
+                  backdropFilter: "blur(12px)",
                   display: "flex",
                   flexDirection: "column",
                   gap: 4,
@@ -739,16 +739,16 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <div style={{ fontWeight: 700, color: "#D4AF37", fontSize: 9.5, letterSpacing: "0.05em", borderBottom: "1px solid rgba(176,141,87,0.3)", paddingBottom: 3 }}>
+                <div style={{ fontWeight: 700, color: COLORS.cyan, fontSize: 9.5, letterSpacing: "0.05em", borderBottom: `1px solid ${COLORS.line}`, paddingBottom: 3 }}>
                   USA STANDARD FORMAT
                 </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, color: "#C5BEB3" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, color: COLORS.textDim }}>
                   <span>📅 Date:</span>
-                  <strong style={{ color: "#FFFFFF", fontFamily: "IBM Plex Mono, monospace", letterSpacing: "0.02em" }}>MM/DD/YYYY</strong>
+                  <strong style={{ color: COLORS.text, fontFamily: "IBM Plex Mono, monospace", letterSpacing: "0.02em" }}>MM/DD/YYYY</strong>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, color: "#C5BEB3" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, color: COLORS.textDim }}>
                   <span>⏰ Time:</span>
-                  <strong style={{ color: "#FFFFFF", fontFamily: "IBM Plex Mono, monospace", letterSpacing: "0.02em" }}>HH:MM AM/PM</strong>
+                  <strong style={{ color: COLORS.text, fontFamily: "IBM Plex Mono, monospace", letterSpacing: "0.02em" }}>HH:MM AM/PM</strong>
                 </div>
               </div>
             )}
@@ -758,10 +758,10 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
         <button
           type="button"
           style={{
-            background: showTimeline ? "rgba(176,141,87,0.15)" : "transparent",
-            border: `1px solid ${showTimeline ? COLORS.brass : COLORS.line}`,
+            background: showTimeline ? "var(--highlight-bg, rgba(0, 210, 255, 0.12))" : "transparent",
+            border: `1px solid ${showTimeline ? COLORS.cyan : COLORS.line}`,
             borderRadius: 4,
-            color: showTimeline ? COLORS.brass : COLORS.textDim,
+            color: showTimeline ? COLORS.cyan : COLORS.textDim,
             fontSize: 10.5,
             padding: "2px 7px",
             cursor: "pointer",
@@ -789,7 +789,7 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
               ...(cred.updatedAt && cred.updatedAt !== cred.createdAt ? [{ action: "Updated", timestamp: cred.updatedAt }] : []),
             ]).map((entry, idx) => (
               <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11, padding: "3px 0", borderBottom: idx < (cred.history?.length || 1) - 1 ? `1px dashed ${COLORS.line}` : "none" }}>
-                <span style={{ color: entry.action === "Created" ? "#8FA98C" : COLORS.brass, fontWeight: 500 }}>
+                <span style={{ color: entry.action === "Created" ? COLORS.green : COLORS.cyan, fontWeight: 500 }}>
                   • {entry.action || "Updated"}
                 </span>
                 <span style={{ color: COLORS.textDim, fontFamily: "IBM Plex Mono, monospace", fontSize: 10.5 }}>
@@ -818,7 +818,7 @@ export function FieldRow({ label, value, secret, revealed, onToggle, copyKey, on
       <div style={S.fieldActions}>
         {secret && <button style={S.iconBtnGhost} onClick={onToggle} aria-label={revealed ? "Hide password" : "Show password"}>{revealed ? <EyeOff size={13} /> : <Eye size={13} />}</button>}
         <button style={S.iconBtnGhost} onClick={() => onCopy(value, copyKey)} disabled={secret && !revealed} aria-label={`Copy ${label}`}>
-          {copiedId === copyKey ? <Check size={13} color="#8FA98C" /> : <Copy size={13} />}
+          {copiedId === copyKey ? <Check size={13} color={COLORS.green} /> : <Copy size={13} />}
         </button>
       </div>
     </div>

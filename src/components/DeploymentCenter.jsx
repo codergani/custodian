@@ -99,10 +99,10 @@ export default function DeploymentCenter({
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Globe size={16} color="#8FA98C" />
+              <Globe size={16} color={COLORS.green} />
               <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.text }}>Production Endpoint</span>
             </div>
-            <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: "rgba(143,169,140,0.15)", color: "#8FA98C", fontWeight: 600 }}>
+            <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: "rgba(16, 185, 129, 0.15)", color: COLORS.green, fontWeight: 600 }}>
               LIVE
             </span>
           </div>
@@ -124,7 +124,7 @@ export default function DeploymentCenter({
                   onClick={() => handleCopy(deployment.productionUrl, "prod_url")}
                   title="Copy URL"
                 >
-                  {copiedKey === "prod_url" ? <Check size={13} color="#8FA98C" /> : <Copy size={13} />}
+                  {copiedKey === "prod_url" ? <Check size={13} color={COLORS.green} /> : <Copy size={13} />}
                 </button>
                 <a
                   href={deployment.productionUrl.startsWith("http") ? deployment.productionUrl : `https://${deployment.productionUrl}`}
@@ -183,7 +183,7 @@ export default function DeploymentCenter({
                   onClick={() => handleCopy(deployment.stagingUrl, "stage_url")}
                   title="Copy URL"
                 >
-                  {copiedKey === "stage_url" ? <Check size={13} color="#8FA98C" /> : <Copy size={13} />}
+                  {copiedKey === "stage_url" ? <Check size={13} color={COLORS.green} /> : <Copy size={13} />}
                 </button>
                 <a
                   href={deployment.stagingUrl.startsWith("http") ? deployment.stagingUrl : `https://${deployment.stagingUrl}`}
@@ -265,7 +265,7 @@ export default function DeploymentCenter({
                 style={{ background: "none", border: "none", color: COLORS.textDim, cursor: "pointer" }}
                 onClick={() => handleCopy(deployment.buildCommand, "build_cmd")}
               >
-                {copiedKey === "build_cmd" ? <Check size={12} color="#8FA98C" /> : <Copy size={12} />}
+                {copiedKey === "build_cmd" ? <Check size={12} color={COLORS.green} /> : <Copy size={12} />}
               </button>
             </div>
             <code style={{ fontSize: 12, color: COLORS.text, fontFamily: "monospace" }}>
@@ -282,7 +282,7 @@ export default function DeploymentCenter({
                 style={{ background: "none", border: "none", color: COLORS.textDim, cursor: "pointer" }}
                 onClick={() => handleCopy(deployment.deployCommand, "deploy_cmd")}
               >
-                {copiedKey === "deploy_cmd" ? <Check size={12} color="#8FA98C" /> : <Copy size={12} />}
+                {copiedKey === "deploy_cmd" ? <Check size={12} color={COLORS.green} /> : <Copy size={12} />}
               </button>
             </div>
             <code style={{ fontSize: 12, color: COLORS.text, fontFamily: "monospace" }}>
