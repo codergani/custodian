@@ -14,6 +14,7 @@ import {
   formatAsVercelJSON,
   formatAsGitHubActions
 } from "../utils/envFormatters";
+import { analyzeEnvSecurity } from "../utils/aiCopilot";
 
 export default function EnvironmentStudio({
   project,
@@ -29,6 +30,7 @@ export default function EnvironmentStudio({
   const [activeExportFormat, setActiveExportFormat] = useState(null); // 'dotenv' | 'docker' | 'shell' | 'json' | 'vercel' | 'github'
   const [exportTargetEnv, setExportTargetEnv] = useState("prod"); // 'prod' | 'staging' | 'dev' | 'all'
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [showAiAudit, setShowAiAudit] = useState(false);
 
   const creds = project.credentials || [];
   const matrix = useMemo(() => computeEnvironmentMatrix(creds), [creds]);
@@ -93,6 +95,10 @@ export default function EnvironmentStudio({
     }
   }, [activeExportFormat, exportVariables, exportTargetEnv]);
 
+  const aiAuditReport = useMemo(() => {
+    return analyzeEnvSecurity(creds, exportTargetEnv === "prod" ? "production" : exportTargetEnv);
+  }, [creds, exportTargetEnv]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* Top Banner: Stats & Export Trigger */}
@@ -128,6 +134,21 @@ export default function EnvironmentStudio({
             >
               {matrix.totalVariables} Variables
             </span>
+            <span
+              style={{
+                fontSize: 11,
+                padding: "2px 8px",
+                borderRadius: 12,
+                background: aiAuditReport.score >= 80 ? "rgba(46,189,133,0.15)" : "rgba(235,87,87,0.15)",
+                color: aiAuditReport.score >= 80 ? COLORS.green : "#EB5757",
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <ShieldCheck size={11} /> AI Score {aiAuditReport.score}/100
+            </span>
           </div>
           <p style={{ fontSize: 12.5, color: COLORS.textDim, margin: "4px 0 0", lineHeight: 1.4 }}>
             Compare, audit, and export variables across Development, Staging, and Production side-by-side.
@@ -136,6 +157,19 @@ export default function EnvironmentStudio({
 
         {/* Action Format Chips */}
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            style={{
+              ...S.actionChipBtn,
+              color: showAiAudit ? COLORS.cyan : COLORS.text,
+              borderColor: showAiAudit ? COLORS.cyan : COLORS.line,
+              background: showAiAudit ? "rgba(0, 210, 255, 0.12)" : "rgba(255, 255, 255, 0.04)",
+              fontWeight: 600,
+            }}
+            onClick={() => setShowAiAudit((prev) => !prev)}
+          >
+            <Sparkles size={13} color={COLORS.cyan} /> <span>{showAiAudit ? "Hide AI Audit" : "✨ AI Security Audit"}</span>
+          </button>
           <button
             type="button"
             style={{ ...S.actionChipBtn, color: COLORS.brass, borderColor: COLORS.brassDim }}
@@ -175,6 +209,104 @@ export default function EnvironmentStudio({
           )}
         </div>
       </div>
+
+      {/* AI Security Audit Interactive Drawer/Card */}
+      {showAiAudit && (
+        <div
+          style={{
+            background: "linear-gradient(135deg, rgba(0, 210, 255, 0.08) 0%, rgba(15, 20, 32, 0.95) 100%)",
+            border: `1px solid rgba(0, 210, 255, 0.35)`,
+            borderRadius: 12,
+            padding: "16px 20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            boxShadow: "0 4px 20px rgba(0, 210, 255, 0.06)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Sparkles size={18} color={COLORS.cyan} />
+              <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>
+                Zero-Knowledge AI Security Audit
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: "2px 8px",
+                  borderRadius: 10,
+                  background:
+                    aiAuditReport.riskLevel === "LOW"
+                      ? "rgba(46,189,133,0.15)"
+                      : aiAuditReport.riskLevel === "MEDIUM"
+                      ? "rgba(240,162,74,0.15)"
+                      : "rgba(235,87,87,0.15)",
+                  color:
+                    aiAuditReport.riskLevel === "LOW"
+                      ? COLORS.green
+                      : aiAuditReport.riskLevel === "MEDIUM"
+                      ? "#F0A24A"
+                      : "#EB5757",
+                }}
+              >
+                {aiAuditReport.riskLevel} RISK ({aiAuditReport.score}/100)
+              </span>
+            </div>
+            <span style={{ fontSize: 11, color: COLORS.textDim }}>
+              🔒 Zero-Knowledge: Evaluated locally on credential metadata without transmitting raw secrets.
+            </span>
+          </div>
+
+          <div style={{ fontSize: 12.5, color: COLORS.textDim, lineHeight: 1.5 }}>
+            {aiAuditReport.summary}
+          </div>
+
+          {aiAuditReport.issues.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+              {aiAuditReport.issues.map((iss, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: "rgba(0, 0, 0, 0.25)",
+                    borderLeft: `3px solid ${
+                      iss.level === "CRITICAL"
+                        ? "#EB5757"
+                        : iss.level === "HIGH"
+                        ? "#F0A24A"
+                        : iss.level === "MEDIUM"
+                        ? "#D9822B"
+                        : COLORS.cyan
+                    }`,
+                    padding: "8px 12px",
+                    borderRadius: "0 6px 6px 0",
+                    fontSize: 12,
+                  }}
+                >
+                  <div style={{ fontWeight: 600, color: COLORS.text, display: "flex", alignItems: "center", gap: 6 }}>
+                    <AlertTriangle size={12} color={iss.level === "CRITICAL" ? "#EB5757" : "#F0A24A"} />
+                    <span>{iss.title || iss.message}</span>
+                  </div>
+                  {iss.detail && <div style={{ color: COLORS.textDim, marginTop: 2, fontSize: 11.5 }}>{iss.detail}</div>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {aiAuditReport.recommendations.length > 0 && (
+            <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: "10px 14px", borderRadius: 8 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 600, color: COLORS.cyan, marginBottom: 4 }}>
+                Recommended Hardening Actions:
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 18, fontSize: 11.5, color: COLORS.textDim, lineHeight: 1.5 }}>
+                {aiAuditReport.recommendations.map((rec, i) => (
+                  <li key={i}>{rec}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Missing Production Variables Alert */}
       {matrix.missingProd.length > 0 && (

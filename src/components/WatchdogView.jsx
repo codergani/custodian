@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import {
   Sparkles, Clock, PiggyBank, ExternalLink, ShieldCheck, Zap, Crown,
   CheckCircle2, BellRing, RefreshCw, Calendar, History, CheckCircle,
-  RotateCcw, TrendingDown, Bell, KeyRound, Edit3
+  RotateCcw, TrendingDown, Bell, KeyRound, Edit3, ArrowDownRight, ChevronDown, ChevronUp
 } from "lucide-react";
 import { S, COLORS } from "../styles";
+import { optimizeBillingWithAI } from "../utils/aiCopilot";
 
 export default function WatchdogView({
   trackedCreds = [],
@@ -19,6 +20,8 @@ export default function WatchdogView({
   onOpenUpgrade,
   currentPlan,
 }) {
+  const [showAiOptimizer, setShowAiOptimizer] = useState(false);
+  const aiBilling = useMemo(() => optimizeBillingWithAI(trackedCreds), [trackedCreds]);
   if (currentPlan === "free") {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 440, textAlign: "center", padding: "16px" }}>
@@ -134,6 +137,92 @@ export default function WatchdogView({
             {formattedAnnualSavings} saved!
           </div>
         </div>
+      </div>
+
+      {/* AI Spend & Consolidation Insights */}
+      <div
+        style={{
+          background: "linear-gradient(135deg, rgba(148, 110, 55, 0.12) 0%, rgba(15, 20, 32, 0.95) 100%)",
+          border: `1px solid rgba(176, 141, 87, 0.35)`,
+          borderRadius: 12,
+          padding: "14px 18px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Sparkles size={16} color={COLORS.brass} />
+            <span style={{ fontSize: 13.5, fontWeight: 700, color: COLORS.text }}>
+              AI Watchdog Spend Intelligence
+            </span>
+            {aiBilling.potentialMonthlySavings > 0 && (
+              <span style={{ ...S.savingsBadge, fontSize: 11 }}>
+                <TrendingDown size={11} /> Save up to ${aiBilling.potentialMonthlySavings}/mo
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            style={{
+              background: "none",
+              border: "none",
+              color: COLORS.brass,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+            onClick={() => setShowAiOptimizer((prev) => !prev)}
+          >
+            <span>{showAiOptimizer ? "Hide Recommendations" : "View Recommendations"}</span>
+            {showAiOptimizer ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+        </div>
+
+        <div style={{ fontSize: 12, color: COLORS.textDim, lineHeight: 1.4 }}>
+          {aiBilling.insight}
+        </div>
+
+        {showAiOptimizer && aiBilling.opportunities.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+            {aiBilling.opportunities.map((opp, idx) => (
+              <div
+                key={idx}
+                style={{
+                  background: "rgba(0,0,0,0.25)",
+                  border: `1px solid ${COLORS.line}`,
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 12,
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: COLORS.text }}>
+                    {opp.title}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: COLORS.textDim, marginTop: 2 }}>
+                    {opp.detail}
+                  </div>
+                  <div style={{ fontSize: 11, color: COLORS.textFaint, marginTop: 4 }}>
+                    Services: {opp.services.join(", ")}
+                  </div>
+                </div>
+                {opp.potentialSavings > 0 && (
+                  <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.green, whiteSpace: "nowrap" }}>
+                    +${opp.potentialSavings.toFixed(2)}/mo
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* #1 Pinned Item: Custodian Platform Membership */}

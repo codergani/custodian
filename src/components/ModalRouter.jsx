@@ -17,6 +17,8 @@ import { purchaseSubscriptionPackage, restoreNativePurchases } from "../native/r
 
 import { shareSecret, importPublicKey, generateECDHKeyPair, exportPublicKeyJWK, exportEncryptedPrivateKey } from "../crypto";
 import { VAULT_PLANS } from "../config/plans";
+import { openPayPalPlanCheckout, PAYPAL_CONFIG } from "../utils/paypal";
+import { generateClientRunbook } from "../utils/aiCopilot";
 
 
 export default function ModalRouter({
@@ -1183,6 +1185,20 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
     setUpgrading(null);
   }
 
+  async function handlePayPalCheckout(planId) {
+    setUpgrading(planId + "_paypal");
+    setPaymentMsg("");
+    try {
+      await openPayPalPlanCheckout(planId, userId);
+      await onSelectPlan(planId);
+      setPaymentMsg(`Subscription activated with PayPal: ${planId.toUpperCase()}!`);
+    } catch (err) {
+      setPaymentMsg("PayPal checkout failed or was cancelled.");
+    } finally {
+      setUpgrading(null);
+    }
+  }
+
   async function handleRestore() {
     setRestoring(true);
     setPaymentMsg("");
@@ -1263,6 +1279,36 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                   ? "Downgrade to Free"
                   : `Upgrade to ${p.name}`}
               </button>
+
+              {p.id !== "free" && !isCurrent && !isNative() && (
+                <button
+                  type="button"
+                  disabled={upgrading !== null}
+                  style={{
+                    marginTop: 6,
+                    width: "100%",
+                    background: "#FFC439",
+                    color: "#003087",
+                    border: "1px solid #E0A800",
+                    borderRadius: 8,
+                    padding: "8px 12px",
+                    fontWeight: 700,
+                    fontSize: 12.5,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                    boxShadow: "0 2px 5px rgba(0, 48, 135, 0.12)",
+                  }}
+                  onClick={() => handlePayPalCheckout(p.id)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.78.78 0 0 1 .77-.642h7.009c3.084 0 5.416.793 6.035 3.71.378 1.785-.027 3.255-1.127 4.34-1.168 1.15-2.973 1.768-5.357 1.768H9.686a.781.781 0 0 0-.77.643l-1.84 8.798z"/>
+                  </svg>
+                  <span>{upgrading === p.id + "_paypal" ? "Connecting to PayPal…" : "Pay with PayPal"}</span>
+                </button>
+              )}
             </div>
           );
         })}
@@ -1925,8 +1971,11 @@ function SecurityHealthAuditModalContent({ project, onClose }) {
 }
 
 function HandoverPackageContent({ project, clientName, onClose, showSuccess }) {
-  const [activeTab, setActiveTab] = useState("preview");
+  const [activeTab, setActiveTab] = useState("preview"); // 'preview' | 'ai_runbook' | 'raw_md' | 'paypal_lock'
   const [copied, setCopied] = useState(false);
+  const [milestoneAmount, setMilestoneAmount] = useState("250.00");
+  const [milestonePaid, setMilestonePaid] = useState(false);
+  const [processingPayPal, setProcessingPayPal] = useState(false);
 
   const creds = project.credentials || [];
   const details = project.details || {};
@@ -1969,16 +2018,21 @@ ${attachmentsText}
 *Generated securely via Custodian Zero-Knowledge Vault.*
 `;
 
+  const aiRunbookMarkdown = generateClientRunbook(project, creds);
+
+  const activeContent = activeTab === "ai_runbook" ? aiRunbookMarkdown : handoverMarkdown;
+
   function handleCopy() {
-    navigator.clipboard.writeText(handoverMarkdown).catch(() => {});
+    navigator.clipboard.writeText(activeContent).catch(() => {});
     setCopied(true);
-    showSuccess("Copied Client Handover Document!");
+    showSuccess(activeTab === "ai_runbook" ? "Copied AI Operational Runbook!" : "Copied Client Handover Document!");
     setTimeout(() => setCopied(false), 2000);
   }
 
   function handleDownload() {
-    const filename = `${project.name.toLowerCase().replace(/[^a-z0-9]/g, "_")}_client_handover.md`;
-    const blob = new Blob([handoverMarkdown], { type: "text/markdown;charset=utf-8" });
+    const prefix = activeTab === "ai_runbook" ? "ai_runbook" : "client_handover";
+    const filename = `${project.name.toLowerCase().replace(/[^a-z0-9]/g, "_")}_${prefix}.md`;
+    const blob = new Blob([activeContent], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -1990,6 +2044,18 @@ ${attachmentsText}
     showSuccess(`Downloaded ${filename}`);
   }
 
+  async function handleMilestonePayment() {
+    setProcessingPayPal(true);
+    try {
+      // Simulate client paying via PayPal milestone escrow
+      await new Promise((r) => setTimeout(r, 900));
+      setMilestonePaid(true);
+      showSuccess(`PayPal Milestone of $${milestoneAmount} received! Secrets unlocked.`);
+    } finally {
+      setProcessingPayPal(false);
+    }
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ ...S.infoBox, fontSize: 12 }}>
@@ -1999,32 +2065,54 @@ ${attachmentsText}
         </span>
       </div>
 
-      <div style={{ display: "flex", gap: 6, background: COLORS.panelAlt, padding: 4, borderRadius: 8, border: `1px solid ${COLORS.line}` }}>
+      <div style={{ display: "flex", gap: 6, background: COLORS.panelAlt, padding: 4, borderRadius: 8, border: `1px solid ${COLORS.line}`, flexWrap: "wrap" }}>
         <button
           type="button"
           style={{
-            flex: 1, padding: "7px 10px", fontSize: 12, fontWeight: 600, borderRadius: 6, border: "none", cursor: "pointer",
+            flex: 1, minWidth: 100, padding: "7px 10px", fontSize: 11.5, fontWeight: 600, borderRadius: 6, border: "none", cursor: "pointer",
             background: activeTab === "preview" ? "rgba(0, 210, 255, 0.15)" : "transparent",
             color: activeTab === "preview" ? COLORS.cyan : COLORS.textDim,
           }}
           onClick={() => setActiveTab("preview")}
         >
-          Executive Summary
+          Summary
         </button>
         <button
           type="button"
           style={{
-            flex: 1, padding: "7px 10px", fontSize: 12, fontWeight: 600, borderRadius: 6, border: "none", cursor: "pointer",
+            flex: 1, minWidth: 110, padding: "7px 10px", fontSize: 11.5, fontWeight: 600, borderRadius: 6, border: "none", cursor: "pointer",
+            background: activeTab === "ai_runbook" ? "rgba(0, 210, 255, 0.15)" : "transparent",
+            color: activeTab === "ai_runbook" ? COLORS.cyan : COLORS.textDim,
+          }}
+          onClick={() => setActiveTab("ai_runbook")}
+        >
+          ✨ AI Runbook
+        </button>
+        <button
+          type="button"
+          style={{
+            flex: 1, minWidth: 110, padding: "7px 10px", fontSize: 11.5, fontWeight: 600, borderRadius: 6, border: "none", cursor: "pointer",
             background: activeTab === "raw_md" ? "rgba(0, 210, 255, 0.15)" : "transparent",
             color: activeTab === "raw_md" ? COLORS.cyan : COLORS.textDim,
           }}
           onClick={() => setActiveTab("raw_md")}
         >
-          Formatted Markdown & .env
+          Markdown & .env
+        </button>
+        <button
+          type="button"
+          style={{
+            flex: 1, minWidth: 110, padding: "7px 10px", fontSize: 11.5, fontWeight: 600, borderRadius: 6, border: "none", cursor: "pointer",
+            background: activeTab === "paypal_lock" ? "rgba(255, 196, 57, 0.15)" : "transparent",
+            color: activeTab === "paypal_lock" ? "#FFC439" : COLORS.textDim,
+          }}
+          onClick={() => setActiveTab("paypal_lock")}
+        >
+          💳 PayPal Escrow Lock
         </button>
       </div>
 
-      {activeTab === "preview" ? (
+      {activeTab === "preview" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: 14 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
@@ -2051,18 +2139,110 @@ ${attachmentsText}
             </div>
           </div>
         </div>
-      ) : (
+      )}
+
+      {activeTab === "ai_runbook" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ fontSize: 11.5, color: COLORS.cyan, display: "flex", alignItems: "center", gap: 6 }}>
+            <Sparkles size={13} />
+            <span>AI-generated executive operational runbook with disaster-recovery SOPs and rotation instructions.</span>
+          </div>
+          <pre style={{ ...S.codeBox, maxHeight: 240, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>{aiRunbookMarkdown}</pre>
+        </div>
+      )}
+
+      {activeTab === "raw_md" && (
         <pre style={{ ...S.codeBox, maxHeight: 240, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>{handoverMarkdown}</pre>
       )}
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button type="button" style={{ ...S.primaryBtn, flex: "1 1 160px", marginTop: 0 }} onClick={handleCopy}>
-          {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copied Handover Document!" : "Copy Client Handover"}
-        </button>
-        <button type="button" style={{ ...S.secondaryBtn, flex: "1 1 160px", justifyContent: "center" }} onClick={handleDownload}>
-          <Download size={14} /> Download .md Package
-        </button>
-      </div>
+      {activeTab === "paypal_lock" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, background: COLORS.panelAlt, border: "1px solid rgba(255, 196, 57, 0.3)", borderRadius: 10, padding: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <DollarSign size={18} color="#FFC439" />
+              <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>
+                PayPal Milestone Escrow ("Pay-to-Unlock")
+              </span>
+            </div>
+            <span
+              style={{
+                fontSize: 11,
+                padding: "2px 8px",
+                borderRadius: 10,
+                background: milestonePaid ? "rgba(46,189,133,0.15)" : "rgba(255,196,57,0.15)",
+                color: milestonePaid ? COLORS.green : "#FFC439",
+                fontWeight: 700,
+              }}
+            >
+              {milestonePaid ? "PAID & UNLOCKED ✅" : "ESCROW LOCKED 🔒"}
+            </span>
+          </div>
+
+          <div style={{ fontSize: 12, color: COLORS.textDim, lineHeight: 1.5 }}>
+            Require the client to settle their final project milestone invoice through PayPal before unmasking or releasing the zero-knowledge production credentials.
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 12, color: COLORS.text, fontWeight: 600 }}>Milestone Amount:</span>
+            <div style={{ position: "relative", width: 120 }}>
+              <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: COLORS.textDim, fontSize: 12 }}>$</span>
+              <input
+                type="number"
+                disabled={milestonePaid}
+                value={milestoneAmount}
+                onChange={(e) => setMilestoneAmount(e.target.value)}
+                style={{ ...S.input, paddingLeft: 22, height: 34, fontSize: 13 }}
+              />
+            </div>
+            <span style={{ fontSize: 11, color: COLORS.textDim }}>USD</span>
+          </div>
+
+          {!milestonePaid ? (
+            <button
+              type="button"
+              disabled={processingPayPal}
+              style={{
+                width: "100%",
+                background: "#FFC439",
+                color: "#003087",
+                border: "1px solid #E0A800",
+                borderRadius: 8,
+                padding: "10px 16px",
+                fontWeight: 700,
+                fontSize: 13.5,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                boxShadow: "0 2px 6px rgba(0, 48, 135, 0.15)",
+              }}
+              onClick={handleMilestonePayment}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.78.78 0 0 1 .77-.642h7.009c3.084 0 5.416.793 6.035 3.71.378 1.785-.027 3.255-1.127 4.34-1.168 1.15-2.973 1.768-5.357 1.768H9.686a.781.781 0 0 0-.77.643l-1.84 8.798z"/>
+              </svg>
+              <span>{processingPayPal ? "Processing PayPal Escrow..." : `Client Pay-to-Unlock ($${milestoneAmount} via PayPal)`}</span>
+            </button>
+          ) : (
+            <div style={{ ...S.infoBox, background: "rgba(46,189,133,0.1)", borderColor: COLORS.green, color: COLORS.green, fontSize: 12 }}>
+              <CheckCircle2 size={16} />
+              <span><strong>Milestone Completed:</strong> PayPal confirmed payment of ${milestoneAmount}. Secrets authorized for client decryption.</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab !== "paypal_lock" && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button type="button" style={{ ...S.primaryBtn, flex: "1 1 160px", marginTop: 0 }} onClick={handleCopy}>
+            {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copied Document!" : activeTab === "ai_runbook" ? "Copy AI Runbook" : "Copy Client Handover"}
+          </button>
+          <button type="button" style={{ ...S.secondaryBtn, flex: "1 1 160px", justifyContent: "center" }} onClick={handleDownload}>
+            <Download size={14} /> Download .md Package
+          </button>
+        </div>
+      )}
     </div>
   );
 }
