@@ -3,11 +3,11 @@
 
 [![Security: Zero-Knowledge](https://img.shields.io/badge/Security-Zero--Knowledge%20(Client--Side)-gold.svg)](#security-architecture)
 [![Encryption: AES-256-GCM](https://img.shields.io/badge/Encryption-AES--256--GCM-blue.svg)](#security-architecture)
-[![Key Derivation: PBKDF2](https://img.shields.io/badge/Key%20Derivation-PBKDF2%20100k%20iters-darkgreen.svg)](#security-architecture)
-[![Key Exchange: ECDH P-256](https://img.shields.io/badge/Key%20Exchange-ECDH%20P--256-purple.svg)](#zero-knowledge-secret-sharing)
-[![Tests: 14/14 Passing](https://img.shields.io/badge/Tests-102%20Passed-brightgreen.svg)](#testing--verification)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Payments: PayPal](https://img.shields.io/badge/Payments-PayPal%20SDK-003087.svg)](#paypal-integration--ai-copilot-architecture)
+[![AI: Zero--Knowledge](https://img.shields.io/badge/AI-Zero--Knowledge%20Copilot-00D2FF.svg)](#paypal-integration--ai-copilot-architecture)
+[![Tests: 21/21 Passing](https://img.shields.io/badge/Tests-152%20Passed-brightgreen.svg)](#testing--verification)
 [![Deployment: Vercel](https://img.shields.io/badge/Deployment-custodian--swart.vercel.app-black.svg)](https://custodian-swart.vercel.app/)
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Online-brightgreen.svg)](https://custodian-swart.vercel.app/)
 
 ---
 
@@ -109,6 +109,40 @@ Custodian enforces a strict **Zero-Knowledge Architecture**. All encryption and 
 ### 7. Founder Admin HQ
 - Built-in administration portal accessible only by authorized founder emails (`ygpksr456@gmail.com`).
 - Live telemetry: registered user directory, user tiers (Free, Pro, Team, Founder), real-time encrypted storage utilization calculations, and geographic user distribution.
+
+### 8. 💳 PayPal Platform Integration & Zero-Knowledge AI Copilot
+- **PayPal Commerce Platform Subscriptions**: 1-click Pro ($8/mo) & Team ($19/mo) plan upgrades via official PayPal Smart Payment Buttons with built-in sandbox mock support.
+- **PayPal Milestone Escrow ("Pay-to-Unlock")**: Freelancers and agencies can lock client production credentials behind an escrow milestone. The client settles via PayPal, which automatically unlocks the zero-knowledge secrets.
+- **Zero-Knowledge AI Security Audit**: Analyzes credential environments in real-time to flag high-risk anomalies (AWS root keys, test keys in prod, unpooled database URLs, 90-day stale rotations) and provides actionable hardening recommendations without exposing raw secrets.
+- **AI Client Runbook Synthesizer**: Generates executive Markdown disaster-recovery SOPs and rotation timelines ready for client delivery.
+- **AI Renewal Watchdog Spend Intelligence**: Tracks recurring API licenses and SaaS renewals, identifying duplicate subscriptions and calculating monthly cost reductions.
+
+---
+
+## Testing & Verification
+
+Custodian includes a comprehensive test suite of **21 test files (152 passing tests)** covering zero-knowledge encryption, PBKDF2 key derivation, ECDH P-256 sharing, PayPal checkout integration, and AI security auditing:
+
+```bash
+# Run complete test suite
+npm test
+```
+
+---
+
+## Instructions for Hackathon Judges & Local Setup
+
+```bash
+# 1. Clone repository
+git clone https://github.com/codergani/custodian.git
+cd custodian
+
+# 2. Install dependencies
+npm install
+
+# 3. Run development server (runs with built-in PayPal sandbox & AI copilot)
+npm run dev
+```
 
 ---
 
@@ -287,5 +321,6 @@ The resulting APK is generated at:
 
 ## License & Intellectual Property
 
-Copyright © 2026 **Custodian**. All Rights Reserved.  
-Crafted with zero-knowledge cryptographic principles by **codergani**.
+This project is open-source and licensed under the **[MIT License](LICENSE)**.  
+Copyright © 2026 **Custodian Contributors** & **codergani**. All Rights Reserved.  
+Crafted with zero-knowledge cryptographic principles.
