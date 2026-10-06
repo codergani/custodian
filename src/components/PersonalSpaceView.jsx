@@ -125,85 +125,63 @@ export default function PersonalSpaceView({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      {/* 1. Header Banner */}
+      {/* 1. Sleek Minimalist Header */}
       <div style={{
-        background: COLORS.panel,
-        border: `1px solid ${COLORS.line}`,
-        borderRadius: 14,
-        padding: "16px 20px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        gap: 16,
         flexWrap: "wrap",
-        boxShadow: "var(--card-shadow, 0 4px 20px rgba(0,0,0,0.06))",
+        gap: 12,
+        paddingBottom: 4,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 260 }}>
-          <div style={{
-            width: 44,
-            height: 44,
-            borderRadius: 12,
-            background: "linear-gradient(135deg, rgba(0, 210, 255, 0.15) 0%, rgba(99, 102, 241, 0.12) 100%)",
-            border: "1px solid rgba(0, 210, 255, 0.35)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            boxShadow: "0 0 16px rgba(0, 210, 255, 0.2)",
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <h1 style={{
+              fontSize: 20,
+              fontWeight: 700,
+              color: COLORS.text,
+              margin: 0,
+              letterSpacing: "-0.02em",
+            }}>
+              Personal Space
+            </h1>
+            <span style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: COLORS.green,
+              background: "rgba(45, 106, 66, 0.12)",
+              padding: "2px 8px",
+              borderRadius: 20,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}>
+              <ShieldCheck size={11} /> Zero-Knowledge
+            </span>
+          </div>
+          <p style={{
+            fontSize: 13,
+            color: COLORS.textDim,
+            margin: "4px 0 0",
+            fontWeight: 400,
           }}>
-            <ShieldCheck size={22} color={COLORS.cyan} />
-          </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, fontFamily: "Outfit, sans-serif", letterSpacing: "-0.01em" }}>
-                Personal Space
-              </span>
-              <span
-                style={{
-                  fontSize: 11,
-                  color: COLORS.cyan,
-                  background: "rgba(0, 210, 255, 0.08)",
-                  border: "1px solid rgba(0, 210, 255, 0.25)",
-                  padding: "2px 8px",
-                  borderRadius: 20,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 4,
-                  fontFamily: "JetBrains Mono, monospace",
-                }}
-              >
-                🔒 Client-Side AES-256-GCM
-              </span>
-            </div>
-            <div style={{ fontSize: 12.5, color: COLORS.textDim, marginTop: 3 }}>
-              Your private personal vault for email passwords, app PINs, Wi-Fi codes, cards, and crypto seed phrases.
-            </div>
-          </div>
+            Encrypted logins, app PINs, Wi-Fi keys, cards, and recovery seed phrases
+          </p>
         </div>
 
         <div>
           <button
             type="button"
             id="btn-add-personal-secret"
-            className="aegis-btn-primary"
             style={{
-              background: "var(--aegis-gradient, linear-gradient(135deg, #00D2FF 0%, #3B82F6 50%, #6366F1 100%))",
-              color: "#FFFFFF",
-              border: "none",
-              borderRadius: 10,
-              padding: "10px 18px",
-              fontSize: 13,
-              fontWeight: 600,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 7,
-              cursor: "pointer",
-              boxShadow: "var(--aegis-btn-glow, 0 4px 18px rgba(0, 210, 255, 0.35))",
-              transition: "transform 0.15s ease, box-shadow 0.15s ease",
+              ...S.primaryBtnSm,
+              fontSize: 12.5,
+              padding: "7px 14px",
+              borderRadius: 8,
             }}
             onClick={() => onAddCred(emptyMeta.preset ? { secretType: emptyMeta.preset } : { secretType: "login" })}
           >
-            <Plus size={15} />
+            <Plus size={14} />
             <span>Add Personal Secret</span>
           </button>
         </div>
@@ -211,7 +189,7 @@ export default function PersonalSpaceView({
 
       {/* 2. Category Filter Tabs & Search Bar */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {PERSONAL_CATEGORIES.map((cat) => {
             const isActive = activeCategory === cat.id;
             const count = countsByCategory[cat.id] || 0;
@@ -221,33 +199,31 @@ export default function PersonalSpaceView({
                 key={cat.id}
                 type="button"
                 style={{
-                  padding: "7px 14px",
+                  padding: "6px 12px",
                   fontSize: 12.5,
-                  borderRadius: 10,
-                  background: isActive ? "linear-gradient(135deg, rgba(0, 210, 255, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%)" : "var(--panel-card, #0F1420)",
-                  border: `1px solid ${isActive ? "rgba(0, 210, 255, 0.5)" : COLORS.line}`,
-                  color: isActive ? COLORS.cyan : COLORS.textDim,
+                  borderRadius: 6,
+                  background: isActive ? "var(--panel-alt, rgba(255, 255, 255, 0.08))" : "transparent",
+                  border: `1px solid ${isActive ? COLORS.line : "transparent"}`,
+                  color: isActive ? COLORS.text : COLORS.textDim,
                   fontWeight: isActive ? 600 : 500,
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: 7,
+                  gap: 6,
                   cursor: "pointer",
                   transition: "all 0.15s ease",
-                  boxShadow: isActive ? "0 0 16px rgba(0, 210, 255, 0.15)" : "none",
                 }}
                 onClick={() => setActiveCategory(cat.id)}
               >
-                <CatIcon size={14} color={isActive ? COLORS.cyan : COLORS.textFaint} />
+                <CatIcon size={13} color={isActive ? COLORS.brass : COLORS.textFaint} />
                 <span>{cat.label}</span>
                 <span style={{
                   fontSize: 10.5,
-                  fontWeight: 700,
-                  padding: "1px 7px",
+                  fontWeight: 600,
+                  padding: "1px 6px",
                   borderRadius: 10,
-                  background: isActive ? COLORS.cyan : "var(--panel-alt, rgba(255,255,255,0.08))",
-                  color: isActive ? "#FFFFFF" : COLORS.textFaint,
+                  background: isActive ? "var(--highlight-bg, rgba(176,141,87,0.15))" : "var(--panel-alt, rgba(255,255,255,0.06))",
+                  color: isActive ? COLORS.brass : COLORS.textFaint,
                   lineHeight: 1.3,
-                  fontFamily: "JetBrains Mono, monospace",
                 }}>
                   {count}
                 </span>
@@ -292,18 +268,17 @@ export default function PersonalSpaceView({
           alignItems: "center",
         }}>
           <div style={{
-            width: 52,
-            height: 52,
+            width: 48,
+            height: 48,
             borderRadius: "50%",
-            background: "rgba(0, 210, 255, 0.12)",
-            border: "1px solid rgba(0, 210, 255, 0.35)",
+            background: "var(--highlight-bg, rgba(0, 210, 255, 0.1))",
+            border: "1px solid rgba(0, 210, 255, 0.25)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             marginBottom: 14,
-            boxShadow: "0 0 16px rgba(0, 210, 255, 0.2)",
           }}>
-            <EmptyIcon size={24} color={COLORS.cyan} />
+            <EmptyIcon size={22} color={COLORS.cyan} />
           </div>
 
           <h3 style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, margin: "0 0 6px 0" }}>
@@ -319,20 +294,11 @@ export default function PersonalSpaceView({
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
             <button
               type="button"
-              className="aegis-btn-primary"
               style={{
-                background: "var(--aegis-gradient, linear-gradient(135deg, #00D2FF 0%, #3B82F6 50%, #6366F1 100%))",
-                color: "#FFFFFF",
-                border: "none",
-                borderRadius: 10,
-                padding: "10px 20px",
+                ...S.primaryBtn,
+                padding: "9px 18px",
                 fontSize: 13,
-                fontWeight: 600,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                cursor: "pointer",
-                boxShadow: "var(--aegis-btn-glow, 0 4px 18px rgba(0, 210, 255, 0.35))",
+                borderRadius: 8,
               }}
               onClick={() => {
                 if (searchQuery) {

@@ -210,8 +210,18 @@ export function getNextRenewalInfo(renewalDate, frequency = "monthly", reminderD
 
 // ──── Overlay (Modal Wrapper) ────
 export function Overlay({ onClose, title, icon, children, cardStyle }) {
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === "Escape") {
+        onClose?.();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
-    <div style={S.overlay} className="custodian-modal-overlay" onClick={onClose}>
+    <div style={S.overlay} className="custodian-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div style={cardStyle || S.modalCard} className="custodian-modal-card" onClick={(e) => e.stopPropagation()}>
         <div style={S.modalHead}>
           <div style={S.authHeader}><div style={S.dialRing}>{icon}</div><h2 style={S.authTitle}>{title}</h2></div>
@@ -353,7 +363,6 @@ export function PromptModal({
 // ──── Credential Card ────
 export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, onDelete, onShare }) {
   const [showTimeline, setShowTimeline] = useState(false);
-  const [showFormatInfo, setShowFormatInfo] = useState(false);
   const renewal = cred.renewalInfo;
   const cost = parseFloat(cred.cost);
   const currency = cred.currency || "$";
@@ -671,97 +680,22 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
         </>
       )}
 
-      {/* Secret Timeline & Modification Metadata (USA Format: MM/DD/YYYY • HH:MM) */}
+      {/* Secret Timeline & Modification Metadata */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, paddingTop: 6, borderTop: `1px solid ${COLORS.line}`, flexWrap: "wrap", gap: 6 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: COLORS.textFaint, position: "relative" }}>
-          <Clock size={11} color={COLORS.brass} />
-          <span style={{ color: COLORS.text, fontWeight: 500 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: COLORS.textFaint }}>
+          <Clock size={11} color={COLORS.textFaint} />
+          <span>
             {cred.updatedAt ? `Updated: ${formatDateTimeUSA(cred.updatedAt)}` : cred.createdAt ? `Created: ${formatDateTimeUSA(cred.createdAt)}` : "Created: N/A"}
           </span>
-
-          {/* "i" in a Circle Info Button (Hover on Desktop, Tap/Click on Mobile) */}
-          <div
-            style={{ position: "relative", display: "inline-flex", alignItems: "center" }}
-            onMouseEnter={() => setShowFormatInfo(true)}
-            onMouseLeave={() => setShowFormatInfo(false)}
-          >
-            <button
-              type="button"
-              style={{
-                background: showFormatInfo ? "var(--highlight-bg, rgba(0, 210, 255, 0.15))" : "var(--panel-alt, rgba(255,255,255,0.06))",
-                border: `1px solid ${showFormatInfo ? COLORS.cyan : COLORS.line}`,
-                borderRadius: "50%",
-                width: 16,
-                height: 16,
-                padding: 0,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                color: showFormatInfo ? COLORS.cyan : COLORS.textDim,
-                fontSize: 10,
-                fontWeight: 700,
-                fontFamily: "serif",
-                lineHeight: 1,
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowFormatInfo(!showFormatInfo);
-              }}
-              title="Click or hover to view date & time format details"
-              aria-label="Date and time format details"
-            >
-              i
-            </button>
-
-            {/* Floating Tooltip / Popover */}
-            {showFormatInfo && (
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: "calc(100% + 8px)",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  background: "var(--panel-card, #0F1420)",
-                  border: `1px solid ${COLORS.lineHover}`,
-                  borderRadius: 8,
-                  padding: "8px 12px",
-                  color: COLORS.text,
-                  fontSize: 10.5,
-                  whiteSpace: "nowrap",
-                  zIndex: 9999,
-                  boxShadow: "var(--card-shadow)",
-                  backdropFilter: "blur(12px)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 4,
-                  minWidth: 175,
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div style={{ fontWeight: 700, color: COLORS.cyan, fontSize: 9.5, letterSpacing: "0.05em", borderBottom: `1px solid ${COLORS.line}`, paddingBottom: 3 }}>
-                  USA STANDARD FORMAT
-                </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, color: COLORS.textDim }}>
-                  <span>📅 Date:</span>
-                  <strong style={{ color: COLORS.text, fontFamily: "IBM Plex Mono, monospace", letterSpacing: "0.02em" }}>MM/DD/YYYY</strong>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, color: COLORS.textDim }}>
-                  <span>⏰ Time:</span>
-                  <strong style={{ color: COLORS.text, fontFamily: "IBM Plex Mono, monospace", letterSpacing: "0.02em" }}>HH:MM AM/PM</strong>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
         <button
           type="button"
           style={{
-            background: showTimeline ? "var(--highlight-bg, rgba(0, 210, 255, 0.12))" : "transparent",
-            border: `1px solid ${showTimeline ? COLORS.cyan : COLORS.line}`,
+            background: showTimeline ? "var(--highlight-bg, rgba(176, 141, 87, 0.12))" : "transparent",
+            border: `1px solid ${showTimeline ? COLORS.brass : COLORS.line}`,
             borderRadius: 4,
-            color: showTimeline ? COLORS.cyan : COLORS.textDim,
+            color: showTimeline ? COLORS.brass : COLORS.textDim,
             fontSize: 10.5,
             padding: "2px 7px",
             cursor: "pointer",
@@ -772,7 +706,7 @@ export function CredCard({ cred, revealed, onReveal, onCopy, copiedId, onEdit, o
           onClick={() => setShowTimeline(!showTimeline)}
           title="View Update Timeline"
         >
-          <History size={11} /> {showTimeline ? "Hide Timeline" : "Timeline"}
+          <History size={11} /> {showTimeline ? "Hide History" : "History"}
         </button>
       </div>
 

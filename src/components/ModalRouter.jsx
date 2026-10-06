@@ -622,7 +622,16 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <form
+      onSubmit={handleSubmit}
+      onKeyDown={(e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+          e.preventDefault();
+          handleSubmit(e);
+        }
+      }}
+      style={{ display: "flex", flexDirection: "column", gap: 12 }}
+    >
       {formErr && (
         <div style={S.errBox}>
           <AlertTriangle size={14} /> {formErr}

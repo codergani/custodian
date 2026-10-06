@@ -1,7 +1,7 @@
 import React from "react";
 import {
-  Crown, ShieldCheck, Plus, Zap, Hourglass, ChevronRight, BellRing,
-  Folder, Calendar, KeyRound, CheckSquare, Pin, ArrowRight, Sparkles
+  ShieldCheck, Plus, Sparkles, Folder, Calendar,
+  ChevronRight, AlertCircle, ArrowUpRight
 } from "lucide-react";
 import { S, COLORS } from "../styles";
 
@@ -36,7 +36,7 @@ export default function OwnerCommandCenter({
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
-  // Calculate project deadlines and Grey Days for each project
+  // Calculate project deadlines and delivery safety buffers
   const projectsWithDeadlines = allProjects.map((p) => {
     const details = p.details || {};
     const lastDate = details.lastDate || "";
@@ -91,311 +91,379 @@ export default function OwnerCommandCenter({
   const urgentProjects = projectsWithDeadlines.filter((p) => p.isUrgent24h);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      {/* Executive Owner Banner */}
-      <div style={S.ownerHeaderCard}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ ...S.dialRing, width: 44, height: 44, background: "var(--highlight-bg, rgba(148,110,55,0.12))", borderColor: COLORS.brass }}>
-            <Crown size={22} color={COLORS.brass} />
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* 1. Sleek Minimalist Header */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 12,
+        paddingBottom: 4,
+      }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <h1 style={{
+              fontSize: 20,
+              fontWeight: 700,
+              color: COLORS.text,
+              margin: 0,
+              letterSpacing: "-0.02em",
+            }}>
+              Vault Overview
+            </h1>
+            <span style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: COLORS.green,
+              background: "rgba(45, 106, 66, 0.12)",
+              padding: "2px 8px",
+              borderRadius: 20,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}>
+              <ShieldCheck size={11} /> Zero-Knowledge
+            </span>
           </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, letterSpacing: "-0.01em" }}>
-                Vault Overview & Deadlines
-              </span>
-              <span style={{ ...S.rolePillOwner, fontSize: 10 }}>WORKSPACE CONTROL</span>
-              <span
-                style={{ fontSize: 11, color: COLORS.green, display: "inline-flex", alignItems: "center", gap: 4, cursor: "help" }}
-                title="Client-Side Zero-Knowledge Protection: All passwords, API keys, and environment variables are encrypted locally with AES-256-GCM before leaving your device. Even database administrators cannot read your secrets."
-              >
-                <ShieldCheck size={12} /> 🔒 AES-256 Protection Active ⓘ
-              </span>
-            </div>
-            <div style={{ fontSize: 12, color: COLORS.textDim, marginTop: 3 }}>
-              Manage client workspaces, encrypted secrets, contract delivery buffers, and API renewal budgets.
-            </div>
-          </div>
+          <p style={{
+            fontSize: 13,
+            color: COLORS.textDim,
+            margin: "4px 0 0",
+            fontWeight: 400,
+          }}>
+            {allProjects.length} {allProjects.length === 1 ? "project" : "projects"} across {clients.length} {clients.length === 1 ? "client" : "clients"} · {allActiveCreds.length} encrypted secrets
+          </p>
         </div>
 
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          {onAddSecret && (
-            <button style={S.primaryBtn} onClick={onAddSecret}>
-              <Plus size={13} /> + New Secret
-            </button>
-          )}
-          <button style={S.secondaryBtn} onClick={onAddClient}>
-            <Plus size={13} /> New Client
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            type="button"
+            style={{
+              ...S.secondaryBtn,
+              fontSize: 12.5,
+              padding: "7px 12px",
+              borderRadius: 8,
+            }}
+            onClick={onAddClient}
+          >
+            <Plus size={13} />
+            <span>New Client</span>
           </button>
-          {profile?.plan === "free" && (
-            <button style={S.primaryBtnSm} onClick={onOpenUpgrade}>
-              <Zap size={13} /> Upgrade to Pro
+          {onAddSecret && (
+            <button
+              type="button"
+              style={{
+                ...S.primaryBtnSm,
+                fontSize: 12.5,
+                padding: "7px 14px",
+                borderRadius: 8,
+              }}
+              onClick={onAddSecret}
+            >
+              <Plus size={13} />
+              <span>New Secret</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Urgent 24-Hour Alerts (if any) */}
+      {/* 2. Urgent Attention Strip (Only shown when there's an actual urgent item) */}
       {(urgentProjects.length > 0 || urgentCreds.length > 0) && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.red, display: "flex", alignItems: "center", gap: 6 }}>
-            <Hourglass size={14} color={COLORS.red} /> Urgent 24-Hour Attention Required
+        <div style={{
+          background: "rgba(181, 56, 43, 0.08)",
+          border: "1px solid rgba(181, 56, 43, 0.25)",
+          borderRadius: 10,
+          padding: "10px 14px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          flexWrap: "wrap",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <AlertCircle size={15} color={COLORS.red} />
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: COLORS.red }}>
+              Action Needed:
+            </span>
+            <span style={{ fontSize: 12.5, color: COLORS.text }}>
+              {urgentProjects.length > 0
+                ? `Project deadline "${urgentProjects[0].name}" due in under 24 hours.`
+                : `API key renewal "${urgentCreds[0]?.label}" due tomorrow.`}
+            </span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 10 }}>
-            {urgentProjects.map((p) => (
-              <div
-                key={"urgent-p-" + p.id}
-                style={{ ...S.watchdogCard, ...S.watchdogCardUrgent, cursor: "pointer" }}
-                onClick={() => onSelectProject(p.clientId, p.id, "timeline")}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <Hourglass size={16} color={COLORS.red} />
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text }}>{p.name}</div>
-                    <div style={{ fontSize: 11, color: COLORS.red }}>
-                      ⏳ Project deadline due in under 24 hours! Click to open.
-                    </div>
-                  </div>
-                </div>
-                <ChevronRight size={14} color={COLORS.textDim} />
-              </div>
-            ))}
-
-            {urgentCreds.slice(0, 2).map((c) => (
-              <div
-                key={"urgent-c-" + c.id}
-                style={{ ...S.watchdogCard, ...S.watchdogCardUrgent, cursor: "pointer" }}
-                onClick={onOpenWatchdog}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <BellRing size={16} color={COLORS.red} />
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text }}>{c.label}</div>
-                    <div style={{ fontSize: 11, color: COLORS.red }}>
-                      🔴 API renewal due {c.renewalInfo?.nextDate}
-                    </div>
-                  </div>
-                </div>
-                <ChevronRight size={14} color={COLORS.textDim} />
-              </div>
-            ))}
-          </div>
+          {urgentProjects.length > 0 ? (
+            <button
+              type="button"
+              style={{ ...S.secondaryBtn, fontSize: 11.5, padding: "3px 9px", color: COLORS.red, borderColor: "rgba(181, 56, 43, 0.3)" }}
+              onClick={() => onSelectProject(urgentProjects[0].clientId, urgentProjects[0].id, "timeline")}
+            >
+              Open Project <ChevronRight size={12} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              style={{ ...S.secondaryBtn, fontSize: 11.5, padding: "3px 9px", color: COLORS.red, borderColor: "rgba(181, 56, 43, 0.3)" }}
+              onClick={onOpenWatchdog}
+            >
+              Open Watchdog <ChevronRight size={12} />
+            </button>
+          )}
         </div>
       )}
 
-      {/* 4 Executive KPI Cards */}
-      <div style={S.watchdogStatGrid}>
-        <div style={S.watchdogStatCard}>
-          <div style={S.watchdogStatLabel}>Active Clients & Projects</div>
-          <div style={S.watchdogStatValue}>
-            {allProjects.length} <span style={{ fontSize: 13, color: COLORS.textDim, fontWeight: 400 }}>in {clients.length} client{clients.length !== 1 ? "s" : ""}</span>
-          </div>
-          <div style={{ fontSize: 11, color: COLORS.textFaint }}>Tracked in your vault</div>
-        </div>
-
-        <div style={S.watchdogStatCard}>
-          <div style={S.watchdogStatLabel}>Encrypted Secrets</div>
-          <div style={{ ...S.watchdogStatValue, color: COLORS.brass }}>{allActiveCreds.length}</div>
-          <div style={{ fontSize: 11, color: COLORS.textFaint }}>Client-side AES-256 protected</div>
-        </div>
-
-        <div style={S.watchdogStatCard}>
-          <div style={S.watchdogStatLabel}>Monthly API Spend</div>
-          <div style={{ ...S.watchdogStatValue, color: COLORS.text, fontSize: 18 }}>{formattedMonthlySpend}</div>
-          <div style={{ fontSize: 11, color: COLORS.textFaint }}>
-            {activeTrackedCreds.length === 0 ? "0 subscriptions tracked · Add cost to keys" : "Active ongoing subscriptions"}
+      {/* 3. Minimalist Key Metrics Strip */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+        gap: 10,
+      }}>
+        <div style={{
+          background: COLORS.panel,
+          border: `1px solid ${COLORS.line}`,
+          borderRadius: 10,
+          padding: "12px 14px",
+        }}>
+          <div style={{ fontSize: 11.5, color: COLORS.textFaint, fontWeight: 500 }}>Projects & Workspaces</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, marginTop: 4 }}>
+            {allProjects.length}
+            <span style={{ fontSize: 12, fontWeight: 400, color: COLORS.textDim, marginLeft: 6 }}>
+              in {clients.length} {clients.length === 1 ? "client" : "clients"}
+            </span>
           </div>
         </div>
 
-        <div style={S.savingsStatCard}>
-          <div style={{ ...S.watchdogStatLabel, color: COLORS.green }}>Total Money Saved</div>
-          <div style={{ ...S.watchdogStatValue, color: COLORS.green, fontSize: 18 }}>{formattedMonthlySavings}/mo</div>
-          <div style={{ fontSize: 11, color: COLORS.textFaint }}>
-            {canceledCreds.length === 0 ? "Cancel unused APIs in Watchdog" : `${formattedAnnualSavings} annualized savings`}
+        <div style={{
+          background: COLORS.panel,
+          border: `1px solid ${COLORS.line}`,
+          borderRadius: 10,
+          padding: "12px 14px",
+        }}>
+          <div style={{ fontSize: 11.5, color: COLORS.textFaint, fontWeight: 500 }}>Encrypted Secrets</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, marginTop: 4 }}>
+            {allActiveCreds.length}
+            <span style={{ fontSize: 12, fontWeight: 400, color: COLORS.textDim, marginLeft: 6 }}>
+              AES-256-GCM
+            </span>
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: COLORS.panel,
+            border: `1px solid ${COLORS.line}`,
+            borderRadius: 10,
+            padding: "12px 14px",
+            cursor: "pointer",
+            transition: "border-color 0.15s ease",
+          }}
+          onClick={onOpenWatchdog}
+          title="Open Subscription Watchdog"
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 11.5, color: COLORS.textFaint, fontWeight: 500 }}>Monthly API Spend</span>
+            <ArrowUpRight size={12} color={COLORS.textFaint} />
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, marginTop: 4 }}>
+            {formattedMonthlySpend}
+            <span style={{ fontSize: 12, fontWeight: 400, color: COLORS.textDim, marginLeft: 6 }}>
+              {activeTrackedCreds.length} tracked
+            </span>
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: COLORS.panel,
+            border: `1px solid ${COLORS.line}`,
+            borderRadius: 10,
+            padding: "12px 14px",
+            cursor: "pointer",
+            transition: "border-color 0.15s ease",
+          }}
+          onClick={onOpenWatchdog}
+          title="Open Subscription Watchdog"
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 11.5, color: COLORS.green, fontWeight: 500 }}>Saved via Watchdog</span>
+            <ArrowUpRight size={12} color={COLORS.green} />
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.green, marginTop: 4 }}>
+            {formattedMonthlySavings}
+            <span style={{ fontSize: 12, fontWeight: 400, color: COLORS.textDim, marginLeft: 6 }}>
+              / month
+            </span>
           </div>
         </div>
       </div>
 
-      {/* All Projects & Delivery Buffers Matrix */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Folder size={15} color={COLORS.cyan} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.text }}>
-              Project Workspaces ({allProjects.length})
-            </span>
-          </div>
-          <span style={{ fontSize: 11, color: COLORS.brass, fontFamily: "IBM Plex Mono, monospace" }}>
-            SELECT A PROJECT TO ENTER MULTI-TAB WORKSPACE
+      {/* 4. Projects Grid */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.text }}>
+            Projects
+          </span>
+          <span style={{ fontSize: 11.5, color: COLORS.textFaint }}>
+            Click a project to open credentials
           </span>
         </div>
 
         {allProjects.length === 0 ? (
-          <div style={S.quickStartCard}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-              <div style={{ maxWidth: 540 }}>
-                <div style={{ ...S.eyebrow, color: COLORS.brass }}>QUICK-START ONBOARDING</div>
-                <h2 style={{ ...S.mainTitle, fontSize: 19, margin: "4px 0 8px" }}>
-                  Welcome to Your Secure Client Vault
-                </h2>
-                <p style={{ fontSize: 13, color: COLORS.textDim, lineHeight: 1.55, margin: 0 }}>
-                  Custodian protects your client API keys, database secrets, and delivery timelines with zero-knowledge AES-256 encryption. Let's set up your first client workspace in 30 seconds.
-                </p>
+          <div style={{
+            background: COLORS.panel,
+            border: `1px solid ${COLORS.line}`,
+            borderRadius: 12,
+            padding: "36px 20px",
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 12,
+          }}>
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              background: "rgba(176, 141, 87, 0.12)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}>
+              <Folder size={20} color={COLORS.brass} />
+            </div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text }}>
+                No Client Projects Yet
               </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                {onStartTour && (
-                  <button type="button" style={S.secondaryBtn} onClick={onStartTour}>
-                    <Sparkles size={13} color={COLORS.brass} /> Take 1-Min Tour
-                  </button>
-                )}
+              <p style={{ fontSize: 12.5, color: COLORS.textDim, margin: "4px 0 0", maxWidth: 380 }}>
+                Create your first client workspace to start organizing and encrypting your credentials.
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+              {onStartTour && (
                 <button
                   type="button"
-                  style={{ ...S.primaryBtnSm, padding: "9px 16px", fontSize: 13 }}
-                  onClick={onAddClient}
+                  style={{ ...S.secondaryBtn, fontSize: 12 }}
+                  onClick={onStartTour}
                 >
-                  <Plus size={15} /> Create First Client
+                  <Sparkles size={12} color={COLORS.brass} /> Quick Tour
                 </button>
-              </div>
-            </div>
-
-            {/* 3-Step Visual Roadmap */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 4 }}>
-              <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 10, padding: "14px 16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: COLORS.brass, color: "var(--primary-btn-text, #FFFFFF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>1</div>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: COLORS.text }}>Add Client & Project</span>
-                </div>
-                <p style={{ fontSize: 11.5, color: COLORS.textFaint, lineHeight: 1.45, margin: 0 }}>
-                  Group apps by client (e.g. Acme Corp &gt; Web App) to keep projects strictly isolated.
-                </p>
-              </div>
-
-              <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 10, padding: "14px 16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: COLORS.brass, color: "var(--primary-btn-text, #FFFFFF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>2</div>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: COLORS.text }}>Store Secrets & .env Keys</span>
-                </div>
-                <p style={{ fontSize: 11.5, color: COLORS.textFaint, lineHeight: 1.45, margin: 0 }}>
-                  Store database passwords, Stripe keys, or import full .env files with client-side encryption.
-                </p>
-              </div>
-
-              <div style={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 10, padding: "14px 16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: COLORS.brass, color: "var(--primary-btn-text, #FFFFFF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>3</div>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: COLORS.text }}>Set Delivery Safety Buffers</span>
-                </div>
-                <p style={{ fontSize: 11.5, color: COLORS.textFaint, lineHeight: 1.45, margin: 0 }}>
-                  Set your internal goal ahead of the client contract deadline to protect against scope creep.
-                </p>
-              </div>
+              )}
+              <button
+                type="button"
+                style={{ ...S.primaryBtnSm, fontSize: 12 }}
+                onClick={onAddClient}
+              >
+                <Plus size={13} /> Create Client
+              </button>
             </div>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+            gap: 12,
+          }}>
             {projectsWithDeadlines.map((p) => {
-              const details = p.details || {};
-              const attachments = details.attachments || [];
+              const secCount = p.credentials?.length || 0;
+              const hasDue = p.daysToLD !== null;
+              const isUrgent = p.daysToLD !== null && p.daysToLD <= 2;
 
               return (
                 <div
                   key={p.id}
-                  style={S.overviewProjectCard}
+                  style={{
+                    background: COLORS.panel,
+                    border: `1px solid ${COLORS.line}`,
+                    borderRadius: 10,
+                    padding: "14px 16px",
+                    cursor: "pointer",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10,
+                    transition: "border-color 0.15s ease, transform 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = COLORS.brassDim;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = COLORS.line;
+                  }}
                   onClick={() => onSelectProject(p.clientId, p.id, "creds")}
                 >
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-                    <div>
-                      <div style={{ fontSize: 11, color: COLORS.brass, fontFamily: "IBM Plex Mono, monospace", fontWeight: 600 }}>
-                        {p.clientName.toUpperCase()}
-                      </div>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, marginTop: 2 }}>
-                        {p.name}
-                      </div>
-                    </div>
-                    <span style={S.rolePillMember}>
-                      {p.credentials?.length || 0} secret{(p.credentials?.length || 0) !== 1 ? "s" : ""}
+                  {/* Top: Client + Secrets count */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: COLORS.textFaint, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      {p.clientName}
+                    </span>
+                    <span style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: COLORS.textDim,
+                      background: COLORS.panelAlt,
+                      padding: "2px 7px",
+                      borderRadius: 12,
+                    }}>
+                      {secCount} {secCount === 1 ? "secret" : "secrets"}
                     </span>
                   </div>
 
-                  {/* Deadlines & Delivery Buffer Pills */}
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {p.daysToLD !== null ? (
-                      <span style={p.daysToLD <= 2 ? S.urgencyPillCritical : S.urgencyPillActive}>
-                        <Calendar size={11} /> Due in {p.daysToLD}d
+                  {/* Title */}
+                  <div style={{
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: COLORS.text,
+                    letterSpacing: "-0.01em",
+                    lineHeight: 1.3,
+                  }}>
+                    {p.name}
+                  </div>
+
+                  {/* Status / Deadline pills */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: "auto" }}>
+                    {hasDue ? (
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 500,
+                        color: isUrgent ? COLORS.red : COLORS.textDim,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}>
+                        <Calendar size={11} color={isUrgent ? COLORS.red : COLORS.textFaint} />
+                        Due in {p.daysToLD}d
                       </span>
                     ) : (
-                      <span style={{ ...S.urgencyPillActive, background: COLORS.panelAlt, color: COLORS.textDim, borderColor: COLORS.line }}>
-                        No deadline set
+                      <span style={{ fontSize: 11, color: COLORS.textFaint }}>
+                        No deadline
                       </span>
                     )}
 
                     {p.greyDays !== null && p.greyDays >= 0 && (
-                      <span
-                        style={{ ...S.savingsBadge, cursor: "help" }}
-                        title="Delivery Safety Buffer (Grey Days): The safety margin of days between your target completion goal and the client's contract delivery deadline to ensure on-time delivery."
-                      >
-                        <ShieldCheck size={11} /> {p.greyDays}d Delivery Buffer ⓘ
+                      <span style={{
+                        fontSize: 10.5,
+                        color: COLORS.brass,
+                        background: "rgba(176, 141, 87, 0.08)",
+                        padding: "1px 6px",
+                        borderRadius: 4,
+                        marginLeft: "auto",
+                      }}>
+                        {p.greyDays}d buffer
                       </span>
                     )}
                   </div>
 
-                  {/* Checklist Progress */}
-                  {p.checklistCount > 0 ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: COLORS.textFaint }}>
-                        <span>Checklist: {p.completedTasks}/{p.checklistCount} done</span>
-                        <span>{p.progressPercent}%</span>
-                      </div>
-                      <div style={S.progressBarBg}>
-                        <div style={{ ...S.progressBarFill, width: `${p.progressPercent}%` }} />
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: 11, color: COLORS.textFaint }}>
-                      Checklist: 0 deliverables tracked
+                  {/* Checklist bar if tasks exist */}
+                  {p.checklistCount > 0 && (
+                    <div style={{ width: "100%", height: 3, background: COLORS.line, borderRadius: 2, overflow: "hidden" }}>
+                      <div style={{
+                        height: "100%",
+                        width: `${p.progressPercent}%`,
+                        background: p.progressPercent === 100 ? COLORS.green : COLORS.brass,
+                        borderRadius: 2,
+                      }} />
                     </div>
                   )}
-
-                  {/* Quick-Jump Tabs Shortcuts */}
-                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap", paddingTop: 4, borderTop: `1px solid ${COLORS.line}` }}>
-                    <button
-                      type="button"
-                      style={{ ...S.secondaryBtn, fontSize: 10.5, padding: "3px 7px", borderRadius: 6 }}
-                      onClick={(e) => { e.stopPropagation(); onSelectProject(p.clientId, p.id, "creds"); }}
-                      title="Open Secrets & .env Tab"
-                    >
-                      <KeyRound size={10} color={COLORS.brass} /> {p.credentials?.length || 0} Secrets
-                    </button>
-                    <button
-                      type="button"
-                      style={{ ...S.secondaryBtn, fontSize: 10.5, padding: "3px 7px", borderRadius: 6 }}
-                      onClick={(e) => { e.stopPropagation(); onSelectProject(p.clientId, p.id, "timeline"); }}
-                      title="Open Delivery Timeline Tab"
-                    >
-                      <Calendar size={10} color={COLORS.brass} /> Timeline
-                    </button>
-                    <button
-                      type="button"
-                      style={{ ...S.secondaryBtn, fontSize: 10.5, padding: "3px 7px", borderRadius: 6 }}
-                      onClick={(e) => { e.stopPropagation(); onSelectProject(p.clientId, p.id, "checklist"); }}
-                      title="Open Deliverables Checklist Tab"
-                    >
-                      <CheckSquare size={10} color={COLORS.green} /> {p.completedTasks}/{p.checklistCount} Tasks
-                    </button>
-                    <button
-                      type="button"
-                      style={{ ...S.secondaryBtn, fontSize: 10.5, padding: "3px 7px", borderRadius: 6 }}
-                      onClick={(e) => { e.stopPropagation(); onSelectProject(p.clientId, p.id, "docs"); }}
-                      title="Open Pinned PRDs & Docs Tab"
-                    >
-                      <Pin size={10} color={COLORS.brass} /> {attachments.length} Docs
-                    </button>
-                  </div>
-
-                  {/* Primary Open Workspace CTA Bar */}
-                  <div style={S.overviewOpenBtn}>
-                    <span>Open Project Workspace (5 Tabs)</span>
-                    <ArrowRight size={13} />
-                  </div>
                 </div>
               );
             })}

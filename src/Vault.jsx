@@ -9,7 +9,8 @@ import {
   CheckSquare, Square, Target, Hourglass, ArrowRight, ArrowLeft, TrendingUp, BarChart3, Database, Lock,
   PackageCheck, Package, Command, Activity, Compass, Terminal,
   Paperclip, Pin, File, Link2, FileCheck, Maximize2, Minimize2,
-  Menu, Sun, Moon, Layers, Rocket, Share2, Dices, Ghost, Smartphone
+  Menu, Sun, Moon, Layers, Rocket, Share2, Dices, Ghost, Smartphone,
+  MoreHorizontal, LayoutGrid
 } from "lucide-react";
 import { supabase } from "./supabaseClient";
 import { encryptJSON, decryptJSON } from "./crypto";
@@ -92,6 +93,8 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
   const [modal, setModal] = useState(null);
   const [actionErr, setActionErr] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
+  const [projectMenuOpen, setProjectMenuOpen] = useState(false);
+  const [projectCredSearch, setProjectCredSearch] = useState("");
 
   // Persist active navigation state to sessionStorage so idle backgrounding or wake-up never resets place
   useEffect(() => {
@@ -1266,16 +1269,18 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
             ...S.treeClientRow,
             marginTop: 4,
             marginBottom: 6,
-            padding: "9px 10px",
+            padding: "8px 10px",
             fontSize: 13,
+            borderRadius: 6,
             background: !selectedClient && !selectedProject && view === "vault" ? "var(--highlight-bg, rgba(0, 210, 255, 0.12))" : "transparent",
             border: `1px solid ${!selectedClient && !selectedProject && view === "vault" ? "rgba(0, 210, 255, 0.35)" : "transparent"}`,
+            cursor: "pointer",
           }}
           onClick={() => { setSelectedClient(null); setSelectedProject(null); setView("vault"); setMobileSidebarOpen(false); }}
         >
-          <Crown size={15} color={!selectedClient && !selectedProject && view === "vault" ? COLORS.cyan : COLORS.textDim} />
+          <LayoutGrid size={14} color={!selectedClient && !selectedProject && view === "vault" ? COLORS.cyan : COLORS.textDim} />
           <span style={{ ...S.treeLabel, fontWeight: 600, fontSize: 13, color: !selectedClient && !selectedProject && view === "vault" ? COLORS.cyan : COLORS.text }}>
-            Vault Overview (All Projects)
+            Overview
           </span>
         </div>
 
@@ -1443,26 +1448,24 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
               </div>
             )}
 
-            {/* Tools & Utilities Section */}
-            <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${COLORS.line}` }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "0 4px 8px" }}>
-                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: COLORS.textFaint, textTransform: "uppercase" }}>
-                  Tools & Utilities
+            {/* Tools Section */}
+            <div style={{ marginTop: 14, paddingTop: 10, borderTop: `1px solid ${COLORS.line}` }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "0 6px 6px" }}>
+                <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.06em", color: COLORS.textFaint, textTransform: "uppercase" }}>
+                  Tools
                 </span>
                 <button
                   type="button"
                   style={{
-                    background: showStickyNotes ? "rgba(0, 210, 255, 0.12)" : "none",
-                    border: `1px solid ${showStickyNotes ? "rgba(0, 210, 255, 0.3)" : "transparent"}`,
+                    background: "none",
+                    border: "none",
                     color: showStickyNotes ? COLORS.cyan : COLORS.textFaint,
                     fontSize: 11,
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
-                    gap: 4,
-                    padding: "2px 6px",
-                    borderRadius: 6,
-                    transition: "all 0.15s ease",
+                    gap: 3,
+                    padding: "2px 4px",
                   }}
                   onClick={() => {
                     setShowStickyNotes((prev) => {
@@ -1471,81 +1474,84 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                       return next;
                     });
                   }}
-                  title="Toggle Cyber Scratchpad Note"
+                  title="Toggle Sticky Scratchpad"
                 >
-                  <Pin size={11} style={{ transform: "rotate(45deg)", color: showStickyNotes ? COLORS.cyan : COLORS.textFaint }} />
-                  <span>{showStickyNotes ? "Hide Stickies" : "Stickies"}</span>
+                  <Pin size={10} style={{ transform: "rotate(45deg)", color: showStickyNotes ? COLORS.cyan : COLORS.textFaint }} />
+                  <span>{showStickyNotes ? "Hide Notes" : "Stickies"}</span>
                 </button>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                <button
-                  type="button"
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <div
                   className="sidebar-nav-btn"
                   style={{
-                    ...S.secondaryBtn,
-                    padding: "9px 10px",
+                    ...S.treeClientRow,
+                    padding: "7px 10px",
                     fontSize: 12.5,
-                    borderRadius: 8,
-                    ...(view === "generator" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
+                    borderRadius: 6,
+                    background: view === "generator" ? "var(--highlight-bg, rgba(176,141,87,0.12))" : "transparent",
+                    color: view === "generator" ? COLORS.brass : COLORS.textDim,
+                    cursor: "pointer",
                   }}
                   onClick={() => { setSelectedClient(null); setSelectedProject(null); setView("generator"); setMobileSidebarOpen(false); }}
-                  title="Password & Key Generator"
                 >
-                  <Dices size={14} color={COLORS.brass} />
-                  <span>Generator</span>
-                </button>
+                  <Dices size={13} color={view === "generator" ? COLORS.brass : COLORS.textFaint} />
+                  <span style={S.treeLabel}>Password Generator</span>
+                </div>
 
-                <button
-                  type="button"
+                <div
                   className="sidebar-nav-btn"
                   style={{
-                    ...S.secondaryBtn,
-                    padding: "9px 10px",
+                    ...S.treeClientRow,
+                    padding: "7px 10px",
                     fontSize: 12.5,
-                    borderRadius: 8,
-                    ...(view === "sharing" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
+                    borderRadius: 6,
+                    background: view === "sharing" ? "var(--highlight-bg, rgba(176,141,87,0.12))" : "transparent",
+                    color: view === "sharing" ? COLORS.brass : COLORS.textDim,
+                    cursor: "pointer",
                   }}
                   onClick={() => { setSelectedClient(null); setSelectedProject(null); setView("sharing"); setMobileSidebarOpen(false); }}
-                  title="Zero-Knowledge Secret Sharing"
                 >
-                  <Share2 size={14} color={COLORS.brass} />
-                  <span>Sharing</span>
-                </button>
+                  <Share2 size={13} color={view === "sharing" ? COLORS.brass : COLORS.textFaint} />
+                  <span style={S.treeLabel}>Secret Sharing</span>
+                </div>
 
-                <button
-                  type="button"
+                <div
                   className="sidebar-nav-btn"
                   style={{
-                    ...S.secondaryBtn,
-                    padding: "9px 10px",
+                    ...S.treeClientRow,
+                    padding: "7px 10px",
                     fontSize: 12.5,
-                    borderRadius: 8,
-                    ...(view === "workspace" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
+                    borderRadius: 6,
+                    background: view === "workspace" ? "var(--highlight-bg, rgba(176,141,87,0.12))" : "transparent",
+                    color: view === "workspace" ? COLORS.brass : COLORS.textDim,
+                    cursor: "pointer",
                   }}
                   onClick={() => { setSelectedClient(null); setSelectedProject(null); setView("workspace"); setMobileSidebarOpen(false); }}
-                  title="Resource Library"
                 >
-                  <Package size={14} />
-                  <span>Library</span>
-                </button>
+                  <Package size={13} color={view === "workspace" ? COLORS.brass : COLORS.textFaint} />
+                  <span style={S.treeLabel}>Resource Library</span>
+                </div>
 
-                <button
-                  type="button"
+                <div
                   className="sidebar-nav-btn"
                   style={{
-                    ...S.secondaryBtn,
-                    padding: "9px 10px",
+                    ...S.treeClientRow,
+                    padding: "7px 10px",
                     fontSize: 12.5,
-                    borderRadius: 8,
-                    ...(view === "trash" ? { borderColor: COLORS.brass, color: COLORS.brass, background: "rgba(176,141,87,0.14)", fontWeight: 600 } : {}),
+                    borderRadius: 6,
+                    background: view === "trash" ? "var(--highlight-bg, rgba(176,141,87,0.12))" : "transparent",
+                    color: view === "trash" ? COLORS.brass : COLORS.textDim,
+                    cursor: "pointer",
                   }}
                   onClick={() => { setSelectedClient(null); setSelectedProject(null); setView("trash"); setMobileSidebarOpen(false); }}
-                  title="Recycle Bin"
                 >
-                  <Trash2 size={14} />
-                  <span>Trash {totalTrashCount > 0 ? `(${totalTrashCount})` : ""}</span>
-                </button>
+                  <Trash2 size={13} color={view === "trash" ? COLORS.brass : COLORS.textFaint} />
+                  <span style={S.treeLabel}>Recycle Bin</span>
+                  {totalTrashCount > 0 && (
+                    <span style={{ ...S.treeCount, fontSize: 10 }}>{totalTrashCount}</span>
+                  )}
+                </div>
               </div>
             </div>
       </div>
@@ -1888,39 +1894,47 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
           </div>
         ) : !currentProject ? (
           <>
-            {/* Client View Breadcrumbs */}
-            <div style={S.breadcrumbBar}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span
-                  style={{ color: COLORS.brass, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}
-                  onClick={() => { setSelectedClient(null); setSelectedProject(null); }}
-                  title="Return to Vault Overview"
-                >
-                  <Crown size={12} color={COLORS.brass} /> Vault Overview
-                </span>
-                <span style={{ color: COLORS.textFaint }}>/</span>
-                <span style={{ color: COLORS.text, fontWeight: 600 }}>{currentClient.name}</span>
-              </div>
-
-              <button
-                type="button"
-                style={{ ...S.secondaryBtn, padding: "4px 8px", fontSize: 11 }}
-                onClick={() => { setSelectedClient(null); setSelectedProject(null); }}
-              >
-                <ArrowLeft size={12} /> Back to Overview
-              </button>
-            </div>
-
-            <div style={S.mainHeadRow}>
+            {/* Minimalist Client Header */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 12,
+              marginBottom: 16,
+              paddingBottom: 4,
+            }}>
               <div>
-                <div style={{ ...S.eyebrow, color: COLORS.brass }}>CLIENT WORKSPACE</div>
-                <h1 style={S.mainTitle}>{currentClient.name}</h1>
-                <div style={{ fontSize: 12, color: COLORS.textDim, marginTop: 4, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span>{currentClient.projects?.length || 0} Projects</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    type="button"
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: COLORS.textDim,
+                      cursor: "pointer",
+                      padding: 0,
+                      fontSize: 13,
+                    }}
+                    onClick={() => { setSelectedClient(null); setSelectedProject(null); }}
+                  >
+                    Overview
+                  </button>
+                  <span style={{ color: COLORS.textFaint }}>/</span>
+                  <h1 style={{
+                    margin: 0,
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: COLORS.text,
+                    letterSpacing: "-0.02em",
+                  }}>
+                    {currentClient.name}
+                  </h1>
+                </div>
+                <div style={{ fontSize: 12.5, color: COLORS.textDim, marginTop: 4, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span>{currentClient.projects?.length || 0} {currentClient.projects?.length === 1 ? "project" : "projects"}</span>
                   {currentClientSpendText && (
-                    <span style={S.clientSpendBadge}>
-                      <DollarSign size={11} /> {currentClientSpendText}/mo active spend
-                    </span>
+                    <span style={{ color: COLORS.textDim }}>· {currentClientSpendText}/mo spend</span>
                   )}
                   {atFreeLimit && (
                     <span style={S.planBadge}>2/2 Free Clients</span>
@@ -1928,19 +1942,25 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                 </div>
               </div>
 
-              <div style={S.headActions}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <button
-                  style={S.secondaryBtn}
+                  type="button"
+                  style={{ ...S.secondaryBtn, fontSize: 12, padding: "7px 12px", borderRadius: 8 }}
                   onClick={() => setModal({ type: "team_members", client: currentClient })}
-                  title="Manage client team members & role permissions"
+                  title="Manage client team members"
                 >
                   <Users size={13} /> Team
                 </button>
-                <button style={S.primaryBtnSm} onClick={() => setModal({ type: "project", clientId: currentClient.id })}>
+                <button
+                  type="button"
+                  style={{ ...S.primaryBtnSm, fontSize: 12, padding: "7px 13px", borderRadius: 8 }}
+                  onClick={() => setModal({ type: "project", clientId: currentClient.id })}
+                >
                   <Plus size={13} /> New Project
                 </button>
                 <button
-                  style={{ ...S.iconBtnGhost, color: COLORS.red }}
+                  type="button"
+                  style={{ ...S.iconBtnGhost, color: COLORS.red, padding: 6 }}
                   title="Delete Client"
                   onClick={() => handleDeleteClient(currentClient.id)}
                 >
@@ -1975,179 +1995,201 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
           </>
         ) : (
           <>
-            {/* Project View Breadcrumbs */}
-            <div style={S.breadcrumbBar}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span
-                  style={{ color: COLORS.brass, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}
-                  onClick={() => { setSelectedClient(null); setSelectedProject(null); }}
-                  title="Return to Vault Overview"
-                >
-                  <Crown size={12} color={COLORS.brass} /> Vault Overview
-                </span>
-                <span style={{ color: COLORS.textFaint }}>/</span>
-                <span
-                  style={{ color: COLORS.textDim, cursor: "pointer" }}
-                  onClick={() => setSelectedProject(null)}
-                  title={`View all projects in ${currentClient.name}`}
-                >
-                  {currentClient.name}
-                </span>
-                <span style={{ color: COLORS.textFaint }}>/</span>
-                <span style={{ color: COLORS.text, fontWeight: 600 }}>{currentProject.name}</span>
-              </div>
-
-              <button
-                type="button"
-                style={{ ...S.secondaryBtn, padding: "4px 8px", fontSize: 11 }}
-                onClick={() => setSelectedProject(null)}
-              >
-                <ArrowLeft size={12} /> Back to Projects
-              </button>
-            </div>
-
-            {/* Project Title Row with Add Secret in the same line */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 12 }}>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ ...S.eyebrow, color: COLORS.brass }}>{currentClient.name.toUpperCase()}</div>
-                <h2 style={{ ...S.mainTitle, fontSize: 20, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {currentProject.name}
-                </h2>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                {projectTab === "creds" && (
-                  <button
-                    style={{ ...S.primaryBtnSm, padding: "8px 14px", display: "flex", alignItems: "center", gap: 6 }}
-                    onClick={() => setModal({ type: "cred", projectId: currentProject.id })}
-                    title="Add a new encrypted secret / API key"
-                  >
-                    <Plus size={14} /> <span>Add secret</span>
-                  </button>
-                )}
-                <button
-                  style={{ ...S.iconBtnGhost, color: COLORS.red, padding: 6 }}
-                  title="Delete Project"
-                  onClick={() => deleteProject(currentProject.id)}
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            </div>
-
-            {/* Production Readiness Score HUD Bar */}
+            {/* Minimalist Unified Project Header */}
             {(() => {
               const readiness = calculateProjectReadiness(currentProject, []);
               const isReady = readiness.score >= 85;
               const isWarning = readiness.score < 60;
-              const color = isReady ? "#2D6A42" : isWarning ? "#B5382B" : COLORS.brass;
-              const badgeBg = isReady ? "rgba(45,106,66,0.12)" : isWarning ? "rgba(181,56,43,0.12)" : "rgba(148,110,55,0.12)";
+              const readinessColor = isReady ? COLORS.green : isWarning ? COLORS.red : COLORS.brass;
 
               return (
-                <div
-                  style={{
-                    background: COLORS.panelAlt,
-                    border: `1px solid ${COLORS.line}`,
-                    borderRadius: 10,
-                    padding: "10px 14px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    flexWrap: "wrap",
-                    gap: 10,
-                    marginBottom: 12,
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 220 }}>
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <ShieldCheck size={14} color={color} />
-                        <span style={{ fontSize: 11.5, fontWeight: 700, color: COLORS.text, letterSpacing: "0.02em" }}>
-                          PRODUCTION READINESS: {readiness.score}%
-                        </span>
-                        <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 4, background: badgeBg, color, fontWeight: 600 }}>
-                          {readiness.status === "production_ready" ? "READY" : readiness.status === "in_progress" ? "IN PROGRESS" : "NEEDS ATTENTION"}
-                        </span>
-                      </div>
-                      <div style={{ width: "100%", maxWidth: 260, height: 5, background: COLORS.line, borderRadius: 3, overflow: "hidden", marginTop: 4 }}>
-                        <div style={{ height: "100%", width: `${readiness.score}%`, background: color, transition: "width 0.3s" }} />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    {readiness.issues.length > 0 && (
-                      <span style={{ fontSize: 11.5, color: COLORS.red, display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 500 }}>
-                        <AlertTriangle size={12} /> {readiness.issues.length} item(s) to resolve
-                      </span>
-                    )}
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 12,
+                  marginBottom: 16,
+                  paddingBottom: 4,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <button
                       type="button"
                       style={{
-                        ...S.secondaryBtn,
-                        padding: "5px 12px",
-                        fontSize: 11.5,
-                        color: COLORS.brass,
-                        borderColor: COLORS.brassDim,
-                        background: "var(--highlight-bg, rgba(148,110,55,0.08))",
+                        background: "none",
+                        border: "none",
+                        color: COLORS.textDim,
+                        cursor: "pointer",
+                        padding: 0,
+                        fontSize: 13,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                      onClick={() => setSelectedProject(null)}
+                      title={`Back to ${currentClient.name}`}
+                    >
+                      <span>{currentClient.name}</span>
+                    </button>
+                    <span style={{ color: COLORS.textFaint }}>/</span>
+                    <h2 style={{
+                      margin: 0,
+                      fontSize: 19,
+                      fontWeight: 700,
+                      color: COLORS.text,
+                      letterSpacing: "-0.01em",
+                    }}>
+                      {currentProject.name}
+                    </h2>
+
+                    {/* Subtle Readiness Pill */}
+                    <button
+                      type="button"
+                      style={{
+                        background: isReady ? "rgba(45,106,66,0.12)" : isWarning ? "rgba(181,56,43,0.12)" : "rgba(176,141,87,0.12)",
+                        color: readinessColor,
+                        border: `1px solid ${readinessColor}33`,
+                        borderRadius: 20,
+                        padding: "2px 8px",
+                        fontSize: 11,
                         fontWeight: 600,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        cursor: "pointer",
+                        transition: "all 0.15s ease",
                       }}
                       onClick={() => setModal({ type: "readiness_audit", project: currentProject })}
+                      title="Review production readiness audit"
                     >
-                      Review Readiness
+                      <ShieldCheck size={11} color={readinessColor} />
+                      <span>{readiness.score}% Ready</span>
                     </button>
+                  </div>
+
+                  {/* Header Actions */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, position: "relative" }}>
+                    {projectTab === "creds" && (
+                      <button
+                        type="button"
+                        style={{ ...S.primaryBtnSm, fontSize: 12.5, padding: "7px 13px", borderRadius: 8, gap: 5 }}
+                        onClick={() => setModal({ type: "cred", projectId: currentProject.id })}
+                        title="Add a new encrypted secret"
+                      >
+                        <Plus size={13} />
+                        <span>Add Secret</span>
+                      </button>
+                    )}
+
+                    {/* More Actions Menu */}
+                    <div style={{ position: "relative" }}>
+                      <button
+                        type="button"
+                        style={{
+                          ...S.secondaryBtn,
+                          padding: "7px 10px",
+                          fontSize: 12,
+                          borderRadius: 8,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                        onClick={() => setProjectMenuOpen((prev) => !prev)}
+                        title="Project actions"
+                      >
+                        <MoreHorizontal size={14} />
+                      </button>
+
+                      {projectMenuOpen && (
+                        <>
+                          <div
+                            style={{ position: "fixed", inset: 0, zIndex: 999 }}
+                            onClick={() => setProjectMenuOpen(false)}
+                          />
+                          <div style={{
+                            position: "absolute",
+                            right: 0,
+                            top: "calc(100% + 6px)",
+                            zIndex: 1000,
+                            background: COLORS.panel,
+                            border: `1px solid ${COLORS.line}`,
+                            borderRadius: 10,
+                            boxShadow: "0 8px 28px rgba(0,0,0,0.25)",
+                            minWidth: 200,
+                            padding: "6px 0",
+                            animation: "scaleIn 0.15s ease",
+                          }}>
+                            <button
+                              type="button"
+                              style={{ width: "100%", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: COLORS.text, background: "none", border: "none", textAlign: "left", cursor: "pointer" }}
+                              onClick={() => { setProjectMenuOpen(false); setModal({ type: "handover", project: currentProject, clientName: currentClient.name }); }}
+                            >
+                              <PackageCheck size={13} color={COLORS.brass} />
+                              <span>Client Handover</span>
+                            </button>
+                            <button
+                              type="button"
+                              style={{ width: "100%", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: COLORS.text, background: "none", border: "none", textAlign: "left", cursor: "pointer" }}
+                              onClick={() => { setProjectMenuOpen(false); setModal({ type: "import_env", projectId: currentProject.id }); }}
+                            >
+                              <Download size={13} color={COLORS.textDim} />
+                              <span>Import .env</span>
+                            </button>
+                            <button
+                              type="button"
+                              style={{ width: "100%", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: COLORS.text, background: "none", border: "none", textAlign: "left", cursor: "pointer" }}
+                              onClick={() => { setProjectMenuOpen(false); setModal({ type: "export_env", project: currentProject }); }}
+                            >
+                              <Upload size={13} color={COLORS.textDim} />
+                              <span>Export .env</span>
+                            </button>
+                            <button
+                              type="button"
+                              style={{ width: "100%", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: COLORS.text, background: "none", border: "none", textAlign: "left", cursor: "pointer" }}
+                              onClick={() => { setProjectMenuOpen(false); setModal({ type: "readiness_audit", project: currentProject }); }}
+                            >
+                              <ShieldCheck size={13} color={COLORS.brass} />
+                              <span>Review Readiness</span>
+                            </button>
+                            {(projectTab === "timeline" || projectTab === "notes") && (
+                              <button
+                                type="button"
+                                style={{ width: "100%", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: COLORS.text, background: "none", border: "none", textAlign: "left", cursor: "pointer" }}
+                                onClick={() => { setProjectMenuOpen(false); setModal({ type: "edit_project_details", project: currentProject }); }}
+                              >
+                                <Edit3 size={13} color={COLORS.brass} />
+                                <span>Edit {projectTab === "timeline" ? "Deadlines" : "Notes"}</span>
+                              </button>
+                            )}
+                            {projectTab === "deployment" && (
+                              <button
+                                type="button"
+                                style={{ width: "100%", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: COLORS.text, background: "none", border: "none", textAlign: "left", cursor: "pointer" }}
+                                onClick={() => { setProjectMenuOpen(false); setModal({ type: "edit_deployment", project: currentProject }); }}
+                              >
+                                <Edit3 size={13} color={COLORS.brass} />
+                                <span>Edit Runbook</span>
+                              </button>
+                            )}
+                            <div style={{ height: 1, background: COLORS.line, margin: "4px 0" }} />
+                            <button
+                              type="button"
+                              style={{ width: "100%", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: COLORS.red, background: "none", border: "none", textAlign: "left", cursor: "pointer" }}
+                              onClick={() => { setProjectMenuOpen(false); deleteProject(currentProject.id); }}
+                            >
+                              <Trash2 size={13} color={COLORS.red} />
+                              <span>Delete Project</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
             })()}
 
-            {/* Sub Actions Bar (Client Handover, Import/Export .env) */}
-            <div style={S.projectSubActionsBar} className="custodian-hscroll">
-              <button
-                type="button"
-                style={{ ...S.actionChipBtn, color: COLORS.brass, borderColor: COLORS.brassDim }}
-                onClick={() => setModal({ type: "handover", project: currentProject, clientName: currentClient.name })}
-                title="Generate 1-Click Executive Client Handover Package"
-              >
-                <PackageCheck size={13} color={COLORS.brass} /> <span>Client Handover</span>
-              </button>
-              <button
-                type="button"
-                style={S.actionChipBtn}
-                onClick={() => setModal({ type: "import_env", projectId: currentProject.id })}
-                title="Import .env file or text"
-              >
-                <Download size={13} color={COLORS.textDim} /> <span>Import .env</span>
-              </button>
-              <button
-                type="button"
-                style={S.actionChipBtn}
-                onClick={() => setModal({ type: "export_env", project: currentProject })}
-                title="Export encrypted or decrypted .env"
-              >
-                <Upload size={13} color={COLORS.textDim} /> <span>Export .env</span>
-              </button>
-              {(projectTab === "timeline" || projectTab === "notes") && (
-                <button
-                  type="button"
-                  style={S.actionChipBtn}
-                  onClick={() => setModal({ type: "edit_project_details", project: currentProject })}
-                >
-                  <Edit3 size={13} color={COLORS.brass} /> <span>Edit {projectTab === "timeline" ? "Deadlines" : "Notes"}</span>
-                </button>
-              )}
-              {projectTab === "deployment" && (
-                <button
-                  type="button"
-                  style={S.actionChipBtn}
-                  onClick={() => setModal({ type: "edit_deployment", project: currentProject })}
-                >
-                  <Edit3 size={13} color={COLORS.brass} /> <span>Edit Runbook</span>
-                </button>
-              )}
-            </div>
-
-            {/* Project Tabs Row */}
+            {/* Streamlined Project Tabs */}
             {(() => {
               const details = currentProject.details || {};
               const checklist = details.checklist || [];
@@ -2155,25 +2197,23 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
               const attachments = details.attachments || [];
 
               return (
-                <div style={{ ...S.projectTabNav, overflowX: "auto", flexWrap: "nowrap" }} className="projectTabNav custodian-hscroll">
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  borderBottom: `1px solid ${COLORS.line}`,
+                  marginBottom: 16,
+                  overflowX: "auto",
+                  paddingBottom: 2,
+                }} className="projectTabNav custodian-hscroll">
                   <button
                     type="button"
                     style={{
                       ...S.projectTabBtn,
                       whiteSpace: "nowrap",
-                      ...(projectTab === "env_studio" ? S.projectTabBtnActive : {}),
-                    }}
-                    onClick={() => setProjectTab("env_studio")}
-                  >
-                    <Layers size={13} color={projectTab === "env_studio" ? COLORS.brass : COLORS.textDim} />
-                    <span>.env Studio & Matrix</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    style={{
-                      ...S.projectTabBtn,
-                      whiteSpace: "nowrap",
+                      fontSize: 12.5,
+                      padding: "8px 12px",
+                      borderRadius: "6px 6px 0 0",
                       ...(projectTab === "creds" ? S.projectTabBtnActive : {}),
                     }}
                     onClick={() => setProjectTab("creds")}
@@ -2187,12 +2227,31 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                     style={{
                       ...S.projectTabBtn,
                       whiteSpace: "nowrap",
+                      fontSize: 12.5,
+                      padding: "8px 12px",
+                      borderRadius: "6px 6px 0 0",
+                      ...(projectTab === "env_studio" ? S.projectTabBtnActive : {}),
+                    }}
+                    onClick={() => setProjectTab("env_studio")}
+                  >
+                    <Layers size={13} color={projectTab === "env_studio" ? COLORS.brass : COLORS.textDim} />
+                    <span>.env Studio</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    style={{
+                      ...S.projectTabBtn,
+                      whiteSpace: "nowrap",
+                      fontSize: 12.5,
+                      padding: "8px 12px",
+                      borderRadius: "6px 6px 0 0",
                       ...(projectTab === "deployment" ? S.projectTabBtnActive : {}),
                     }}
                     onClick={() => setProjectTab("deployment")}
                   >
                     <Rocket size={13} color={projectTab === "deployment" ? "#7AA2E3" : COLORS.textDim} />
-                    <span>Deployment Runbook</span>
+                    <span>Runbook</span>
                   </button>
 
                   <button
@@ -2200,12 +2259,15 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                     style={{
                       ...S.projectTabBtn,
                       whiteSpace: "nowrap",
+                      fontSize: 12.5,
+                      padding: "8px 12px",
+                      borderRadius: "6px 6px 0 0",
                       ...(projectTab === "timeline" ? S.projectTabBtnActive : {}),
                     }}
                     onClick={() => setProjectTab("timeline")}
                   >
                     <Calendar size={13} color={projectTab === "timeline" ? COLORS.brass : COLORS.textDim} />
-                    <span>Delivery Timeline</span>
+                    <span>Timeline</span>
                   </button>
 
                   <button
@@ -2213,6 +2275,9 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                     style={{
                       ...S.projectTabBtn,
                       whiteSpace: "nowrap",
+                      fontSize: 12.5,
+                      padding: "8px 12px",
+                      borderRadius: "6px 6px 0 0",
                       ...(projectTab === "checklist" ? S.projectTabBtnActive : {}),
                     }}
                     onClick={() => setProjectTab("checklist")}
@@ -2226,12 +2291,15 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                     style={{
                       ...S.projectTabBtn,
                       whiteSpace: "nowrap",
+                      fontSize: 12.5,
+                      padding: "8px 12px",
+                      borderRadius: "6px 6px 0 0",
                       ...(projectTab === "docs" ? S.projectTabBtnActive : {}),
                     }}
                     onClick={() => setProjectTab("docs")}
                   >
                     <Pin size={13} color={projectTab === "docs" ? COLORS.brass : COLORS.textDim} />
-                    <span>PRDs & Docs ({attachments.length})</span>
+                    <span>Docs ({attachments.length})</span>
                   </button>
 
                   <button
@@ -2239,6 +2307,9 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                     style={{
                       ...S.projectTabBtn,
                       whiteSpace: "nowrap",
+                      fontSize: 12.5,
+                      padding: "8px 12px",
+                      borderRadius: "6px 6px 0 0",
                       ...(projectTab === "notes" ? S.projectTabBtnActive : {}),
                     }}
                     onClick={() => setProjectTab("notes")}
@@ -2280,10 +2351,17 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
               const devCount = projectCreds.filter((c) => c.environment === "dev").length;
 
               const displayedCreds = projectCreds.filter((c) => {
-                if (envFilter === "global") return !c.environment || c.environment === "global";
-                if (envFilter === "prod") return c.environment === "prod";
-                if (envFilter === "staging") return c.environment === "staging";
-                if (envFilter === "dev") return c.environment === "dev";
+                if (envFilter === "global" && (c.environment && c.environment !== "global")) return false;
+                if (envFilter === "prod" && c.environment !== "prod") return false;
+                if (envFilter === "staging" && c.environment !== "staging") return false;
+                if (envFilter === "dev" && c.environment !== "dev") return false;
+                if (projectCredSearch.trim()) {
+                  const q = projectCredSearch.toLowerCase();
+                  const match = (c.label || "").toLowerCase().includes(q) ||
+                                (c.username || "").toLowerCase().includes(q) ||
+                                (c.url || "").toLowerCase().includes(q);
+                  if (!match) return false;
+                }
                 return true;
               });
 
@@ -2291,35 +2369,72 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
 
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {/* Environment Filters & Security Score Badge */}
+                  {/* Environment Filters, Quick Search & Security Score */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-                    <div style={{ display: "flex", gap: 5, overflowX: "auto", WebkitOverflowScrolling: "touch", flexWrap: "nowrap", maxWidth: "100%", paddingBottom: 2 }} className="custodian-hscroll">
-                      {[
-                        { id: "all", label: `All (${projectCreds.length})` },
-                        { id: "global", label: `🌐 Global (${globalCount})` },
-                        { id: "prod", label: `🚀 Prod (${prodCount})` },
-                        { id: "staging", label: `🧪 Staging (${stagingCount})` },
-                        { id: "dev", label: `💻 Dev (${devCount})` },
-                      ].map((f) => (
-                        <button
-                          key={f.id}
-                          type="button"
-                          style={{
-                            ...S.secondaryBtn,
-                            padding: "4px 10px",
-                            fontSize: 11.5,
-                            flexShrink: 0,
-                            whiteSpace: "nowrap",
-                            background: envFilter === f.id ? "rgba(176,141,87,0.18)" : "transparent",
-                            borderColor: envFilter === f.id ? COLORS.brass : COLORS.line,
-                            color: envFilter === f.id ? COLORS.brass : COLORS.textDim,
-                            fontWeight: envFilter === f.id ? 600 : 400,
-                          }}
-                          onClick={() => setEnvFilter(f.id)}
-                        >
-                          {f.label}
-                        </button>
-                      ))}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", gap: 5, overflowX: "auto", WebkitOverflowScrolling: "touch", flexWrap: "nowrap", maxWidth: "100%", paddingBottom: 2 }} className="custodian-hscroll">
+                        {[
+                          { id: "all", label: `All (${projectCreds.length})` },
+                          { id: "global", label: `🌐 Global (${globalCount})` },
+                          { id: "prod", label: `🚀 Prod (${prodCount})` },
+                          { id: "staging", label: `🧪 Staging (${stagingCount})` },
+                          { id: "dev", label: `💻 Dev (${devCount})` },
+                        ].map((f) => (
+                          <button
+                            key={f.id}
+                            type="button"
+                            style={{
+                              ...S.secondaryBtn,
+                              padding: "4px 10px",
+                              fontSize: 11.5,
+                              flexShrink: 0,
+                              whiteSpace: "nowrap",
+                              background: envFilter === f.id ? "rgba(176,141,87,0.18)" : "transparent",
+                              borderColor: envFilter === f.id ? COLORS.brass : COLORS.line,
+                              color: envFilter === f.id ? COLORS.brass : COLORS.textDim,
+                              fontWeight: envFilter === f.id ? 600 : 400,
+                            }}
+                            onClick={() => setEnvFilter(f.id)}
+                          >
+                            {f.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* In-project quick search */}
+                      {projectCreds.length > 2 && (
+                        <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+                          <Search size={12} color={COLORS.textFaint} style={{ position: "absolute", left: 8 }} />
+                          <input
+                            type="text"
+                            placeholder="Filter secrets..."
+                            value={projectCredSearch}
+                            onChange={(e) => setProjectCredSearch(e.target.value)}
+                            style={{
+                              background: COLORS.panelAlt,
+                              border: `1px solid ${COLORS.line}`,
+                              borderRadius: 6,
+                              padding: "4px 22px 4px 24px",
+                              fontSize: 11.5,
+                              color: COLORS.text,
+                              outline: "none",
+                              width: 125,
+                              transition: "width 0.2s ease, border-color 0.2s ease",
+                            }}
+                            onFocus={(e) => (e.target.style.width = "175px")}
+                            onBlur={(e) => { if (!projectCredSearch) e.target.style.width = "125px"; }}
+                          />
+                          {projectCredSearch && (
+                            <button
+                              type="button"
+                              onClick={() => setProjectCredSearch("")}
+                              style={{ position: "absolute", right: 6, background: "none", border: "none", color: COLORS.textFaint, cursor: "pointer", padding: 0 }}
+                            >
+                              <X size={11} />
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {projectCreds.length > 0 && (
@@ -2329,7 +2444,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                         title="Click to view Vault Security Health Audit score breakdown"
                       >
                         <ShieldCheck size={12} />
-                        <span>Security Score: {health.score}/100</span>
+                        <span>Security: {health.score}/100</span>
                       </div>
                     )}
                   </div>
@@ -2356,22 +2471,36 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
                       </div>
                     </div>
                   ) : displayedCreds.length === 0 ? (
-                    <div style={{ ...S.emptyState, padding: "32px 20px", textAlign: "center", background: "rgba(255,255,255,0.01)", border: `1px solid ${COLORS.line}`, borderRadius: 8 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, marginBottom: 4 }}>
-                        No specific {envFilter.toUpperCase()} overrides found
-                      </div>
-                      <div style={{ fontSize: 12, color: COLORS.textDim, maxWidth: 460, margin: "0 auto 12px", lineHeight: 1.5 }}>
-                        Your {globalCount} 🌐 <strong>Global</strong> credentials automatically apply across all environments (including {envFilter.toUpperCase()}) unless you create an environment-specific override.
-                      </div>
-                      <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                        <button style={{ ...S.secondaryBtn, fontSize: 11.5, padding: "6px 12px" }} onClick={() => setEnvFilter("global")}>
-                          View 🌐 Global Secrets ({globalCount})
-                        </button>
-                        <button style={{ ...S.primaryBtn, fontSize: 11.5, padding: "6px 12px" }} onClick={() => setModal({ type: "cred", projectId: currentProject.id })}>
-                          + Add {envFilter.toUpperCase()} Override
+                    projectCredSearch.trim() ? (
+                      <div style={{ ...S.emptyState, padding: "32px 20px", textAlign: "center", background: "rgba(255,255,255,0.01)", border: `1px solid ${COLORS.line}`, borderRadius: 8 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, marginBottom: 4 }}>
+                          No secrets match &ldquo;{projectCredSearch}&rdquo;
+                        </div>
+                        <div style={{ fontSize: 12, color: COLORS.textDim, maxWidth: 360, margin: "0 auto 12px", lineHeight: 1.5 }}>
+                          Check the spelling or try searching by label, key, or URL.
+                        </div>
+                        <button style={{ ...S.secondaryBtn, fontSize: 11.5, padding: "6px 14px", margin: "0 auto" }} onClick={() => setProjectCredSearch("")}>
+                          Clear Filter
                         </button>
                       </div>
-                    </div>
+                    ) : (
+                      <div style={{ ...S.emptyState, padding: "32px 20px", textAlign: "center", background: "rgba(255,255,255,0.01)", border: `1px solid ${COLORS.line}`, borderRadius: 8 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, marginBottom: 4 }}>
+                          No specific {envFilter.toUpperCase()} overrides found
+                        </div>
+                        <div style={{ fontSize: 12, color: COLORS.textDim, maxWidth: 460, margin: "0 auto 12px", lineHeight: 1.5 }}>
+                          Your {globalCount} 🌐 <strong>Global</strong> credentials automatically apply across all environments (including {envFilter.toUpperCase()}) unless you create an environment-specific override.
+                        </div>
+                        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                          <button style={{ ...S.secondaryBtn, fontSize: 11.5, padding: "6px 12px" }} onClick={() => setEnvFilter("global")}>
+                            View 🌐 Global Secrets ({globalCount})
+                          </button>
+                          <button style={{ ...S.primaryBtn, fontSize: 11.5, padding: "6px 12px" }} onClick={() => setModal({ type: "cred", projectId: currentProject.id })}>
+                            + Add {envFilter.toUpperCase()} Override
+                          </button>
+                        </div>
+                      </div>
+                    )
                   ) : (
                     <div style={S.credGrid}>
                       {displayedCreds.map((cred) => (

@@ -116,7 +116,7 @@ export const S = {
     alignItems: "center",
     gap: 6,
     cursor: "pointer",
-    boxShadow: "0 2px 14px rgba(0, 210, 255, 0.3)",
+    boxShadow: "0 2px 8px rgba(0, 210, 255, 0.2)",
     transition: "all 0.18s ease",
   },
   secondaryBtn: {
@@ -536,15 +536,15 @@ export const S = {
     overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none",
   },
   projectTabBtn: {
-    background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "8px 15px",
-    fontSize: 12.5, fontWeight: 600, color: COLORS.textDim, cursor: "pointer", display: "flex", alignItems: "center",
-    gap: 7, transition: "all 0.15s ease", outline: "none", userSelect: "none", flexShrink: 0,
+    background: "transparent", border: "1px solid transparent", borderRadius: 6, padding: "7px 12px",
+    fontSize: 12.5, fontWeight: 500, color: COLORS.textDim, cursor: "pointer", display: "flex", alignItems: "center",
+    gap: 6, transition: "all 0.15s ease", outline: "none", userSelect: "none", flexShrink: 0,
   },
   projectTabBtnActive: {
-    background: "linear-gradient(135deg, rgba(0, 210, 255, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%)",
-    borderColor: "rgba(0, 210, 255, 0.5)",
-    color: COLORS.cyan,
-    boxShadow: "0 0 16px rgba(0, 210, 255, 0.2)",
+    background: "var(--panel-alt, rgba(255, 255, 255, 0.06))",
+    borderColor: COLORS.line,
+    color: COLORS.text,
+    fontWeight: 600,
   },
   deadlineGrid: {
     display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginBottom: 14,
