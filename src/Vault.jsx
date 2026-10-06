@@ -1175,7 +1175,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
             <Search size={14} color={COLORS.cyan} /> Search Vault...
           </span>
           <span style={{ fontSize: 10.5, color: COLORS.cyan, fontFamily: "JetBrains Mono, monospace", background: "var(--highlight-bg, rgba(0, 210, 255, 0.12))", border: "1px solid rgba(0, 210, 255, 0.25)", padding: "2px 6px", borderRadius: 4 }}>
-            ⌘K
+            {typeof navigator !== "undefined" && navigator?.platform?.toUpperCase()?.includes("MAC") ? "⌘K" : "Ctrl+K"}
           </span>
         </button>
 

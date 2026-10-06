@@ -359,8 +359,8 @@ export const S = {
     display: "flex",
     flexDirection: "column",
     gap: 8,
-    boxShadow: "0 4px 18px rgba(0, 0, 0, 0.4)",
-    transition: "all 0.2s ease",
+    boxShadow: "var(--card-shadow)",
+    transition: "all 0.15s ease",
   },
   projectTileAdd: {
     background: "transparent",

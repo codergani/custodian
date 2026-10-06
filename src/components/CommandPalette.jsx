@@ -317,9 +317,19 @@ export default function CommandPalette({ clients, onClose, onSelectClient, onSel
 
           {q && matchingCreds.length === 0 && matchingProjects.length === 0 && matchingClients.length === 0 && (
             <div style={{ padding: "24px 16px", textAlign: "center", color: COLORS.textDim, fontSize: 13 }}>
-              No matches found for "{query}".
+              No matches found for &ldquo;{query}&rdquo;.
             </div>
           )}
+        </div>
+
+        {/* Keyboard Shortcuts Footer Bar */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px", borderTop: `1px solid ${COLORS.line}`, fontSize: 11, color: COLORS.textFaint }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span><strong style={{ color: COLORS.textDim }}>↑↓</strong> Navigate</span>
+            <span><strong style={{ color: COLORS.textDim }}>↵</strong> Select</span>
+            <span><strong style={{ color: COLORS.textDim }}>Esc</strong> Close</span>
+          </div>
+          <span>Zero-Knowledge Search</span>
         </div>
       </div>
     </div>
