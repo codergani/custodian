@@ -1,7 +1,12 @@
 const { createClient } = require("@supabase/supabase-js");
 
-const url = "https://gksyoebjuokkbekxxhtu.supabase.co";
-const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdrc3lvZWJqdW9ra2Jla3h4aHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NjQ2NDMsImV4cCI6MjEwMzM0MDY0M30.NtGybajKXP6fmicMoqac9JKLGjDRU5b3BsONmNMs6eU";
+const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+
+if (!url || !anonKey) {
+  console.error("Error: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables are required.");
+  process.exit(1);
+}
 
 const supabase = createClient(url, anonKey);
 

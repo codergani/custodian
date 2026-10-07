@@ -49,6 +49,7 @@ import {
   PERSONAL_WORKSPACE_NAME,
   PERSONAL_PROJECT_NAME
 } from "./utils/personalSpace";
+import { copySecretWithAutoClear } from "./utils/clipboard";
 
 export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensureEcdhPrivateKey, onLock, onProfileUpdate, isMfaEnrolled, onMfaEnrolled }) {
   const { theme, toggleTheme } = useTheme();
@@ -310,8 +311,18 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
             } catch {}
           } else {
             try {
-              const local = localStorage.getItem(`custodian_proj_details_${p.id}`);
-              if (local) details = { ...details, ...JSON.parse(local) };
+              const localBlob = localStorage.getItem(`custodian_proj_details_blob_${p.id}`);
+              if (localBlob) {
+                const dec = await decryptJSON(vaultKey, localBlob);
+                details = { ...details, ...dec };
+              } else {
+                // Migration fallback for legacy unencrypted local key, then purge it
+                const legacy = localStorage.getItem(`custodian_proj_details_${p.id}`);
+                if (legacy) {
+                  details = { ...details, ...JSON.parse(legacy) };
+                  localStorage.removeItem(`custodian_proj_details_${p.id}`);
+                }
+              }
             } catch {}
           }
           return {
@@ -613,7 +624,8 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
         await supabase.from("projects").update({ details_blob: blob }).eq("id", projectId);
       } catch {}
       try {
-        localStorage.setItem(`custodian_proj_details_${projectId}`, JSON.stringify(updatedDetails));
+        localStorage.setItem(`custodian_proj_details_blob_${projectId}`, blob);
+        localStorage.removeItem(`custodian_proj_details_${projectId}`);
       } catch {}
       showSuccess("Project deadlines & specs updated!");
       setModal(null);
@@ -836,7 +848,8 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
   }
 
   function copyText(text, id) {
-    navigator.clipboard.writeText(text).catch(() => {});
+    if (!text) return;
+    copySecretWithAutoClear(text, 30000);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 1400);
   }

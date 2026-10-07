@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { receiveSharedSecret, importPublicKey } from "../crypto";
+import { copySecretWithAutoClear } from "../utils/clipboard";
 import { S, COLORS } from "../styles";
 
 export default function SharedSecretsView({ userId, profile, vaultKey, ecdhPrivateKey, ensureEcdhPrivateKey, onOpenShareModal, onSaveToVault }) {
@@ -154,7 +155,8 @@ export default function SharedSecretsView({ userId, profile, vaultKey, ecdhPriva
   }
 
   function handleCopy(text, key) {
-    navigator.clipboard.writeText(text);
+    if (!text) return;
+    copySecretWithAutoClear(text, 30000);
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 2000);
   }

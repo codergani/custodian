@@ -20,6 +20,6 @@ $$;
 -- Allow authenticated users to call this function for their own account
 GRANT EXECUTE ON FUNCTION public.reset_my_mfa() TO authenticated;
 
--- Immediate reset for your founder account:
-DELETE FROM auth.mfa_factors WHERE user_id = (SELECT id FROM auth.users WHERE email = 'ygpksr456@gmail.com');
-DELETE FROM public.mfa_recovery_codes WHERE user_id = (SELECT id FROM auth.users WHERE email = 'ygpksr456@gmail.com');
+-- Optional manual reset for an administrative user if locked out (replace with specific user email if needed):
+-- DELETE FROM auth.mfa_factors WHERE user_id = (SELECT id FROM auth.users WHERE email = 'admin@example.com');
+-- DELETE FROM public.mfa_recovery_codes WHERE user_id = (SELECT id FROM auth.users WHERE email = 'admin@example.com');
