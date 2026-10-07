@@ -12,7 +12,7 @@ describe("Mandatory 2FA Policy & Setup Component Suite", () => {
         profile.plan === "founder" ||
         profile.plan === "pro" ||
         profile.plan === "team" ||
-        profile.email?.toLowerCase() === "ygpksr456@gmail.com"
+        profile.email?.toLowerCase() === "founder@custodian.app"
       );
     }
 
@@ -28,7 +28,7 @@ describe("Mandatory 2FA Policy & Setup Component Suite", () => {
 
     // Founder tier: mandatory
     expect(is2FAMandatory({ plan: "founder", role: "founder" })).toBe(true);
-    expect(is2FAMandatory({ email: "ygpksr456@gmail.com" })).toBe(true);
+    expect(is2FAMandatory({ email: "founder@custodian.app" })).toBe(true);
   });
 
   it("exports Mandatory2FASetup component without syntax errors", () => {

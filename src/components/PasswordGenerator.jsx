@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { S, COLORS } from "../styles";
 import { generateSecret, calculateEntropy } from "../utils/passwordGenerator";
+import { copySecretWithAutoClear } from "../utils/clipboard";
 import { CustomDropdown, ToggleSwitch } from "./shared";
 
 const MODES = [
@@ -114,18 +115,10 @@ export default function PasswordGenerator({ compact = false, onUseValue, onClose
 
   // ─── Copy to clipboard ────────────────────────────────────────
   const handleCopy = useCallback(async (text) => {
-    try {
-      await navigator.clipboard.writeText(text || generated);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback
-      const ta = document.createElement("textarea");
-      ta.value = text || generated;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
+    const val = text || generated;
+    if (!val) return;
+    const ok = await copySecretWithAutoClear(val, 30000);
+    if (ok) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }

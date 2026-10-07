@@ -18,7 +18,6 @@ export default function AdminSupportPanel({ currentUser, profile, onExit }) {
 
   const isAuthorized =
     (founderEmail && userEmail === founderEmail) ||
-    userEmail === "ygpksr456@gmail.com" ||
     currentPlan === "founder" ||
     currentRole === "founder" ||
     currentRole === "admin";

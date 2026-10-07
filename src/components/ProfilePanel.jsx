@@ -12,6 +12,7 @@ import { isBiometricsAvailable, isBiometricEnabled, enableBiometricUnlock, disab
 import { exportKeyRaw } from "../crypto";
 import { checkPasswordStrength } from "../utils/passwordGenerator";
 import { generateRecoveryCodes, storeRecoveryCodes, purgeRecoveryCodes, saveRecoveryCodesToVault } from "../utils/mfaUtils";
+import { copySecretWithAutoClear } from "../utils/clipboard";
 
 export default function ProfilePanel({
   profile,
@@ -392,7 +393,7 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
   }
 
   function handleCopyRecoveryCodes() {
-    navigator.clipboard.writeText(generatedRecoveryCodes.join("\n"));
+    copySecretWithAutoClear(generatedRecoveryCodes.join("\n"), 30000);
     setCopiedCodes(true);
     setTimeout(() => setCopiedCodes(false), 2000);
   }
@@ -402,7 +403,6 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
   const userEmail = (profile?.email || "").toLowerCase().trim();
   const isFounder =
     (founderEmail && userEmail === founderEmail) ||
-    userEmail === "ygpksr456@gmail.com" ||
     currentPlan === "founder" ||
     profile?.role === "founder" ||
     profile?.role === "admin";
@@ -1432,7 +1432,7 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
                     type="button"
                     style={{ ...S.secondaryBtn, padding: "5px 8px", fontSize: 11, flexShrink: 0 }}
                     onClick={() => {
-                      navigator.clipboard.writeText(enrollData.totp.secret);
+                      copySecretWithAutoClear(enrollData.totp.secret, 30000);
                       setCopiedSecret(true);
                       setTimeout(() => setCopiedSecret(false), 1800);
                     }}

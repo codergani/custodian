@@ -281,8 +281,8 @@ describe("All Components Smoke & Render Integrity Suite", () => {
   });
 
   it("renders AdminSupportPanel for founder with title, filters, and refresh button", () => {
-    const founderUser = { id: "founder-1", email: "ygpksr456@gmail.com" };
-    const founderProfile = { id: "founder-1", email: "ygpksr456@gmail.com", role: "founder", plan: "founder" };
+    const founderUser = { id: "founder-1", email: "founder@custodian.app" };
+    const founderProfile = { id: "founder-1", email: "founder@custodian.app", role: "founder", plan: "founder" };
     const html = renderToString(
       <AdminSupportPanel
         currentUser={founderUser}

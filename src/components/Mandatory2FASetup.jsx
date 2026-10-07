@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { generateRecoveryCodes, storeRecoveryCodes, saveRecoveryCodesToVault } from "../utils/mfaUtils";
+import { copySecretWithAutoClear } from "../utils/clipboard";
 import { S, COLORS } from "../styles";
 
 export default function Mandatory2FASetup({ profile, vaultKey, onComplete, onSignOut, onCancel, isMandatory = true }) {
@@ -136,14 +137,14 @@ ${recoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
   }
 
   function handleCopyAllCodes() {
-    navigator.clipboard.writeText(recoveryCodes.join("\n"));
+    copySecretWithAutoClear(recoveryCodes.join("\n"), 30000);
     setCopiedCodes(true);
     setTimeout(() => setCopiedCodes(false), 2500);
   }
 
   function handleCopySecret() {
     if (enrollData?.totp?.secret) {
-      navigator.clipboard.writeText(enrollData.totp.secret);
+      copySecretWithAutoClear(enrollData.totp.secret, 30000);
       setCopiedSecret(true);
       setTimeout(() => setCopiedSecret(false), 2500);
     }
