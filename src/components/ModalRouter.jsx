@@ -530,40 +530,40 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
     ? secretType === "login"
       ? "ACCOUNT IDENTIFIER (USERNAME / EMAIL)"
       : secretType === "pin"
-      ? "PIN LABEL / IDENTIFIER"
-      : secretType === "note"
-      ? "ACCOUNT / TAG (OPTIONAL)"
-      : "CARD DETAILS (HOLDER / LAST 4)"
+        ? "PIN LABEL / IDENTIFIER"
+        : secretType === "note"
+          ? "ACCOUNT / TAG (OPTIONAL)"
+          : "CARD DETAILS (HOLDER / LAST 4)"
     : "ENVIRONMENT VARIABLE (KEY = VALUE)";
 
   const keyPlaceholder = isPersonalType
     ? secretType === "login"
       ? "e.g. user@gmail.com or @handle"
       : secretType === "pin"
-      ? "e.g. App PIN, Wi-Fi SSID"
-      : secretType === "note"
-      ? "e.g. youremail@gmail.com"
-      : "e.g. Cardholder Name / Last 4"
+        ? "e.g. App PIN, Wi-Fi SSID"
+        : secretType === "note"
+          ? "e.g. youremail@gmail.com"
+          : "e.g. Cardholder Name / Last 4"
     : "VARIABLE_KEY";
 
   const valPlaceholder = isPersonalType
     ? secretType === "login"
       ? "Account Password"
       : secretType === "pin"
-      ? "Secret PIN or Passcode"
-      : secretType === "note"
-      ? "Paste your backup codes or secret text here..."
-      : "CVV, PIN or Card Security Code"
+        ? "Secret PIN or Passcode"
+        : secretType === "note"
+          ? "Paste your backup codes or secret text here..."
+          : "CVV, PIN or Card Security Code"
     : "secret_token_value";
 
   const purposePlaceholder = isPersonalType
     ? secretType === "login"
       ? "e.g. Personal Gmail, Netflix, Twitter"
       : secretType === "pin"
-      ? "e.g. Banking App PIN, Home Wi-Fi"
-      : secretType === "note"
-      ? "e.g. Google Backup Codes, Recovery Words, Private Keys"
-      : "e.g. ICICI Bank Credit Card"
+        ? "e.g. Banking App PIN, Home Wi-Fi"
+        : secretType === "note"
+          ? "e.g. Google Backup Codes, Recovery Words, Private Keys"
+          : "e.g. ICICI Bank Credit Card"
     : "e.g. Stripe Prod, OpenAI, Postgres URL";
 
   function handleCostChange(e) {
@@ -664,21 +664,21 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", overflowX: "auto" }} className="custodian-hscroll">
           {(isPersonalType
             ? [
-                { id: "login", label: "📧 Login / Account" },
-                { id: "pin", label: "📱 PIN / Wi-Fi" },
-                { id: "note", label: "📝 Note / Backup Codes" },
-                { id: "card", label: "💳 Card & Bank" },
-              ]
+              { id: "login", label: "📧 Login / Account" },
+              { id: "pin", label: "📱 PIN / Wi-Fi" },
+              { id: "note", label: "📝 Note / Backup Codes" },
+              { id: "card", label: "💳 Card & Bank" },
+            ]
             : [
-                { id: "env_var", label: "📦 Env Var" },
-                { id: "database", label: "🗄️ Database" },
-                { id: "api_key", label: "🔑 API Key" },
-                { id: "stripe", label: "💳 Stripe" },
-                { id: "supabase", label: "⚡ Supabase" },
-                { id: "aws", label: "☁️ AWS" },
-                { id: "ssh", label: "🔒 SSH" },
-                { id: "generic", label: "🌐 Generic" },
-              ]
+              { id: "env_var", label: "📦 Env Var" },
+              { id: "database", label: "🗄️ Database" },
+              { id: "api_key", label: "🔑 API Key" },
+              { id: "stripe", label: "💳 Stripe" },
+              { id: "supabase", label: "⚡ Supabase" },
+              { id: "aws", label: "☁️ AWS" },
+              { id: "ssh", label: "🔒 SSH" },
+              { id: "generic", label: "🌐 Generic" },
+            ]
           ).map((t) => (
             <button
               key={t.id}
@@ -945,188 +945,188 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
       {secretType !== "note" && (
         <div
           style={{
-          marginTop: 2,
-          background: "rgba(176,141,87,0.05)",
-          border: `1px solid ${trackRenewal ? COLORS.brassDim : COLORS.line}`,
-          borderRadius: 8,
-          padding: "8px 10px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-        }}
-      >
-        <div
-          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
-          onClick={() => {
-            if (currentPlan === "free") {
-              onOpenUpgrade();
-            } else {
-              setTrackRenewal(!trackRenewal);
-            }
+            marginTop: 2,
+            background: "rgba(176,141,87,0.05)",
+            border: `1px solid ${trackRenewal ? COLORS.brassDim : COLORS.line}`,
+            borderRadius: 8,
+            padding: "8px 10px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 6, color: COLORS.brass, fontSize: 11.5, fontWeight: 600 }}>
-            <Bell size={13} />
-            <span>Renewal Watchdog & Billing Tracker</span>
-            {currentPlan === "free" && <span style={S.planBadge}>PRO</span>}
-          </div>
-          {currentPlan === "free" ? (
-            <span style={{ fontSize: 10.5, color: COLORS.brass, display: "flex", alignItems: "center", gap: 3 }}>
-              <Sparkles size={11} /> Unlock with Pro
-            </span>
-          ) : (
-            <ToggleSwitch
-              checked={trackRenewal}
-              onChange={(val) => setTrackRenewal(val)}
-            />
-          )}
-        </div>
-
-        {trackRenewal && currentPlan !== "free" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 2 }}>
-            {/* Intent Selector Mode */}
-            <div>
-              <div style={{ display: "flex", gap: 6, background: COLORS.panelAlt, padding: 3, borderRadius: 6, border: `1px solid ${COLORS.line}` }}>
-                <button
-                  type="button"
-                  style={{
-                    ...S.intentToggleBtn,
-                    padding: "5px 8px",
-                    fontSize: 11,
-                    background: alertIntent === "review_cancel" ? "rgba(224,122,109,0.2)" : "transparent",
-                    color: alertIntent === "review_cancel" ? "#FFA296" : COLORS.textDim,
-                  }}
-                  onClick={() => setAlertIntent("review_cancel")}
-                >
-                  <BellRing size={11} /> 🔔 Review / Cancel Alert
-                </button>
-                <button
-                  type="button"
-                  style={{
-                    ...S.intentToggleBtn,
-                    padding: "5px 8px",
-                    fontSize: 11,
-                    background: alertIntent === "permanent_auto" ? "rgba(16, 185, 129, 0.2)" : "transparent",
-                    color: alertIntent === "permanent_auto" ? COLORS.green : COLORS.textDim,
-                  }}
-                  onClick={() => setAlertIntent("permanent_auto")}
-                >
-                  <RefreshCw size={11} /> 🔄 Auto-Renew (Quiet)
-                </button>
-              </div>
+          <div
+            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
+            onClick={() => {
+              if (currentPlan === "free") {
+                onOpenUpgrade();
+              } else {
+                setTrackRenewal(!trackRenewal);
+              }
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 6, color: COLORS.brass, fontSize: 11.5, fontWeight: 600 }}>
+              <Bell size={13} />
+              <span>Renewal Watchdog & Billing Tracker</span>
+              {currentPlan === "free" && <span style={S.planBadge}>PRO</span>}
             </div>
-
-            {/* Row 1: Date + Frequency */}
-            <div style={{ display: "flex", gap: 8 }}>
-              <div style={{ flex: 1.1 }}>
-                <label style={{ ...S.label, fontSize: 10.5, marginBottom: 2 }}>Billing Date</label>
-                <input
-                  style={{ ...S.input, padding: "6px 8px", fontSize: 11.5 }}
-                  type="date"
-                  value={renewalDate}
-                  onChange={(e) => setRenewalDate(e.target.value)}
-                  required={trackRenewal}
-                />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ ...S.label, fontSize: 10.5, marginBottom: 2 }}>Cycle</label>
-                <CustomDropdown
-                  value={billingFrequency}
-                  onChange={setBillingFrequency}
-                  options={[
-                    { value: "monthly", label: "Monthly" },
-                    { value: "yearly", label: "Yearly" },
-                    { value: "one-time", label: "One-time / Trial" },
-                  ]}
-                  buttonStyle={{ padding: "6px 8px", fontSize: 11.5 }}
-                />
-              </div>
-            </div>
-
-            {/* Row 2: Currency & Cost + Reminder */}
-            <div style={{ display: "flex", gap: 8 }}>
-              <div style={{ width: 75 }}>
-                <label style={{ ...S.label, fontSize: 10.5, marginBottom: 2 }}>Currency</label>
-                <CustomDropdown
-                  value={currency}
-                  onChange={setCurrency}
-                  options={[
-                    { value: "$", label: "$ USD" },
-                    { value: "₹", label: "₹ INR" },
-                    { value: "€", label: "€ EUR" },
-                    { value: "£", label: "£ GBP" },
-                  ]}
-                  buttonStyle={{ padding: "6px 8px", fontSize: 11.5 }}
-                />
-              </div>
-              <div style={{ flex: 1.1 }}>
-                <label style={{ ...S.label, fontSize: 10.5, marginBottom: 2 }}>Estimated Cost</label>
-                <input
-                  style={{
-                    ...S.input,
-                    padding: "6px 8px",
-                    fontSize: 11.5,
-                    ...(costError ? { borderColor: COLORS.red } : {}),
-                  }}
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  placeholder="20.00 or 1999"
-                  value={cost}
-                  onChange={handleCostChange}
-                />
-                {costError && (
-                  <div style={{ fontSize: 10, color: "#FFA296", marginTop: 3, display: "flex", alignItems: "center", gap: 3 }}>
-                    <AlertTriangle size={11} /> {costError}
-                  </div>
-                )}
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ ...S.label, fontSize: 10.5, marginBottom: 2 }}>Reminder</label>
-                <CustomDropdown
-                  value={reminderDays}
-                  onChange={setReminderDays}
-                  options={[
-                    { value: "1", label: "1 Day Prior" },
-                    { value: "3", label: "3 Days Prior" },
-                    { value: "7", label: "1 Week Prior" },
-                  ]}
-                  buttonStyle={{ padding: "6px 8px", fontSize: 11.5 }}
-                />
-              </div>
-            </div>
-
-            {/* Row 3: Cancel Portal URL */}
-            <div>
-              <label style={{ ...S.label, fontSize: 10.5, marginBottom: 2 }}>Cancellation / Billing Portal URL</label>
-              <input
-                style={{ ...S.input, padding: "6px 8px", fontSize: 11.5 }}
-                type="url"
-                placeholder="https://platform.openai.com/account/billing"
-                value={cancelUrl}
-                onChange={(e) => setCancelUrl(e.target.value)}
+            {currentPlan === "free" ? (
+              <span style={{ fontSize: 10.5, color: COLORS.brass, display: "flex", alignItems: "center", gap: 3 }}>
+                <Sparkles size={11} /> Unlock with Pro
+              </span>
+            ) : (
+              <ToggleSwitch
+                checked={trackRenewal}
+                onChange={(val) => setTrackRenewal(val)}
               />
-            </div>
-
-            {isEdit && (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.panelAlt, padding: "6px 10px", borderRadius: 6, border: `1px solid ${COLORS.line}`, marginTop: 2 }}>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ fontSize: 11.5, fontWeight: 500, color: isCanceled ? COLORS.green : COLORS.text }}>
-                    Mark subscription as stopped / canceled
-                  </span>
-                  <span style={{ fontSize: 10, color: COLORS.textFaint }}>
-                    Logs price into savings tracker & disables renewal alarms
-                  </span>
-                </div>
-                <ToggleSwitch
-                  checked={isCanceled}
-                  onChange={(val) => setIsCanceled(val)}
-                />
-              </div>
             )}
           </div>
-        )}
-      </div>
+
+          {trackRenewal && currentPlan !== "free" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 2 }}>
+              {/* Intent Selector Mode */}
+              <div>
+                <div style={{ display: "flex", gap: 6, background: COLORS.panelAlt, padding: 3, borderRadius: 6, border: `1px solid ${COLORS.line}` }}>
+                  <button
+                    type="button"
+                    style={{
+                      ...S.intentToggleBtn,
+                      padding: "5px 8px",
+                      fontSize: 11,
+                      background: alertIntent === "review_cancel" ? "rgba(224,122,109,0.2)" : "transparent",
+                      color: alertIntent === "review_cancel" ? "#FFA296" : COLORS.textDim,
+                    }}
+                    onClick={() => setAlertIntent("review_cancel")}
+                  >
+                    <BellRing size={11} /> 🔔 Review / Cancel Alert
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      ...S.intentToggleBtn,
+                      padding: "5px 8px",
+                      fontSize: 11,
+                      background: alertIntent === "permanent_auto" ? "rgba(16, 185, 129, 0.2)" : "transparent",
+                      color: alertIntent === "permanent_auto" ? COLORS.green : COLORS.textDim,
+                    }}
+                    onClick={() => setAlertIntent("permanent_auto")}
+                  >
+                    <RefreshCw size={11} /> 🔄 Auto-Renew (Quiet)
+                  </button>
+                </div>
+              </div>
+
+              {/* Row 1: Date + Frequency */}
+              <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ flex: 1.1 }}>
+                  <label style={{ ...S.label, fontSize: 10.5, marginBottom: 2 }}>Billing Date</label>
+                  <input
+                    style={{ ...S.input, padding: "6px 8px", fontSize: 11.5 }}
+                    type="date"
+                    value={renewalDate}
+                    onChange={(e) => setRenewalDate(e.target.value)}
+                    required={trackRenewal}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ ...S.label, fontSize: 10.5, marginBottom: 2 }}>Cycle</label>
+                  <CustomDropdown
+                    value={billingFrequency}
+                    onChange={setBillingFrequency}
+                    options={[
+                      { value: "monthly", label: "Monthly" },
+                      { value: "yearly", label: "Yearly" },
+                      { value: "one-time", label: "One-time / Trial" },
+                    ]}
+                    buttonStyle={{ padding: "6px 8px", fontSize: 11.5 }}
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Currency & Cost + Reminder */}
+              <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ width: 75 }}>
+                  <label style={{ ...S.label, fontSize: 10.5, marginBottom: 2 }}>Currency</label>
+                  <CustomDropdown
+                    value={currency}
+                    onChange={setCurrency}
+                    options={[
+                      { value: "$", label: "$ USD" },
+                      { value: "₹", label: "₹ INR" },
+                      { value: "€", label: "€ EUR" },
+                      { value: "£", label: "£ GBP" },
+                    ]}
+                    buttonStyle={{ padding: "6px 8px", fontSize: 11.5 }}
+                  />
+                </div>
+                <div style={{ flex: 1.1 }}>
+                  <label style={{ ...S.label, fontSize: 10.5, marginBottom: 2 }}>Estimated Cost</label>
+                  <input
+                    style={{
+                      ...S.input,
+                      padding: "6px 8px",
+                      fontSize: 11.5,
+                      ...(costError ? { borderColor: COLORS.red } : {}),
+                    }}
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    placeholder="20.00 or 1999"
+                    value={cost}
+                    onChange={handleCostChange}
+                  />
+                  {costError && (
+                    <div style={{ fontSize: 10, color: "#FFA296", marginTop: 3, display: "flex", alignItems: "center", gap: 3 }}>
+                      <AlertTriangle size={11} /> {costError}
+                    </div>
+                  )}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ ...S.label, fontSize: 10.5, marginBottom: 2 }}>Reminder</label>
+                  <CustomDropdown
+                    value={reminderDays}
+                    onChange={setReminderDays}
+                    options={[
+                      { value: "1", label: "1 Day Prior" },
+                      { value: "3", label: "3 Days Prior" },
+                      { value: "7", label: "1 Week Prior" },
+                    ]}
+                    buttonStyle={{ padding: "6px 8px", fontSize: 11.5 }}
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: Cancel Portal URL */}
+              <div>
+                <label style={{ ...S.label, fontSize: 10.5, marginBottom: 2 }}>Cancellation / Billing Portal URL</label>
+                <input
+                  style={{ ...S.input, padding: "6px 8px", fontSize: 11.5 }}
+                  type="url"
+                  placeholder="https://platform.openai.com/account/billing"
+                  value={cancelUrl}
+                  onChange={(e) => setCancelUrl(e.target.value)}
+                />
+              </div>
+
+              {isEdit && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.panelAlt, padding: "6px 10px", borderRadius: 6, border: `1px solid ${COLORS.line}`, marginTop: 2 }}>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <span style={{ fontSize: 11.5, fontWeight: 500, color: isCanceled ? COLORS.green : COLORS.text }}>
+                      Mark subscription as stopped / canceled
+                    </span>
+                    <span style={{ fontSize: 10, color: COLORS.textFaint }}>
+                      Logs price into savings tracker & disables renewal alarms
+                    </span>
+                  </div>
+                  <ToggleSwitch
+                    checked={isCanceled}
+                    onChange={(val) => setIsCanceled(val)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       <button
@@ -1266,18 +1266,18 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                   isCurrent
                     ? { ...S.secondaryBtn, justifyContent: "center", cursor: "default", opacity: 0.8 }
                     : p.popular
-                    ? { ...S.primaryBtn, marginTop: 8 }
-                    : { ...S.secondaryBtn, justifyContent: "center", marginTop: 8, color: p.id === "free" ? "#E07A6D" : COLORS.text }
+                      ? { ...S.primaryBtn, marginTop: 8 }
+                      : { ...S.secondaryBtn, justifyContent: "center", marginTop: 8, color: p.id === "free" ? "#E07A6D" : COLORS.text }
                 }
                 onClick={() => handleSelect(p.id)}
               >
                 {upgrading === p.id
                   ? isNative() ? "Opening Google Play…" : "Opening Checkout…"
                   : isCurrent
-                  ? "Current Plan"
-                  : p.id === "free"
-                  ? "Downgrade to Free"
-                  : `Upgrade to ${p.name}`}
+                    ? "Current Plan"
+                    : p.id === "free"
+                      ? "Downgrade to Free"
+                      : `Upgrade to ${p.name}`}
               </button>
 
               {p.id !== "free" && !isCurrent && !isNative() && (
@@ -1304,7 +1304,7 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                   onClick={() => handlePayPalCheckout(p.id)}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.78.78 0 0 1 .77-.642h7.009c3.084 0 5.416.793 6.035 3.71.378 1.785-.027 3.255-1.127 4.34-1.168 1.15-2.973 1.768-5.357 1.768H9.686a.781.781 0 0 0-.77.643l-1.84 8.798z"/>
+                    <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.78.78 0 0 1 .77-.642h7.009c3.084 0 5.416.793 6.035 3.71.378 1.785-.027 3.255-1.127 4.34-1.168 1.15-2.973 1.768-5.357 1.768H9.686a.781.781 0 0 0-.77.643l-1.84 8.798z" />
                   </svg>
                   <span>{upgrading === p.id + "_paypal" ? "Connecting to PayPal…" : "Pay with PayPal"}</span>
                 </button>
@@ -1495,7 +1495,7 @@ function ExportEnvContent({ project, onClose, showSuccess }) {
   const displayText = mode === "skeleton" ? skeletonText : fullText;
 
   function handleCopy() {
-    navigator.clipboard.writeText(displayText).catch(() => {});
+    navigator.clipboard.writeText(displayText).catch(() => { });
     setCopied(true);
     showSuccess(mode === "skeleton" ? "Copied Skeleton .env.example" : "Copied Full Decrypted .env");
     setTimeout(() => setCopied(false), 1500);
@@ -1586,7 +1586,7 @@ function TeamMembersContent({ client, userId, onClose, showSuccess }) {
     try {
       // 1. Fetch active members & profiles
       const { data: memberRows } = await supabase.from("client_members").select("*").eq("client_id", client.id);
-      
+
       let enrichedMembers = [];
       if (memberRows && memberRows.length > 0) {
         const userIds = memberRows.map((m) => m.user_id);
@@ -1652,7 +1652,7 @@ function TeamMembersContent({ client, userId, onClose, showSuccess }) {
             email: row.email.trim().toLowerCase(),
             role: row.role,
           }, { onConflict: "client_id,email" });
-        } catch {}
+        } catch { }
       }
       showSuccess(
         validRows.length === 1
@@ -1683,7 +1683,7 @@ function TeamMembersContent({ client, userId, onClose, showSuccess }) {
 
   function handleCopyInviteLink(inv) {
     const inviteUrl = `${window.location.origin}/?invite=${encodeURIComponent(inv.email)}&client=${client.id}`;
-    navigator.clipboard.writeText(inviteUrl).catch(() => {});
+    navigator.clipboard.writeText(inviteUrl).catch(() => { });
     showSuccess(`Copied invite link for ${inv.email}`);
   }
 
@@ -2023,7 +2023,7 @@ ${attachmentsText}
   const activeContent = activeTab === "ai_runbook" ? aiRunbookMarkdown : handoverMarkdown;
 
   function handleCopy() {
-    navigator.clipboard.writeText(activeContent).catch(() => {});
+    navigator.clipboard.writeText(activeContent).catch(() => { });
     setCopied(true);
     showSuccess(activeTab === "ai_runbook" ? "Copied AI Operational Runbook!" : "Copied Client Handover Document!");
     setTimeout(() => setCopied(false), 2000);
@@ -2220,7 +2220,7 @@ ${attachmentsText}
               onClick={handleMilestonePayment}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.78.78 0 0 1 .77-.642h7.009c3.084 0 5.416.793 6.035 3.71.378 1.785-.027 3.255-1.127 4.34-1.168 1.15-2.973 1.768-5.357 1.768H9.686a.781.781 0 0 0-.77.643l-1.84 8.798z"/>
+                <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.78.78 0 0 1 .77-.642h7.009c3.084 0 5.416.793 6.035 3.71.378 1.785-.027 3.255-1.127 4.34-1.168 1.15-2.973 1.768-5.357 1.768H9.686a.781.781 0 0 0-.77.643l-1.84 8.798z" />
               </svg>
               <span>{processingPayPal ? "Processing PayPal Escrow..." : `Client Pay-to-Unlock ($${milestoneAmount} via PayPal)`}</span>
             </button>
@@ -2576,7 +2576,7 @@ function ShareSecretModalContent({ userId, vaultKey, ecdhPrivateKey, ensureEcdhP
           if (recProfile?.public_key) {
             recPubKey = recProfile.public_key;
           }
-        } catch {}
+        } catch { }
       }
 
       if (!recPubKey) {
@@ -2614,7 +2614,7 @@ function ShareSecretModalContent({ userId, vaultKey, ecdhPrivateKey, ensureEcdhP
           .eq("id", userId)
           .single();
         senderPubKey = myProfile?.public_key;
-      } catch {}
+      } catch { }
 
       if (!senderPubKey) {
         senderPubKey = localStorage.getItem(`demo_vault_ecdh_pub_${userId}`);
@@ -2625,7 +2625,7 @@ function ShareSecretModalContent({ userId, vaultKey, ecdhPrivateKey, ensureEcdhP
         localStorage.setItem(`demo_vault_ecdh_pub_${userId}`, senderPubKey);
         try {
           await supabase.from("profiles").update({ public_key: senderPubKey }).eq("id", userId);
-        } catch {}
+        } catch { }
       }
 
       // 6. Save to shared_secrets table

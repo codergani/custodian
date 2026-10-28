@@ -18,17 +18,31 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file('custodian-release.keystore')
-            storePassword 'custodian_release_pass'
-            keyAlias 'custodian_key'
-            keyPassword 'custodian_release_pass'
-            v1SigningEnabled true
-            v2SigningEnabled true
+            def localProps = new Properties()
+            def localPropsFile = rootProject.file('local.properties')
+            if (localPropsFile.exists()) {
+                localProps.load(new FileInputStream(localPropsFile))
+            }
+            def keystorePath = System.getenv("KEYSTORE_FILE") ?: localProps.getProperty("keystore.file") ?: 'custodian-release.keystore'
+            def keystorePass = System.getenv("KEYSTORE_PASSWORD") ?: localProps.getProperty("keystore.password")
+            def keyAliasName = System.getenv("KEY_ALIAS") ?: localProps.getProperty("key.alias") ?: 'custodian_key'
+            def keyPass = System.getenv("KEY_PASSWORD") ?: localProps.getProperty("key.password")
+
+            if (keystorePass) {
+                storeFile file(keystorePath)
+                storePassword keystorePass
+                keyAlias keyAliasName
+                keyPassword keyPass ?: keystorePass
+                v1SigningEnabled true
+                v2SigningEnabled true
+            }
         }
     }
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            if (signingConfigs.release.storeFile != null) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

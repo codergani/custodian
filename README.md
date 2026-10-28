@@ -6,8 +6,15 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Payments: PayPal](https://img.shields.io/badge/Payments-PayPal%20SDK-003087.svg)](#paypal-integration--ai-copilot-architecture)
 [![AI: Zero--Knowledge](https://img.shields.io/badge/AI-Zero--Knowledge%20Copilot-00D2FF.svg)](#paypal-integration--ai-copilot-architecture)
-[![Tests: 21/21 Passing](https://img.shields.io/badge/Tests-152%20Passed-brightgreen.svg)](#testing--verification)
+[![Tests: 23/23 Passing](https://img.shields.io/badge/Tests-161%20Passed-brightgreen.svg)](#testing--verification)
 [![Deployment: Vercel](https://img.shields.io/badge/Deployment-custodian--swart.vercel.app-black.svg)](https://custodian-swart.vercel.app/)
+[![Release: Nov 1, 2026](https://img.shields.io/badge/Launch-Karnataka%20Rajyotsava%20(Nov%201)-yellow.svg)](ROADMAP.md)
+[![Roadmap: AI Gateway Vision](https://img.shields.io/badge/Roadmap-Phase%202%20AI%20Gateway-purple.svg)](ROADMAP.md)
+
+---
+
+> 🚀 **Open-Source Milestone — Karnataka Rajyotsava (November 1, 2026)**  
+> Custodian is officially open-sourced as a 100% Zero-Knowledge client-side secret vault & SaaS watchdog. See our [ROADMAP.md](ROADMAP.md) to explore our Two-Phase Strategy: from zero-knowledge client security to an enterprise-grade AI Gateway dogfooded in our production AI Film Studio.
 
 ---
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   generateRecoveryCodes,
   normalizeRecoveryCode,
@@ -14,6 +14,7 @@ import {
   clearFailedAttempts,
 } from "../security";
 import { deriveKey, newSalt, encryptJSON, decryptJSON } from "../crypto";
+import { supabase } from "../supabaseClient";
 
 // Mock localStorage for node test environment
 const mockStorage = new Map();
@@ -31,6 +32,21 @@ describe("MFA & 2FA Recovery Codes & Anti-Brute-Force Test Suite", () => {
   beforeEach(() => {
     localStorage.clear();
     clearFailedAttempts(testUserId);
+    vi.spyOn(supabase, "from").mockImplementation(() => {
+      const builder = {
+        select: () => builder,
+        insert: () => builder,
+        delete: () => builder,
+        update: () => builder,
+        eq: () => builder,
+        is: () => builder,
+        then: (resolve) => Promise.resolve({ data: null, error: { message: "Offline DB fallback" } }).then(resolve),
+        catch: (reject) => Promise.resolve({ data: null, error: { message: "Offline DB fallback" } }).catch(reject),
+        maybeSingle: () => Promise.resolve({ data: null, error: { message: "Offline DB fallback" } }),
+        single: () => Promise.resolve({ data: null, error: { message: "Offline DB fallback" } }),
+      };
+      return builder;
+    });
   });
 
   it("generates correct number of single-use recovery codes in CUST-XXXX-XXXX format", () => {

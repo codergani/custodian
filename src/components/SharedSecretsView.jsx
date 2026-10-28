@@ -176,7 +176,7 @@ export default function SharedSecretsView({ userId, profile, vaultKey, ecdhPriva
             </span>
           </div>
           <p style={{ fontSize: 12.5, color: COLORS.textDim, margin: 0, maxWidth: 650, lineHeight: 1.5 }}>
-            End-to-end encrypted sharing. Secrets are encrypted on your device using the recipient's public key. 
+            End-to-end encrypted sharing. Secrets are encrypted on your device using the recipient's public key.
             <strong> Custodian servers never see plaintext secrets.</strong> Free for all users.
           </p>
         </div>
