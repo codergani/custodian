@@ -10,14 +10,12 @@ import { formatDateTimeUSA } from "../utils/dateFormatter";
 import { sendSupportReplyEmail } from "../utils/resend";
 
 export default function AdminSupportPanel({ currentUser, profile, onExit }) {
-  // 1. Founder Access Control Gate
-  const founderEmail = (import.meta.env.VITE_FOUNDER_EMAIL || "").toLowerCase().trim();
-  const userEmail = (currentUser?.email || profile?.email || "").toLowerCase().trim();
+  // 1. Founder Access Control Gate (Enforced via database profile role/plan)
   const currentPlan = profile?.plan || "";
   const currentRole = profile?.role || "";
+  const userEmail = (currentUser?.email || profile?.email || "").toLowerCase().trim();
 
   const isAuthorized =
-    (founderEmail && userEmail === founderEmail) ||
     currentPlan === "founder" ||
     currentRole === "founder" ||
     currentRole === "admin";

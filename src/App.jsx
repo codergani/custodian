@@ -480,16 +480,7 @@ function AppContent() {
       .eq("id", session.user.id)
       .single()
       .then(({ data, error }) => {
-        const isFounderEmail =
-          (import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
-          false;
-        const promoOverride = localStorage.getItem(`custodian_promo_override_${session.user.id}`);
-        let loaded = data || { id: session.user.id, email: session.user.email, role: "member" };
-        if (isFounderEmail) {
-          loaded = { ...loaded, plan: "founder", role: "founder" };
-        } else if (promoOverride && (promoOverride === "pro" || promoOverride === "team")) {
-          loaded = { ...loaded, plan: promoOverride };
-        }
+        let loaded = data || { id: session.user.id, email: session.user.email, role: "member", plan: "free" };
         setProfile(loaded);
         if (loaded && !loaded.public_key) {
           generateECDHKeyPair().then(async (pair) => {
@@ -509,16 +500,11 @@ function AppContent() {
       })
       .catch((err) => {
         console.error("Profile query exception, using fallback:", err);
-        const isFounderEmail =
-          (import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
-          false;
-        const promoOverride = localStorage.getItem(`custodian_promo_override_${session.user.id}`);
-        const activePlan = isFounderEmail ? "founder" : (promoOverride || "free");
         const fallbackProfile = {
           id: session.user.id,
           email: session.user.email,
-          role: isFounderEmail ? "founder" : "member",
-          plan: activePlan,
+          role: "member",
+          plan: "free",
         };
         setProfile(fallbackProfile);
         const pendingPassword = lastAuthPasswordRef.current;
@@ -678,9 +664,7 @@ function AppContent() {
     const isAuthorized =
       profile?.role === "founder" ||
       profile?.role === "admin" ||
-      profile?.plan === "founder" ||
-      (import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
-      false;
+      profile?.plan === "founder";
 
     if (!isAuthorized) {
       return (
@@ -733,9 +717,7 @@ function AppContent() {
     const isAuthorized =
       profile?.role === "founder" ||
       profile?.role === "admin" ||
-      profile?.plan === "founder" ||
-      (import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
-      false;
+      profile?.plan === "founder";
 
     if (!isAuthorized) {
       return (
@@ -779,9 +761,7 @@ function AppContent() {
   const isFounderUser =
     profile?.role === "founder" ||
     profile?.role === "admin" ||
-    profile?.plan === "founder" ||
-    (import.meta.env.VITE_FOUNDER_EMAIL && session?.user?.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
-    false;
+    profile?.plan === "founder";
 
   const isProOrTeam =
     isFounderUser ||

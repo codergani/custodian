@@ -114,7 +114,7 @@ Custodian enforces a strict **Zero-Knowledge Architecture**. All encryption and 
 - An isolated, zero-knowledge personal vault section for developers' private API keys, side projects, and personal accounts that remain strictly segregated from client deliverables.
 
 ### 7. Founder Admin HQ
-- Built-in administration portal accessible only by authorized founder emails (configured via `VITE_FOUNDER_EMAIL`).
+- Built-in administration portal accessible only by authorized accounts (enforced via database role `profiles.role = 'founder' | 'admin'`).
 - Live telemetry: registered user directory, user tiers (Free, Pro, Team, Founder), real-time encrypted storage utilization calculations, and geographic user distribution.
 
 ### 8. 💳 PayPal Platform Integration & Zero-Knowledge AI Copilot
@@ -213,17 +213,15 @@ Create a `.env` file in the project root:
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
-VITE_FOUNDER_EMAIL=founder@yourdomain.com
 ```
 
 ### 3. Initialize Database Schema
 1. Open your **Supabase Dashboard** → **SQL Editor**.
-2. Open [`custodian_complete_schema.sql`](file:///e:/CreateApps/Custodian/custodian_complete_schema.sql).
-3. Paste and run the entire script. This automatically creates:
-   - All tables: `profiles`, `clients`, `projects`, `credentials`, `deliverables`, `shared_secrets`, `system_logs`.
-   - Row-Level Security (RLS) policies for complete tenant isolation.
-   - Triggers for user registration, plan limits, and updated timestamps.
-   - Founder administrative functions (`admin_get_all_users`).
+2. Run [`custodian_complete_schema.sql`](file:///e:/CreateApps/Custodian/custodian_complete_schema.sql) followed by [`supabase_production_security_migration.sql`](file:///e:/CreateApps/Custodian/supabase_production_security_migration.sql). This automatically sets up:
+   - All tables: `profiles`, `clients`, `projects`, `credentials`, `deliverables`, `shared_secrets`, `promo_codes`, `promo_redemptions`.
+   - Row-Level Security (RLS) policies for tenant isolation.
+   - Database engine column-level protections preventing unauthorized self-elevation of plans or roles.
+   - Atomic promo redemption RPC (`redeem_promo_code`) and founder administrative telemetry (`admin_get_all_users`).
 
 ### 4. Start Dev Server
 ```bash
@@ -235,7 +233,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Testing & Verification
 
-Custodian includes extensive unit tests across 14 test suites covering cryptographic routines, date formatting, password generation, personal space isolation, rate limiting, and client archives.
+Custodian includes extensive unit tests across 24 test suites covering cryptographic routines, privilege enforcement, date formatting, password generation, personal space isolation, rate limiting, and client archives.
 
 Run all tests:
 ```bash
@@ -278,7 +276,6 @@ Under **Environment Variables**, add the following keys:
 | :--- | :--- | :--- |
 | `VITE_SUPABASE_URL` | `https://xyz.supabase.co` | Your live Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | `eyJh...` | Your Supabase public anonymous API key |
-| `VITE_FOUNDER_EMAIL` | `founder@yourdomain.com` | Founder account email for Admin HQ access |
 
 ### Step 4: Deploy
 Click **"Deploy"**. Vercel will build and serve your app. The included [`vercel.json`](file:///e:/CreateApps/Custodian/vercel.json) automatically enforces:

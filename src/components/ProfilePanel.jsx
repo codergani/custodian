@@ -339,16 +339,14 @@ export default function ProfilePanel({
     const cleanCode = promoCode.trim().toUpperCase();
     if (!cleanCode) return setPromoErr("Please enter a promo code.");
 
-    const VALID_PROMOS = ["SHIPATON2026", "JUDGE2026", "REVIEWER2026", "SAMSUNG2026"];
-    if (!VALID_PROMOS.includes(cleanCode)) {
-      return setPromoErr("Invalid or expired promo code.");
-    }
-
     setPromoBusy(true);
     try {
-      localStorage.setItem(`custodian_promo_override_${profile.id}`, "pro");
-      await supabase.from("profiles").update({ plan: "pro" }).eq("id", profile.id);
-      setPromoMsg("🎉 Reviewer Pass Activated! Temporary Pro Access Granted.");
+      const { data, error: rpcErr } = await supabase.rpc("redeem_promo_code", { p_code: cleanCode });
+      if (rpcErr) throw rpcErr;
+      if (!data?.success) {
+        return setPromoErr(data?.message || "Invalid or expired promo code.");
+      }
+      setPromoMsg(`🎉 ${data.message || "Reviewer Pass Activated! Pro Access Granted."}`);
       setPromoCode("");
       setShowPromoInput(false);
       setTimeout(() => {
@@ -356,11 +354,7 @@ export default function ProfilePanel({
       }, 1200);
     } catch (err) {
       console.error("[ProfilePanel] Promo redeem error:", err);
-      localStorage.setItem(`custodian_promo_override_${profile.id}`, "pro");
-      setPromoMsg("🎉 Reviewer Pass Activated Locally! Pro Access Granted.");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1200);
+      setPromoErr(err?.message || "Failed to activate promo code on server. Please try again.");
     } finally {
       setPromoBusy(false);
     }
@@ -399,10 +393,8 @@ ${generatedRecoveryCodes.map((c, i) => `${i + 1}. ${c}`).join("\n")}
   }
 
   const currentPlan = profile?.plan || "free";
-  const founderEmail = (import.meta.env.VITE_FOUNDER_EMAIL || "").toLowerCase().trim();
   const userEmail = (profile?.email || "").toLowerCase().trim();
   const isFounder =
-    (founderEmail && userEmail === founderEmail) ||
     currentPlan === "founder" ||
     profile?.role === "founder" ||
     profile?.role === "admin";

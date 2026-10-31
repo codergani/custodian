@@ -107,7 +107,7 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
 
   // Audit Logger Helper (Supabase table + localStorage fallback)
   const logAdminAction = useCallback(async (action, targetUserId = null, targetUserEmail = null, details = {}) => {
-    const adminEmail = currentUser?.email || import.meta.env.VITE_FOUNDER_EMAIL || "founder@custodian.app";
+    const adminEmail = currentUser?.email || "founder@custodian.app";
     const logItem = {
       id: crypto.randomUUID(),
       admin_id: currentUser?.id || "founder-root",
