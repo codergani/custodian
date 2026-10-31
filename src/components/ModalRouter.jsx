@@ -11,7 +11,6 @@ import { supabase } from "../supabaseClient";
 import { S, COLORS } from "../styles";
 import { CustomDropdown, ToggleSwitch, Overlay, calculateSecurityHealth } from "./shared";
 import { calculateProjectReadiness } from "../utils/projectReadiness";
-import { openLemonCheckout } from "../utils/lemonsqueezy";
 import { isNative } from "../native/nativeBridge";
 import { purchaseSubscriptionPackage, restoreNativePurchases } from "../native/revenueCat";
 
@@ -1175,12 +1174,10 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
         await onSelectPlan(planId);
       }
     } else {
-      // Web Browser: Lemon Squeezy Checkout
-      const launched = openLemonCheckout(planId, userId, userEmail);
-      if (!launched) {
-        // If checkout URL is not yet configured in .env, fallback to direct activation for development testing
-        await onSelectPlan(planId);
-      }
+      // Web Browser: Direct PayPal Checkout
+      await handlePayPalCheckout(planId);
+      setUpgrading(null);
+      return;
     }
     setUpgrading(null);
   }
@@ -1321,7 +1318,7 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
           <div style={{ fontSize: 11.5, color: COLORS.textDim }}>
             {isNative()
               ? "🔒 Google Play In-App Billing (UPI, Cards, GPay). Cancel anytime in Play Store."
-              : "🔒 Secure Checkout by Lemon Squeezy (Cards, UPI, PayPal, Apple & Google Pay)."}
+              : "🔒 Secure Global Checkout powered by PayPal (Cards, UPI, International Payments)."}
           </div>
         </div>
         <button

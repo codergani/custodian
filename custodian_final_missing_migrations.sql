@@ -64,7 +64,7 @@ SECURITY DEFINER
 SET search_path = public, auth
 AS $$
 BEGIN
-  IF (COALESCE(auth.jwt() ->> 'email', '') != 'ygpksr456@gmail.com') AND
+  IF (COALESCE(auth.jwt() ->> 'email', '') != 'admin@custodian.app') AND
      NOT EXISTS (
        SELECT 1 FROM public.profiles prof
        WHERE prof.id = auth.uid() AND (prof.plan = 'founder' OR prof.role = 'founder' OR prof.role = 'admin')

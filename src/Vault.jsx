@@ -1133,7 +1133,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
             {(profile?.plan === "founder" ||
               profile?.role === "founder" ||
               profile?.role === "admin" ||
-              profile?.email?.toLowerCase() === "ygpksr456@gmail.com") && (
+              (import.meta.env.VITE_FOUNDER_EMAIL && profile?.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase())) && (
               <button
                 type="button"
                 style={{ ...S.iconBtnGhost, color: "#FFD700" }}
@@ -1622,7 +1622,7 @@ export default function Vault({ userId, profile, vaultKey, ecdhPrivateKey, ensur
             {(profile?.plan === "founder" ||
               profile?.role === "founder" ||
               profile?.role === "admin" ||
-              profile?.email?.toLowerCase() === "ygpksr456@gmail.com") && (
+              (import.meta.env.VITE_FOUNDER_EMAIL && profile?.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase())) && (
               <button
                 type="button"
                 style={{ ...S.iconBtnGhost, padding: 6, color: "#FFD700" }}

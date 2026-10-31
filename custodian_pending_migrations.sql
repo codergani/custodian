@@ -117,7 +117,7 @@ BEGIN
   SELECT email INTO user_email FROM auth.users WHERE id = current_user_id;
   SELECT plan, role INTO user_plan, user_role FROM public.profiles WHERE id = current_user_id;
   
-  IF LOWER(COALESCE(user_email, '')) = 'ygpksr456@gmail.com' 
+  IF LOWER(COALESCE(user_email, '')) = 'admin@custodian.app' 
      OR user_plan = 'founder' 
      OR user_role = 'founder' THEN
     RAISE EXCEPTION 'Action Forbidden: Founder VIP account is protected and cannot be deleted.';
@@ -158,7 +158,7 @@ DO $$ BEGIN
       FOR SELECT USING (
         EXISTS (
           SELECT 1 FROM public.profiles p 
-          WHERE p.id = auth.uid() AND (p.plan = 'founder' OR p.email = 'ygpksr456@gmail.com')
+          WHERE p.id = auth.uid() AND (p.plan = 'founder' OR p.email = 'admin@custodian.app')
         )
       );
   END IF;
@@ -167,7 +167,7 @@ DO $$ BEGIN
       FOR INSERT WITH CHECK (
         EXISTS (
           SELECT 1 FROM public.profiles p 
-          WHERE p.id = auth.uid() AND (p.plan = 'founder' OR p.email = 'ygpksr456@gmail.com')
+          WHERE p.id = auth.uid() AND (p.plan = 'founder' OR p.email = 'admin@custodian.app')
         )
       );
   END IF;
@@ -247,7 +247,7 @@ CREATE POLICY "Founders can view all profiles"
   FOR SELECT
   USING (
     auth.uid() = id
-    OR (auth.jwt() ->> 'email') = 'ygpksr456@gmail.com'
+    OR (auth.jwt() ->> 'email') = 'admin@custodian.app'
   );
 
 DROP POLICY IF EXISTS "Founders can update all profiles" ON public.profiles;
@@ -256,7 +256,7 @@ CREATE POLICY "Founders can update all profiles"
   FOR UPDATE
   USING (
     auth.uid() = id
-    OR (auth.jwt() ->> 'email') = 'ygpksr456@gmail.com'
+    OR (auth.jwt() ->> 'email') = 'admin@custodian.app'
   );
 
 -- Admin RPC function bypassing RLS with SECURITY DEFINER for Founder
@@ -274,7 +274,7 @@ SECURITY DEFINER
 SET search_path = public, auth
 AS $$
 BEGIN
-  IF (COALESCE(auth.jwt() ->> 'email', '') != 'ygpksr456@gmail.com') AND
+  IF (COALESCE(auth.jwt() ->> 'email', '') != 'admin@custodian.app') AND
      NOT EXISTS (
        SELECT 1 FROM public.profiles prof
        WHERE prof.id = auth.uid() AND (prof.plan = 'founder' OR prof.role = 'founder' OR prof.role = 'admin')
@@ -325,7 +325,7 @@ DO $$ BEGIN
       ON public.support_requests
       FOR SELECT
       USING (
-        (auth.jwt() ->> 'email') = 'ygpksr456@gmail.com'
+        (auth.jwt() ->> 'email') = 'admin@custodian.app'
         OR EXISTS (
           SELECT 1 FROM public.profiles
           WHERE profiles.id = auth.uid()
@@ -344,7 +344,7 @@ DO $$ BEGIN
       ON public.support_requests
       FOR UPDATE
       USING (
-        (auth.jwt() ->> 'email') = 'ygpksr456@gmail.com'
+        (auth.jwt() ->> 'email') = 'admin@custodian.app'
         OR EXISTS (
           SELECT 1 FROM public.profiles
           WHERE profiles.id = auth.uid()

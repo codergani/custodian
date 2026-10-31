@@ -114,7 +114,7 @@ Custodian enforces a strict **Zero-Knowledge Architecture**. All encryption and 
 - An isolated, zero-knowledge personal vault section for developers' private API keys, side projects, and personal accounts that remain strictly segregated from client deliverables.
 
 ### 7. Founder Admin HQ
-- Built-in administration portal accessible only by authorized founder emails (`ygpksr456@gmail.com`).
+- Built-in administration portal accessible only by authorized founder emails (configured via `VITE_FOUNDER_EMAIL`).
 - Live telemetry: registered user directory, user tiers (Free, Pro, Team, Founder), real-time encrypted storage utilization calculations, and geographic user distribution.
 
 ### 8. 💳 PayPal Platform Integration & Zero-Knowledge AI Copilot
@@ -213,7 +213,7 @@ Create a `.env` file in the project root:
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
-VITE_FOUNDER_EMAIL=ygpksr456@gmail.com
+VITE_FOUNDER_EMAIL=founder@yourdomain.com
 ```
 
 ### 3. Initialize Database Schema
@@ -278,7 +278,7 @@ Under **Environment Variables**, add the following keys:
 | :--- | :--- | :--- |
 | `VITE_SUPABASE_URL` | `https://xyz.supabase.co` | Your live Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | `eyJh...` | Your Supabase public anonymous API key |
-| `VITE_FOUNDER_EMAIL` | `ygpksr456@gmail.com` | Founder account email for Admin HQ access |
+| `VITE_FOUNDER_EMAIL` | `founder@yourdomain.com` | Founder account email for Admin HQ access |
 
 ### Step 4: Deploy
 Click **"Deploy"**. Vercel will build and serve your app. The included [`vercel.json`](file:///e:/CreateApps/Custodian/vercel.json) automatically enforces:

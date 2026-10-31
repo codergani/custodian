@@ -107,7 +107,7 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
 
   // Audit Logger Helper (Supabase table + localStorage fallback)
   const logAdminAction = useCallback(async (action, targetUserId = null, targetUserEmail = null, details = {}) => {
-    const adminEmail = currentUser?.email || "ygpksr456@gmail.com";
+    const adminEmail = currentUser?.email || import.meta.env.VITE_FOUNDER_EMAIL || "founder@custodian.app";
     const logItem = {
       id: crypto.randomUUID(),
       admin_id: currentUser?.id || "founder-root",
@@ -1198,7 +1198,7 @@ export default function AdminHQ({ onExit, currentUser, profile }) {
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <span style={{ color: COLORS.green }}>[AUTH GUARD]</span>
-                  <span>Founder VIP immunity active for ygpksr456@gmail.com.</span>
+                  <span>Founder VIP immunity active for ${currentUser?.email || "Founder Account"}.</span>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <span style={{ color: COLORS.green }}>[STORAGE GUARD]</span>

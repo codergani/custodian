@@ -13,7 +13,6 @@ import Mandatory2FASetup from "./components/Mandatory2FASetup";
 import { saveRecoveryCodesToVault } from "./utils/mfaUtils";
 import { ThemeProvider } from "./ThemeContext";
 import { isNative, initNativePlugins, setupBackButtonListener, setupDeepLinkAuthListener, setupAppStateAutoLock } from "./native/nativeBridge";
-import { initLemonSqueezy } from "./utils/lemonsqueezy";
 
 import { initRevenueCat, identifyUser, resetPurchasesUser } from "./native/revenueCat";
 import { getAutoLockMinutes } from "./security";
@@ -394,7 +393,6 @@ function AppContent() {
     setupBackButtonListener();
     setupDeepLinkAuthListener(supabase, setSession);
     setupAppStateAutoLock(handleLock);
-    initLemonSqueezy();
   }, []);
 
   // Auto-Lock Inactivity & Web Visibility Controller
@@ -484,7 +482,7 @@ function AppContent() {
       .then(({ data, error }) => {
         const isFounderEmail =
           (import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
-          session.user.email?.toLowerCase() === "ygpksr456@gmail.com";
+          false;
         const promoOverride = localStorage.getItem(`custodian_promo_override_${session.user.id}`);
         let loaded = data || { id: session.user.id, email: session.user.email, role: "member" };
         if (isFounderEmail) {
@@ -513,7 +511,7 @@ function AppContent() {
         console.error("Profile query exception, using fallback:", err);
         const isFounderEmail =
           (import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
-          session.user.email?.toLowerCase() === "ygpksr456@gmail.com";
+          false;
         const promoOverride = localStorage.getItem(`custodian_promo_override_${session.user.id}`);
         const activePlan = isFounderEmail ? "founder" : (promoOverride || "free");
         const fallbackProfile = {
@@ -682,7 +680,7 @@ function AppContent() {
       profile?.role === "admin" ||
       profile?.plan === "founder" ||
       (import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
-      session.user.email?.toLowerCase() === "ygpksr456@gmail.com";
+      false;
 
     if (!isAuthorized) {
       return (
@@ -737,7 +735,7 @@ function AppContent() {
       profile?.role === "admin" ||
       profile?.plan === "founder" ||
       (import.meta.env.VITE_FOUNDER_EMAIL && session.user.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
-      session.user.email?.toLowerCase() === "ygpksr456@gmail.com";
+      false;
 
     if (!isAuthorized) {
       return (
@@ -783,7 +781,7 @@ function AppContent() {
     profile?.role === "admin" ||
     profile?.plan === "founder" ||
     (import.meta.env.VITE_FOUNDER_EMAIL && session?.user?.email?.toLowerCase() === import.meta.env.VITE_FOUNDER_EMAIL.toLowerCase()) ||
-    session?.user?.email?.toLowerCase() === "ygpksr456@gmail.com";
+    false;
 
   const isProOrTeam =
     isFounderUser ||
