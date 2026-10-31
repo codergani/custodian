@@ -128,7 +128,7 @@ Custodian enforces a strict **Zero-Knowledge Architecture**. All encryption and 
 
 ## Testing & Verification
 
-Custodian includes a comprehensive test suite of **21 test files (152 passing tests)** covering zero-knowledge encryption, PBKDF2 key derivation, ECDH P-256 sharing, PayPal checkout integration, and AI security auditing:
+Custodian includes a comprehensive test suite of **23 test files (161 passing tests)** covering zero-knowledge encryption, PBKDF2 key derivation, ECDH P-256 sharing, PayPal checkout integration, AI security auditing, and Phase 2 AI Gateway budget guardrails:
 
 ```bash
 # Run complete test suite
@@ -137,7 +137,7 @@ npm test
 
 ---
 
-## Instructions for Hackathon Judges & Local Setup
+## Local Setup & Quickstart
 
 ```bash
 # 1. Clone repository
