@@ -15,7 +15,7 @@ Custodian ("we", "our", or "us") provides a zero-knowledge encrypted credential 
 ### 2. Information We Collect
 - **Account Information:** When you sign up, we collect your email address and authentication tokens via Supabase Auth to maintain your session and manage your subscription tier.
 - **Billing Information:** 
-  - On Web: Payment transactions and subscriptions are securely processed by Lemon Squeezy (Merchant of Record). We do not store your credit card or bank numbers.
+  - On Web: Payment transactions and subscriptions are securely processed by PayPal. We do not store your credit card or bank numbers.
   - On Mobile (Android): Subscriptions are processed directly by Google Play In-App Billing via RevenueCat.
 - **Workspace Files:** User-uploaded files in the Workspace/Store Room are stored in your private storage bucket with strict Row Level Security (RLS) policies ensuring only authenticated account owners can access their files.
 
