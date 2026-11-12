@@ -16,7 +16,7 @@ import { purchaseSubscriptionPackage, restoreNativePurchases } from "../native/r
 
 import { shareSecret, importPublicKey, generateECDHKeyPair, exportPublicKeyJWK, exportEncryptedPrivateKey } from "../crypto";
 import { VAULT_PLANS } from "../config/plans";
-import { openPayPalPlanCheckout, openPayPalEscrowCheckout, PAYPAL_CONFIG } from "../utils/paypal";
+import { openPayPalPlanCheckout, openPayPalEscrowCheckout, PAYPAL_CONFIG, PAYPAL_LOGO_DATA_URL } from "../utils/paypal";
 import { generateClientRunbook } from "../utils/aiCopilot";
 import { useTheme } from "../ThemeContext";
 
@@ -1607,9 +1607,9 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                     >
                       {/* Official PayPal Logo */}
                       <img
-                        src="/paypal-logo.png"
+                        src={PAYPAL_LOGO_DATA_URL}
                         alt="PayPal"
-                        style={{ height: 20, width: "auto", objectFit: "contain", display: "inline-block" }}
+                        style={{ height: 22, width: "auto", objectFit: "contain", display: "inline-block" }}
                       />
                       <span>
                         {upgrading === p.id + "_paypal"
