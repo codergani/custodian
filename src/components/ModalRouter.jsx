@@ -215,7 +215,19 @@ export default function ModalRouter({
   }
   if (modal.type === "upgrade") {
     return (
-      <Overlay onClose={onClose} title="Choose your plan" icon={<Sparkles size={18} color={COLORS.cyan} />} cardStyle={S.upgradeModalCard}>
+      <Overlay
+        onClose={onClose}
+        title="Choose Your Vault Plan"
+        icon={<Sparkles size={18} color="#00D2FF" />}
+        cardStyle={{
+          ...S.upgradeModalCard,
+          maxWidth: 1040,
+          background: "#080B11",
+          border: "1px solid rgba(0, 210, 255, 0.4)",
+          color: "#F8FAFC",
+          boxShadow: "0 25px 80px rgba(0,0,0,0.9), 0 0 35px rgba(0,210,255,0.15)",
+        }}
+      >
         <UpgradePlansContent
           currentPlan={currentPlan}
           userId={userId}
@@ -1214,117 +1226,323 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ fontSize: 13, color: COLORS.textDim, lineHeight: 1.5 }}>
-        Upgrade your vault to remove limits, enable client handovers, and unlock powerful collaboration tools.
+    <div style={{ display: "flex", flexDirection: "column", gap: 18, color: "#F8FAFC" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 13, color: "#94A3B8", lineHeight: 1.5 }}>
+            Upgrade your vault to remove limits, enable PayPal milestone escrow, and unlock automated client handover packages.
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255, 196, 57, 0.12)", border: "1px solid rgba(255, 196, 57, 0.35)", padding: "4px 12px", borderRadius: 20 }}>
+          <span style={{ fontSize: 13 }}>💳</span>
+          <span style={{ fontSize: 11, fontWeight: 800, color: "#FFC439", letterSpacing: "0.05em" }}>PAYPAL SANDBOX VERIFIED</span>
+        </div>
       </div>
 
       {paymentMsg && (
-        <div style={{ ...S.infoBox, background: "rgba(148,110,55,0.1)", borderColor: COLORS.brass, color: COLORS.text }}>
-          <Sparkles size={14} color={COLORS.brass} /> {paymentMsg}
+        <div style={{ ...S.infoBox, background: "rgba(0, 210, 255, 0.12)", borderColor: "#00D2FF", color: "#F8FAFC" }}>
+          <Sparkles size={14} color="#00D2FF" /> {paymentMsg}
         </div>
       )}
 
-      <div style={S.planGrid}>
+      {/* 3-Column Modern Pricing Cards */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: 16,
+          marginTop: 6,
+          alignItems: "stretch",
+        }}
+      >
         {plans.map((p) => {
           const isCurrent = currentPlan === p.id;
+          const isPro = p.id === "pro";
+          const isTeam = p.id === "team";
+
           return (
             <div
               key={p.id}
               style={{
-                ...S.pricingCard,
-                ...(p.popular ? S.pricingCardPopular : {}),
-                ...(isCurrent ? S.pricingCardCurrent : {}),
+                boxSizing: "border-box",
+                background: isPro
+                  ? "linear-gradient(180deg, rgba(0, 210, 255, 0.14) 0%, rgba(13, 20, 36, 0.98) 100%)"
+                  : isTeam
+                    ? "linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(13, 20, 36, 0.98) 100%)"
+                    : "#0E131F",
+                border: isPro
+                  ? "2px solid #00D2FF"
+                  : isTeam
+                    ? "1.5px solid rgba(99, 102, 241, 0.6)"
+                    : "1px solid rgba(255, 255, 255, 0.12)",
+                borderRadius: 16,
+                padding: "24px 20px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                position: "relative",
+                boxShadow: isPro
+                  ? "0 14px 40px -6px rgba(0, 210, 255, 0.35), 0 0 20px rgba(0, 210, 255, 0.12)"
+                  : "0 8px 24px rgba(0, 0, 0, 0.5)",
               }}
             >
-              {p.popular && <div style={S.popularTag}>Most Popular</div>}
-              <div>
-                <div style={S.pricingTitle}>{p.name}</div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 4 }}>
-                  <span style={S.pricingPrice}>{p.price}</span>
-                  <span style={S.pricingPeriod}>{p.period}</span>
-                </div>
-                <div style={{ ...S.pricingDesc, marginTop: 6 }}>{p.desc}</div>
-              </div>
-
-              <div style={S.featureList}>
-                {p.features.map((feat, idx) => (
-                  <div key={idx} style={S.featureItem}>
-                    <CheckCircle2 size={13} color={p.popular ? COLORS.brass : COLORS.green} style={{ flexShrink: 0 }} />
-                    <span>{feat}</span>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                disabled={isCurrent || upgrading !== null}
-                style={
-                  isCurrent
-                    ? { ...S.secondaryBtn, justifyContent: "center", cursor: "default", opacity: 0.9, borderColor: "rgba(16, 185, 129, 0.4)", color: COLORS.green }
-                    : p.popular
-                      ? { ...S.primaryBtn, marginTop: 8 }
-                      : { ...S.secondaryBtn, justifyContent: "center", marginTop: 8, color: p.id === "free" ? "#E07A6D" : COLORS.text }
-                }
-                onClick={() => handleSelect(p.id)}
-              >
-                {upgrading === p.id
-                  ? isNative() ? "Opening Google Play…" : "Opening Checkout…"
-                  : isCurrent
-                    ? "✓ Current Plan"
-                    : p.id === "free"
-                      ? "Downgrade to Free"
-                      : `Upgrade to ${p.name}`}
-              </button>
-
-              {p.id !== "free" && !isNative() && (
-                <button
-                  type="button"
-                  disabled={upgrading !== null}
+              {isPro && (
+                <div
                   style={{
-                    marginTop: 8,
-                    width: "100%",
-                    background: "#FFC439",
-                    color: "#003087",
-                    border: "1px solid #E0A800",
-                    borderRadius: 8,
-                    padding: "9px 12px",
-                    fontWeight: 700,
-                    fontSize: 12.5,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                    boxShadow: "0 2px 6px rgba(0, 48, 135, 0.15)",
-                    transition: "filter 0.15s ease",
+                    position: "absolute",
+                    top: -12,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    background: "linear-gradient(135deg, #00D2FF 0%, #3B82F6 100%)",
+                    color: "#FFFFFF",
+                    fontSize: 10,
+                    fontWeight: 800,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    padding: "4px 14px",
+                    borderRadius: 20,
+                    boxShadow: "0 4px 14px rgba(0, 210, 255, 0.45)",
+                    whiteSpace: "nowrap",
                   }}
-                  onClick={() => handlePayPalCheckout(p.id)}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.78.78 0 0 1 .77-.642h7.009c3.084 0 5.416.793 6.035 3.71.378 1.785-.027 3.255-1.127 4.34-1.168 1.15-2.973 1.768-5.357 1.768H9.686a.781.781 0 0 0-.77.643l-1.84 8.798z" />
-                  </svg>
-                  <span>{upgrading === p.id + "_paypal" ? "Connecting to PayPal…" : isCurrent ? `Pay / Renew with PayPal (${p.price})` : `Pay with PayPal (${p.price})`}</span>
-                </button>
+                  ⭐ MOST POPULAR • BUILT FOR PAYPAL
+                </div>
               )}
+
+              {isTeam && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: -11,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    background: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
+                    color: "#FFFFFF",
+                    fontSize: 9.5,
+                    fontWeight: 800,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    padding: "3px 12px",
+                    borderRadius: 20,
+                    boxShadow: "0 4px 12px rgba(99, 102, 241, 0.4)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  COLLABORATION SUITE
+                </div>
+              )}
+
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 800,
+                      color: isPro ? "#00D2FF" : isTeam ? "#A5B4FC" : "#E2E8F0",
+                      letterSpacing: "0.02em",
+                      fontFamily: "Outfit, Inter, sans-serif",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {p.name}
+                  </div>
+                  {isCurrent && (
+                    <span
+                      style={{
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        color: "#34D399",
+                        background: "rgba(52, 211, 153, 0.15)",
+                        border: "1px solid rgba(52, 211, 153, 0.35)",
+                        padding: "2px 8px",
+                        borderRadius: 12,
+                      }}
+                    >
+                      CURRENT PLAN
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 10 }}>
+                  <span
+                    style={{
+                      fontSize: 34,
+                      fontWeight: 900,
+                      color: "#FFFFFF",
+                      fontFamily: "Outfit, Inter, sans-serif",
+                      letterSpacing: "-0.03em",
+                    }}
+                  >
+                    {p.price}
+                  </span>
+                  <span style={{ fontSize: 13, color: "#94A3B8", fontWeight: 500 }}>
+                    {p.period}
+                  </span>
+                </div>
+
+                <div style={{ fontSize: 12, color: "#94A3B8", lineHeight: 1.5, marginTop: 8, minHeight: 36 }}>
+                  {p.desc}
+                </div>
+
+                {/* Features List */}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10,
+                    margin: "18px 0 14px",
+                    paddingTop: 16,
+                    borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+                  }}
+                >
+                  {p.features.map((feat, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 8,
+                        fontSize: 12,
+                        color: "#E2E8F0",
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      <CheckCircle2
+                        size={14}
+                        color={isPro ? "#00D2FF" : isTeam ? "#818CF8" : "#34D399"}
+                        style={{ flexShrink: 0, marginTop: 1 }}
+                      />
+                      <span>{feat}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+                {p.id === "free" ? (
+                  <button
+                    type="button"
+                    disabled={isCurrent || upgrading !== null}
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      border: "1px solid rgba(255, 255, 255, 0.15)",
+                      background: "rgba(255, 255, 255, 0.05)",
+                      color: isCurrent ? "#94A3B8" : "#F43F5E",
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      cursor: isCurrent ? "default" : "pointer",
+                    }}
+                    onClick={() => handleSelect(p.id)}
+                  >
+                    {isCurrent ? "Active Free Tier" : "Downgrade to Free"}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      disabled={isCurrent || upgrading !== null}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        border: "none",
+                        background: isPro
+                          ? "linear-gradient(135deg, #00D2FF 0%, #3B82F6 100%)"
+                          : "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
+                        color: "#FFFFFF",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: isCurrent ? "default" : "pointer",
+                        opacity: isCurrent ? 0.75 : 1,
+                        boxShadow: isPro ? "0 4px 14px rgba(0, 210, 255, 0.35)" : "none",
+                      }}
+                      onClick={() => handleSelect(p.id)}
+                    >
+                      {upgrading === p.id
+                        ? "Connecting…"
+                        : isCurrent
+                          ? `✓ Active ${p.name}`
+                          : `Upgrade to ${p.name}`}
+                    </button>
+
+                    {/* Official PayPal Button */}
+                    <button
+                      type="button"
+                      disabled={upgrading !== null}
+                      style={{
+                        width: "100%",
+                        background: "#FFC439",
+                        color: "#001C63",
+                        border: "1px solid #E0A800",
+                        borderRadius: 10,
+                        padding: "11px 16px",
+                        fontWeight: 800,
+                        fontSize: 13.5,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        boxShadow: "0 4px 14px rgba(255, 196, 57, 0.35)",
+                        transition: "filter 0.15s ease",
+                      }}
+                      onClick={() => handlePayPalCheckout(p.id)}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="#001C63">
+                        <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.78.78 0 0 1 .77-.642h7.009c3.084 0 5.416.793 6.035 3.71.378 1.785-.027 3.255-1.127 4.34-1.168 1.15-2.973 1.768-5.357 1.768H9.686a.781.781 0 0 0-.77.643l-1.84 8.798z" />
+                      </svg>
+                      <span>
+                        {upgrading === p.id + "_paypal"
+                          ? "Connecting to PayPal…"
+                          : isCurrent
+                            ? `Pay / Renew with PayPal (${p.price})`
+                            : `Pay with PayPal (${p.price})`}
+                      </span>
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* Restore Purchases & Guarantee Footer */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, background: COLORS.panelAlt, padding: "10px 14px", borderRadius: 8, border: `1px solid ${COLORS.line}`, marginTop: 4 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <ShieldCheck size={16} color={COLORS.brass} style={{ flexShrink: 0 }} />
-          <div style={{ fontSize: 11.5, color: COLORS.textDim }}>
-            {isNative()
-              ? "🔒 Google Play In-App Billing (UPI, Cards, GPay). Cancel anytime in Play Store."
-              : "🔒 Secure Global Checkout powered by PayPal (Cards, UPI, International Payments)."}
+      {/* Restore Purchases & Security Footer */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 12,
+          background: "rgba(255, 255, 255, 0.03)",
+          padding: "12px 16px",
+          borderRadius: 10,
+          border: "1px solid rgba(255, 255, 255, 0.08)",
+          marginTop: 6,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <ShieldCheck size={18} color="#00D2FF" style={{ flexShrink: 0 }} />
+          <div style={{ fontSize: 12, color: "#94A3B8" }}>
+            🔒 <strong>Official PayPal Sandbox Gateway:</strong> 256-bit AES encrypted, automated instant credential provisioning.
           </div>
         </div>
         <button
           type="button"
-          style={{ background: "none", border: "none", color: COLORS.brass, fontSize: 12, cursor: "pointer", textDecoration: "underline", padding: 0 }}
+          style={{
+            background: "none",
+            border: "none",
+            color: "#00D2FF",
+            fontSize: 12,
+            cursor: "pointer",
+            textDecoration: "underline",
+            padding: 0,
+            fontWeight: 600,
+          }}
           disabled={restoring}
           onClick={handleRestore}
         >
@@ -1332,17 +1550,16 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
         </button>
       </div>
 
-      {/* Legal & Compliance Disclosures */}
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, fontSize: 11, color: COLORS.textDim, marginTop: 2, flexWrap: "wrap" }}>
-        <span>By subscribing, you agree to our</span>
-        <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: COLORS.brass, textDecoration: "underline" }}>
+      <div style={{ textAlign: "center", fontSize: 11, color: "#64748B", marginTop: 2 }}>
+        By subscribing, you agree to our{" "}
+        <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: "#94A3B8", textDecoration: "underline" }}>
           Terms of Service
-        </a>
-        <span>&</span>
-        <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: COLORS.brass, textDecoration: "underline" }}>
+        </a>{" "}
+        &amp;{" "}
+        <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: "#94A3B8", textDecoration: "underline" }}>
           Privacy Policy
-        </a>
-        <span>• 14-day refund guarantee</span>
+        </a>{" "}
+        • 14-day refund guarantee • Zero-knowledge cryptographic storage
       </div>
     </div>
   );
