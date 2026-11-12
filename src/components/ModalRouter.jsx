@@ -1261,7 +1261,7 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                 disabled={isCurrent || upgrading !== null}
                 style={
                   isCurrent
-                    ? { ...S.secondaryBtn, justifyContent: "center", cursor: "default", opacity: 0.8 }
+                    ? { ...S.secondaryBtn, justifyContent: "center", cursor: "default", opacity: 0.9, borderColor: "rgba(16, 185, 129, 0.4)", color: COLORS.green }
                     : p.popular
                       ? { ...S.primaryBtn, marginTop: 8 }
                       : { ...S.secondaryBtn, justifyContent: "center", marginTop: 8, color: p.id === "free" ? "#E07A6D" : COLORS.text }
@@ -1271,24 +1271,24 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                 {upgrading === p.id
                   ? isNative() ? "Opening Google Play…" : "Opening Checkout…"
                   : isCurrent
-                    ? "Current Plan"
+                    ? "✓ Current Plan"
                     : p.id === "free"
                       ? "Downgrade to Free"
                       : `Upgrade to ${p.name}`}
               </button>
 
-              {p.id !== "free" && !isCurrent && !isNative() && (
+              {p.id !== "free" && !isNative() && (
                 <button
                   type="button"
                   disabled={upgrading !== null}
                   style={{
-                    marginTop: 6,
+                    marginTop: 8,
                     width: "100%",
                     background: "#FFC439",
                     color: "#003087",
                     border: "1px solid #E0A800",
                     borderRadius: 8,
-                    padding: "8px 12px",
+                    padding: "9px 12px",
                     fontWeight: 700,
                     fontSize: 12.5,
                     cursor: "pointer",
@@ -1296,14 +1296,15 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 6,
-                    boxShadow: "0 2px 5px rgba(0, 48, 135, 0.12)",
+                    boxShadow: "0 2px 6px rgba(0, 48, 135, 0.15)",
+                    transition: "filter 0.15s ease",
                   }}
                   onClick={() => handlePayPalCheckout(p.id)}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.78.78 0 0 1 .77-.642h7.009c3.084 0 5.416.793 6.035 3.71.378 1.785-.027 3.255-1.127 4.34-1.168 1.15-2.973 1.768-5.357 1.768H9.686a.781.781 0 0 0-.77.643l-1.84 8.798z" />
                   </svg>
-                  <span>{upgrading === p.id + "_paypal" ? "Connecting to PayPal…" : "Pay with PayPal"}</span>
+                  <span>{upgrading === p.id + "_paypal" ? "Connecting to PayPal…" : isCurrent ? `Pay / Renew with PayPal (${p.price})` : `Pay with PayPal (${p.price})`}</span>
                 </button>
               )}
             </div>
