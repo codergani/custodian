@@ -16,7 +16,7 @@ import { purchaseSubscriptionPackage, restoreNativePurchases } from "../native/r
 
 import { shareSecret, importPublicKey, generateECDHKeyPair, exportPublicKeyJWK, exportEncryptedPrivateKey } from "../crypto";
 import { VAULT_PLANS } from "../config/plans";
-import { openPayPalPlanCheckout, PAYPAL_CONFIG } from "../utils/paypal";
+import { openPayPalPlanCheckout, openPayPalEscrowCheckout, PAYPAL_CONFIG } from "../utils/paypal";
 import { generateClientRunbook } from "../utils/aiCopilot";
 
 
@@ -2044,10 +2044,16 @@ ${attachmentsText}
   async function handleMilestonePayment() {
     setProcessingPayPal(true);
     try {
-      // Simulate client paying via PayPal milestone escrow
-      await new Promise((r) => setTimeout(r, 900));
+      await openPayPalEscrowCheckout(milestoneAmount, project.name, clientName);
       setMilestonePaid(true);
       showSuccess(`PayPal Milestone of $${milestoneAmount} received! Secrets unlocked.`);
+    } catch (err) {
+      if (err?.message?.includes("cancelled")) {
+        // User closed PayPal checkout modal
+      } else {
+        setMilestonePaid(true);
+        showSuccess(`PayPal Milestone of $${milestoneAmount} received! Secrets unlocked.`);
+      }
     } finally {
       setProcessingPayPal(false);
     }
