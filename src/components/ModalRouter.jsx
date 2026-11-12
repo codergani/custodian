@@ -1605,12 +1605,12 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                       }}
                       onClick={() => handlePayPalCheckout(p.id)}
                     >
-                      {/* Official PayPal Dual-Tone Interlocking P Monogram */}
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.78.78 0 0 1 .77-.642h7.009c3.084 0 5.416.793 6.035 3.71.378 1.785-.027 3.255-1.127 4.34-1.168 1.15-2.973 1.768-5.357 1.768H9.686a.781.781 0 0 0-.77.643l-1.84 8.798z" fill="#003087"/>
-                        <path d="M9.686 12.899l1.458-6.966c.105-.502.545-.867 1.057-.867h5.132c2.257 0 3.963.58 4.416 2.716.276 1.306-.02 2.381-.825 3.174-.855.842-2.176 1.294-3.923 1.294H10.457a.781.781 0 0 0-.771.649z" fill="#0079C1"/>
-                        <path d="M8.88 16.24l.806-3.34h3.56c2.47 0 4.34-.64 5.55-1.83 1.14-1.12 1.57-2.64 1.17-4.49-.64-3.02-3.04-3.84-6.22-3.84h-7.17a.81.81 0 0 0-.8.66l-2 12.7a.55.55 0 0 0 .55.64h3.77a.55.55 0 0 0 .55-.48z" fill="#00457C"/>
-                      </svg>
+                      {/* Official PayPal Logo */}
+                      <img
+                        src="/paypal-logo.png"
+                        alt="PayPal"
+                        style={{ height: 20, width: "auto", objectFit: "contain", display: "inline-block" }}
+                      />
                       <span>
                         {upgrading === p.id + "_paypal"
                           ? "Connecting to PayPal…"
