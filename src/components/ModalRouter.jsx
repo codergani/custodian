@@ -18,6 +18,7 @@ import { shareSecret, importPublicKey, generateECDHKeyPair, exportPublicKeyJWK, 
 import { VAULT_PLANS } from "../config/plans";
 import { openPayPalPlanCheckout, openPayPalEscrowCheckout, PAYPAL_CONFIG } from "../utils/paypal";
 import { generateClientRunbook } from "../utils/aiCopilot";
+import { useTheme } from "../ThemeContext";
 
 
 export default function ModalRouter({
@@ -218,14 +219,14 @@ export default function ModalRouter({
       <Overlay
         onClose={onClose}
         title="Choose Your Vault Plan"
-        icon={<Sparkles size={18} color="#00D2FF" />}
+        icon={<Sparkles size={18} color="var(--brand-cyan, #00D2FF)" />}
         cardStyle={{
           ...S.upgradeModalCard,
           maxWidth: 1040,
-          background: "linear-gradient(180deg, #101626 0%, #090D17 100%)",
-          border: "1px solid rgba(0, 210, 255, 0.35)",
-          color: "#FFFFFF",
-          boxShadow: "0 28px 80px rgba(0, 0, 0, 0.85), 0 0 35px rgba(0, 210, 255, 0.15)",
+          background: "var(--panel-card, #FFFFFF)",
+          border: "1px solid var(--line-main, rgba(15, 23, 42, 0.09))",
+          color: "var(--text-main, #0F172A)",
+          boxShadow: "var(--card-shadow, 0 20px 60px -15px rgba(0, 0, 0, 0.5))",
         }}
       >
         <UpgradePlansContent
@@ -1154,12 +1155,18 @@ function CredFormContent({ initialData, isEdit, currentPlan, defaultCurrency = "
 
 function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
   const [upgrading, setUpgrading] = useState(null);
-
-  const plans = VAULT_PLANS;
-
-
   const [restoring, setRestoring] = useState(false);
   const [paymentMsg, setPaymentMsg] = useState("");
+  const plans = VAULT_PLANS;
+
+  let theme = "dark";
+  try {
+    const ctx = useTheme();
+    if (ctx?.theme) theme = ctx.theme;
+  } catch {
+    // fallback if outside context
+  }
+  const isLight = theme === "light" || (typeof document !== "undefined" && document.documentElement.getAttribute("data-theme") === "light");
 
   async function handleSelect(planId) {
     if (planId === currentPlan) return;
@@ -1226,22 +1233,48 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 18, color: "#F8FAFC" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 18, color: "var(--text-main, #0F172A)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
         <div>
-          <div style={{ fontSize: 13, color: "#94A3B8", lineHeight: 1.5 }}>
+          <div style={{ fontSize: 13, color: "var(--text-dim, #64748B)", lineHeight: 1.5 }}>
             Upgrade your vault to remove limits, enable PayPal milestone escrow, and unlock automated client handover packages.
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255, 196, 57, 0.12)", border: "1px solid rgba(255, 196, 57, 0.35)", padding: "4px 12px", borderRadius: 20 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: isLight ? "rgba(245, 158, 11, 0.10)" : "rgba(255, 196, 57, 0.12)",
+            border: isLight ? "1px solid rgba(245, 158, 11, 0.35)" : "1px solid rgba(255, 196, 57, 0.35)",
+            padding: "5px 12px",
+            borderRadius: 20,
+          }}
+        >
           <span style={{ fontSize: 13 }}>💳</span>
-          <span style={{ fontSize: 11, fontWeight: 800, color: "#FFC439", letterSpacing: "0.05em" }}>PAYPAL SANDBOX VERIFIED</span>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              color: isLight ? "#B45309" : "#FFC439",
+              letterSpacing: "0.05em",
+            }}
+          >
+            PAYPAL SANDBOX VERIFIED
+          </span>
         </div>
       </div>
 
       {paymentMsg && (
-        <div style={{ ...S.infoBox, background: "rgba(0, 210, 255, 0.12)", borderColor: "#00D2FF", color: "#F8FAFC" }}>
-          <Sparkles size={14} color="#00D2FF" /> {paymentMsg}
+        <div
+          style={{
+            ...S.infoBox,
+            background: isLight ? "rgba(2, 132, 199, 0.08)" : "rgba(0, 210, 255, 0.12)",
+            borderColor: isLight ? "#0284C7" : "#00D2FF",
+            color: "var(--text-main, #0F172A)",
+          }}
+        >
+          <Sparkles size={14} color={isLight ? "#0284C7" : "#00D2FF"} /> {paymentMsg}
         </div>
       )}
 
@@ -1260,30 +1293,78 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
           const isPro = p.id === "pro";
           const isTeam = p.id === "team";
 
+          const cardBg = isLight
+            ? isPro
+              ? "linear-gradient(180deg, rgba(2, 132, 199, 0.06) 0%, #FFFFFF 100%)"
+              : isTeam
+                ? "linear-gradient(180deg, rgba(99, 102, 241, 0.05) 0%, #FFFFFF 100%)"
+                : "#FFFFFF"
+            : isPro
+              ? "linear-gradient(180deg, rgba(0, 210, 255, 0.14) 0%, rgba(13, 20, 36, 0.98) 100%)"
+              : isTeam
+                ? "linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(13, 20, 36, 0.98) 100%)"
+                : "#0E131F";
+
+          const cardBorder = isLight
+            ? isPro
+              ? "2px solid #0284C7"
+              : isTeam
+                ? "1.5px solid #6366F1"
+                : "1px solid var(--line-main, rgba(15, 23, 42, 0.12))"
+            : isPro
+              ? "2px solid #00D2FF"
+              : isTeam
+                ? "1.5px solid rgba(99, 102, 241, 0.6)"
+                : "1px solid rgba(255, 255, 255, 0.12)";
+
+          const cardShadow = isLight
+            ? isPro
+              ? "0 12px 32px -4px rgba(2, 132, 199, 0.18), 0 0 0 1px #0284C7"
+              : isTeam
+                ? "0 8px 24px -4px rgba(99, 102, 241, 0.14)"
+                : "0 4px 16px -2px rgba(15, 23, 42, 0.06), 0 0 1px 1px rgba(15, 23, 42, 0.06)"
+            : isPro
+              ? "0 14px 40px -6px rgba(0, 210, 255, 0.35), 0 0 20px rgba(0, 210, 255, 0.12)"
+              : "0 8px 24px rgba(0, 0, 0, 0.5)";
+
+          const titleColor = isLight
+            ? isPro
+              ? "#0284C7"
+              : isTeam
+                ? "#4F46E5"
+                : "var(--text-main, #0F172A)"
+            : isPro
+              ? "#00D2FF"
+              : isTeam
+                ? "#A5B4FC"
+                : "#E2E8F0";
+
+          const checkColor = isLight
+            ? isPro
+              ? "#0284C7"
+              : isTeam
+                ? "#6366F1"
+                : "#059669"
+            : isPro
+              ? "#00D2FF"
+              : isTeam
+                ? "#818CF8"
+                : "#34D399";
+
           return (
             <div
               key={p.id}
               style={{
                 boxSizing: "border-box",
-                background: isPro
-                  ? "linear-gradient(180deg, rgba(0, 210, 255, 0.14) 0%, rgba(13, 20, 36, 0.98) 100%)"
-                  : isTeam
-                    ? "linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(13, 20, 36, 0.98) 100%)"
-                    : "#0E131F",
-                border: isPro
-                  ? "2px solid #00D2FF"
-                  : isTeam
-                    ? "1.5px solid rgba(99, 102, 241, 0.6)"
-                    : "1px solid rgba(255, 255, 255, 0.12)",
+                background: cardBg,
+                border: cardBorder,
                 borderRadius: 16,
                 padding: "24px 20px",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
                 position: "relative",
-                boxShadow: isPro
-                  ? "0 14px 40px -6px rgba(0, 210, 255, 0.35), 0 0 20px rgba(0, 210, 255, 0.12)"
-                  : "0 8px 24px rgba(0, 0, 0, 0.5)",
+                boxShadow: cardShadow,
               }}
             >
               {isPro && (
@@ -1293,7 +1374,9 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                     top: -12,
                     left: "50%",
                     transform: "translateX(-50%)",
-                    background: "linear-gradient(135deg, #00D2FF 0%, #3B82F6 100%)",
+                    background: isLight
+                      ? "linear-gradient(135deg, #0284C7 0%, #2563EB 100%)"
+                      : "linear-gradient(135deg, #00D2FF 0%, #3B82F6 100%)",
                     color: "#FFFFFF",
                     fontSize: 10,
                     fontWeight: 800,
@@ -1301,7 +1384,9 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                     textTransform: "uppercase",
                     padding: "4px 14px",
                     borderRadius: 20,
-                    boxShadow: "0 4px 14px rgba(0, 210, 255, 0.45)",
+                    boxShadow: isLight
+                      ? "0 4px 14px rgba(2, 132, 199, 0.35)"
+                      : "0 4px 14px rgba(0, 210, 255, 0.45)",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -1324,7 +1409,7 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                     textTransform: "uppercase",
                     padding: "3px 12px",
                     borderRadius: 20,
-                    boxShadow: "0 4px 12px rgba(99, 102, 241, 0.4)",
+                    boxShadow: "0 4px 12px rgba(99, 102, 241, 0.35)",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -1338,7 +1423,7 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                     style={{
                       fontSize: 15,
                       fontWeight: 800,
-                      color: isPro ? "#00D2FF" : isTeam ? "#A5B4FC" : "#E2E8F0",
+                      color: titleColor,
                       letterSpacing: "0.02em",
                       fontFamily: "Outfit, Inter, sans-serif",
                       textTransform: "uppercase",
@@ -1351,9 +1436,9 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                       style={{
                         fontSize: 10.5,
                         fontWeight: 700,
-                        color: "#34D399",
-                        background: "rgba(52, 211, 153, 0.15)",
-                        border: "1px solid rgba(52, 211, 153, 0.35)",
+                        color: isLight ? "#059669" : "#34D399",
+                        background: isLight ? "rgba(5, 150, 105, 0.12)" : "rgba(52, 211, 153, 0.15)",
+                        border: isLight ? "1px solid rgba(5, 150, 105, 0.35)" : "1px solid rgba(52, 211, 153, 0.35)",
                         padding: "2px 8px",
                         borderRadius: 12,
                       }}
@@ -1368,19 +1453,19 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                     style={{
                       fontSize: 34,
                       fontWeight: 900,
-                      color: "#FFFFFF",
+                      color: "var(--text-main, #0F172A)",
                       fontFamily: "Outfit, Inter, sans-serif",
                       letterSpacing: "-0.03em",
                     }}
                   >
                     {p.price}
                   </span>
-                  <span style={{ fontSize: 13, color: "#94A3B8", fontWeight: 500 }}>
+                  <span style={{ fontSize: 13, color: "var(--text-dim, #64748B)", fontWeight: 500 }}>
                     {p.period}
                   </span>
                 </div>
 
-                <div style={{ fontSize: 12, color: "#94A3B8", lineHeight: 1.5, marginTop: 8, minHeight: 36 }}>
+                <div style={{ fontSize: 12, color: "var(--text-dim, #64748B)", lineHeight: 1.5, marginTop: 8, minHeight: 36 }}>
                   {p.desc}
                 </div>
 
@@ -1392,7 +1477,7 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                     gap: 10,
                     margin: "18px 0 14px",
                     paddingTop: 16,
-                    borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderTop: "1px solid var(--line-main, rgba(15, 23, 42, 0.08))",
                   }}
                 >
                   {p.features.map((feat, idx) => (
@@ -1403,13 +1488,13 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                         alignItems: "flex-start",
                         gap: 8,
                         fontSize: 12,
-                        color: "#E2E8F0",
+                        color: "var(--text-main, #334155)",
                         lineHeight: 1.4,
                       }}
                     >
                       <CheckCircle2
                         size={14}
-                        color={isPro ? "#00D2FF" : isTeam ? "#818CF8" : "#34D399"}
+                        color={checkColor}
                         style={{ flexShrink: 0, marginTop: 1 }}
                       />
                       <span>{feat}</span>
@@ -1429,9 +1514,9 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                         width: "100%",
                         padding: "10px 14px",
                         borderRadius: 10,
-                        border: "1px solid rgba(255, 255, 255, 0.15)",
-                        background: "rgba(255, 255, 255, 0.05)",
-                        color: isCurrent ? "#94A3B8" : "#F43F5E",
+                        border: "1px solid var(--line-main, rgba(15, 23, 42, 0.12))",
+                        background: isLight ? "rgba(244, 63, 94, 0.06)" : "rgba(255, 255, 255, 0.05)",
+                        color: isCurrent ? "var(--text-dim, #94A3B8)" : "#F43F5E",
                         fontSize: 12.5,
                         fontWeight: 600,
                         cursor: isCurrent ? "default" : "pointer",
@@ -1445,8 +1530,9 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                         width: "100%",
                         padding: "10px 14px",
                         borderRadius: 10,
-                        border: "1px dashed rgba(255, 255, 255, 0.12)",
-                        color: "#94A3B8",
+                        border: "1px dashed var(--line-main, rgba(15, 23, 42, 0.15))",
+                        color: "var(--text-dim, #64748B)",
+                        background: isLight ? "rgba(15, 23, 42, 0.02)" : "transparent",
                         fontSize: 11.5,
                         fontWeight: 600,
                         textAlign: "center",
@@ -1470,14 +1556,20 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                         borderRadius: 10,
                         border: "none",
                         background: isPro
-                          ? "linear-gradient(135deg, #00D2FF 0%, #3B82F6 100%)"
+                          ? isLight
+                            ? "linear-gradient(135deg, #0284C7 0%, #2563EB 100%)"
+                            : "linear-gradient(135deg, #00D2FF 0%, #3B82F6 100%)"
                           : "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
                         color: "#FFFFFF",
                         fontSize: 13,
                         fontWeight: 700,
                         cursor: isCurrent ? "default" : "pointer",
                         opacity: isCurrent ? 0.75 : 1,
-                        boxShadow: isPro ? "0 4px 14px rgba(0, 210, 255, 0.35)" : "none",
+                        boxShadow: isPro
+                          ? isLight
+                            ? "0 4px 14px rgba(2, 132, 199, 0.35)"
+                            : "0 4px 14px rgba(0, 210, 255, 0.35)"
+                          : "none",
                       }}
                       onClick={() => handleSelect(p.id)}
                     >
@@ -1506,7 +1598,9 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                         alignItems: "center",
                         justifyContent: "center",
                         gap: 8,
-                        boxShadow: "0 4px 14px rgba(255, 196, 57, 0.35)",
+                        boxShadow: isLight
+                          ? "0 4px 14px rgba(245, 158, 11, 0.35)"
+                          : "0 4px 14px rgba(255, 196, 57, 0.35)",
                         transition: "filter 0.15s ease",
                       }}
                       onClick={() => handlePayPalCheckout(p.id)}
@@ -1539,16 +1633,16 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
           justifyContent: "space-between",
           flexWrap: "wrap",
           gap: 12,
-          background: "rgba(255, 255, 255, 0.03)",
+          background: isLight ? "rgba(15, 23, 42, 0.03)" : "rgba(255, 255, 255, 0.03)",
           padding: "12px 16px",
           borderRadius: 10,
-          border: "1px solid rgba(255, 255, 255, 0.08)",
+          border: "1px solid var(--line-main, rgba(15, 23, 42, 0.08))",
           marginTop: 6,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <ShieldCheck size={18} color="#00D2FF" style={{ flexShrink: 0 }} />
-          <div style={{ fontSize: 12, color: "#94A3B8" }}>
+          <ShieldCheck size={18} color={isLight ? "#0284C7" : "#00D2FF"} style={{ flexShrink: 0 }} />
+          <div style={{ fontSize: 12, color: "var(--text-dim, #64748B)" }}>
             🔒 <strong>Official PayPal Sandbox Gateway:</strong> 256-bit AES encrypted, automated instant credential provisioning.
           </div>
         </div>
@@ -1557,7 +1651,7 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
           style={{
             background: "none",
             border: "none",
-            color: "#00D2FF",
+            color: isLight ? "#0284C7" : "#00D2FF",
             fontSize: 12,
             cursor: "pointer",
             textDecoration: "underline",
@@ -1571,13 +1665,13 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
         </button>
       </div>
 
-      <div style={{ textAlign: "center", fontSize: 11, color: "#64748B", marginTop: 2 }}>
+      <div style={{ textAlign: "center", fontSize: 11, color: "var(--text-dim, #64748B)", marginTop: 2 }}>
         By subscribing, you agree to our{" "}
-        <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: "#94A3B8", textDecoration: "underline" }}>
+        <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: isLight ? "#0284C7" : "#00D2FF", textDecoration: "underline" }}>
           Terms of Service
         </a>{" "}
         &amp;{" "}
-        <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: "#94A3B8", textDecoration: "underline" }}>
+        <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: isLight ? "#0284C7" : "#00D2FF", textDecoration: "underline" }}>
           Privacy Policy
         </a>{" "}
         • 14-day refund guarantee • Zero-knowledge cryptographic storage
