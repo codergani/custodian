@@ -222,10 +222,10 @@ export default function ModalRouter({
         cardStyle={{
           ...S.upgradeModalCard,
           maxWidth: 1040,
-          background: "#080B11",
-          border: "1px solid rgba(0, 210, 255, 0.4)",
-          color: "#F8FAFC",
-          boxShadow: "0 25px 80px rgba(0,0,0,0.9), 0 0 35px rgba(0,210,255,0.15)",
+          background: "linear-gradient(180deg, #101626 0%, #090D17 100%)",
+          border: "1px solid rgba(0, 210, 255, 0.35)",
+          color: "#FFFFFF",
+          boxShadow: "0 28px 80px rgba(0, 0, 0, 0.85), 0 0 35px rgba(0, 210, 255, 0.15)",
         }}
       >
         <UpgradePlansContent
@@ -1421,24 +1421,44 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
               {/* Action Buttons */}
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
                 {p.id === "free" ? (
-                  <button
-                    type="button"
-                    disabled={isCurrent || upgrading !== null}
-                    style={{
-                      width: "100%",
-                      padding: "10px 14px",
-                      borderRadius: 10,
-                      border: "1px solid rgba(255, 255, 255, 0.15)",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      color: isCurrent ? "#94A3B8" : "#F43F5E",
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      cursor: isCurrent ? "default" : "pointer",
-                    }}
-                    onClick={() => handleSelect(p.id)}
-                  >
-                    {isCurrent ? "Active Free Tier" : "Downgrade to Free"}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      disabled={isCurrent || upgrading !== null}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        border: "1px solid rgba(255, 255, 255, 0.15)",
+                        background: "rgba(255, 255, 255, 0.05)",
+                        color: isCurrent ? "#94A3B8" : "#F43F5E",
+                        fontSize: 12.5,
+                        fontWeight: 600,
+                        cursor: isCurrent ? "default" : "pointer",
+                      }}
+                      onClick={() => handleSelect(p.id)}
+                    >
+                      {isCurrent ? "Active Free Tier" : "Downgrade to Free"}
+                    </button>
+                    <div
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        border: "1px dashed rgba(255, 255, 255, 0.12)",
+                        color: "#94A3B8",
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        textAlign: "center",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minHeight: 40,
+                      }}
+                    >
+                      Free Forever • No Card Needed
+                    </div>
+                  </>
                 ) : (
                   <>
                     <button
@@ -1475,12 +1495,12 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                       style={{
                         width: "100%",
                         background: "#FFC439",
-                        color: "#001C63",
+                        color: "#003087",
                         border: "1px solid #E0A800",
                         borderRadius: 10,
-                        padding: "11px 16px",
+                        padding: "10px 14px",
                         fontWeight: 800,
-                        fontSize: 13.5,
+                        fontSize: 13,
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
@@ -1491,15 +1511,16 @@ function UpgradePlansContent({ currentPlan, userId, userEmail, onSelectPlan }) {
                       }}
                       onClick={() => handlePayPalCheckout(p.id)}
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="#001C63">
-                        <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.78.78 0 0 1 .77-.642h7.009c3.084 0 5.416.793 6.035 3.71.378 1.785-.027 3.255-1.127 4.34-1.168 1.15-2.973 1.768-5.357 1.768H9.686a.781.781 0 0 0-.77.643l-1.84 8.798z" />
+                      {/* Official PayPal Dual-Tone Interlocking P Monogram */}
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.78.78 0 0 1 .77-.642h7.009c3.084 0 5.416.793 6.035 3.71.378 1.785-.027 3.255-1.127 4.34-1.168 1.15-2.973 1.768-5.357 1.768H9.686a.781.781 0 0 0-.77.643l-1.84 8.798z" fill="#003087"/>
+                        <path d="M9.686 12.899l1.458-6.966c.105-.502.545-.867 1.057-.867h5.132c2.257 0 3.963.58 4.416 2.716.276 1.306-.02 2.381-.825 3.174-.855.842-2.176 1.294-3.923 1.294H10.457a.781.781 0 0 0-.771.649z" fill="#0079C1"/>
+                        <path d="M8.88 16.24l.806-3.34h3.56c2.47 0 4.34-.64 5.55-1.83 1.14-1.12 1.57-2.64 1.17-4.49-.64-3.02-3.04-3.84-6.22-3.84h-7.17a.81.81 0 0 0-.8.66l-2 12.7a.55.55 0 0 0 .55.64h3.77a.55.55 0 0 0 .55-.48z" fill="#00457C"/>
                       </svg>
                       <span>
                         {upgrading === p.id + "_paypal"
                           ? "Connecting to PayPal…"
-                          : isCurrent
-                            ? `Pay / Renew with PayPal (${p.price})`
-                            : `Pay with PayPal (${p.price})`}
+                          : `Pay with PayPal (${p.price})`}
                       </span>
                     </button>
                   </>

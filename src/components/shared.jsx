@@ -224,8 +224,8 @@ export function Overlay({ onClose, title, icon, children, cardStyle }) {
     <div style={S.overlay} className="custodian-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div style={cardStyle || S.modalCard} className="custodian-modal-card" onClick={(e) => e.stopPropagation()}>
         <div style={S.modalHead}>
-          <div style={S.authHeader}><div style={S.dialRing}>{icon}</div><h2 style={S.authTitle}>{title}</h2></div>
-          <button style={S.iconBtnGhost} onClick={onClose} aria-label="Close modal"><X size={16} /></button>
+          <div style={S.authHeader}><div style={S.dialRing}>{icon}</div><h2 style={{ ...S.authTitle, color: cardStyle?.color || "#F8FAFC" }}>{title}</h2></div>
+          <button style={{ ...S.iconBtnGhost, color: cardStyle?.color ? "rgba(255, 255, 255, 0.7)" : COLORS.textDim }} onClick={onClose} aria-label="Close modal"><X size={16} /></button>
         </div>
         {children}
       </div>
